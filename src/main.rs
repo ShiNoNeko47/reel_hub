@@ -16,16 +16,26 @@ fn main() -> ExitCode {
 fn build_ui(app: &Application) {
     let content = Box::new(Orientation::Vertical, 5);
 
-    let main_window = Window::builder()
-        .application(app)
-        .title("movies")
-        .child(&ScrolledWindow::builder().child(&content).build())
-        .build();
-
     content.set_margin_end(10);
     content.set_margin_start(10);
     content.set_margin_top(10);
     content.set_margin_bottom(10);
+
+    let scrolled_window = ScrolledWindow::builder()
+        .child(&content)
+        .has_frame(true)
+        .build();
+
+    scrolled_window.set_margin_end(10);
+    scrolled_window.set_margin_start(10);
+    scrolled_window.set_margin_top(10);
+    scrolled_window.set_margin_bottom(10);
+
+    let main_window = Window::builder()
+        .application(app)
+        .title("movies")
+        .child(&scrolled_window)
+        .build();
 
     for file in WalkDir::new("/home/nikola/Media/befafd9f-f32e-4121-978d-5abfe9b6bf6c/movies/")
         .into_iter()
@@ -44,6 +54,10 @@ fn build_ui(app: &Application) {
             content.append(&button);
         }
     }
+    main_window.connect_notify::<_>(Some("default-width"), |window, _| {
+        window.set_default_width(window.width());
+        window.child().unwrap().set_margin_start(window.width() / 3);
+    });
 
     main_window.present();
 }
