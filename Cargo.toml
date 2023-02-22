@@ -10,4 +10,6 @@ gtk={version='0.6.1', package='gtk4'}
 walkdir='2.3.2'
 regex='1.7.1'
 libadwaita='0.3.1'
-# reqwest='0.11.14'
+reqwest={version='0.11.14', features=['blocking']}
+glib='0.17.2'
+json='0.12.4'

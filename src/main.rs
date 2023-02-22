@@ -1,15 +1,19 @@
+use glib::{clone, MainContext, PRIORITY_DEFAULT};
 use gtk::{
-    glib::ExitCode, prelude::*, Box, Button, Dialog, Label, ListBox, Orientation, Picture,
-    ResponseType, ScrolledWindow, Window,
+    gdk_pixbuf::Pixbuf,
+    gio::{Cancellable, MemoryInputStream},
+    glib::ExitCode,
+    prelude::*,
+    Box, Button, ListBox, Orientation, Picture, ScrolledWindow, Window,
 };
 use libadwaita::Application;
 use regex::Regex;
-use std::{ffi::OsStr, process::Command};
+use std::{ffi::OsStr, process::Command, thread};
 use walkdir::WalkDir;
 
 fn main() -> ExitCode {
     let app = Application::builder()
-        .application_id("com.gtk_rs.movies")
+        // .application_id("com.gtk_rs.movies")
         .build();
     app.connect_activate(build_ui);
     app.run()
@@ -18,17 +22,22 @@ fn main() -> ExitCode {
 fn build_ui(app: &Application) {
     let hbox = Box::new(Orientation::Horizontal, 0);
     let list_box = ListBox::new();
-    hbox.set_halign(gtk::Align::End);
-    // hbox.set_valign(gtk::Align::Center);
 
-    // let pixbuf = Pixbuf::from_file("RyuuguuRena.png").unwrap();
+    let info = Box::new(Orientation::Vertical, 5);
+    info.set_halign(gtk::Align::Center);
+    info.set_valign(gtk::Align::End);
     let poster = Picture::new();
-    hbox.append(&poster);
+    info.append(&poster);
+    info.set_hexpand(true);
+    info.set_halign(gtk::Align::Fill);
+
+    hbox.append(&info);
 
     list_box.set_margin_end(10);
     list_box.set_margin_start(10);
     list_box.set_margin_top(10);
     list_box.set_margin_bottom(10);
+    list_box.set_selection_mode(gtk::SelectionMode::None);
 
     let scrolled_window = ScrolledWindow::builder()
         .child(&list_box)
@@ -54,54 +63,75 @@ fn build_ui(app: &Application) {
         .filter_map(|file| file.ok())
     {
         if file.path().extension() == Some(OsStr::new("mp4")) {
-            let movie_name: String = file.file_name().to_str().unwrap().to_string();
+            let movie_name = name_parse(file.file_name().to_str().unwrap().to_string());
 
-            let dialog = Dialog::builder().transient_for(&main_window).build();
-            dialog.add_buttons(&[("Yes", ResponseType::Accept), ("No", ResponseType::Reject)]);
-            dialog
-                .content_area()
-                .append(&Label::new(Some("Continue watching?")));
-            dialog.content_area().set_margin_end(10);
-            dialog.content_area().set_margin_start(10);
-            dialog.content_area().set_margin_top(10);
-            dialog.content_area().set_margin_bottom(10);
-            dialog.connect_response(move |dialog, resp| {
-                match resp {
-                    ResponseType::Accept => {
-                        play_movie(file.path().to_str().unwrap().to_string(), false)
-                    }
-                    ResponseType::Reject => {
-                        play_movie(file.path().to_str().unwrap().to_string(), true)
-                    }
-                    _ => {}
-                };
-                dialog.hide();
-            });
+            let button = Button::builder()
+                .label(movie_name.0.replace(".", " "))
+                .build();
+            // button.set_focusable(false);
+            let (sender, reciever) = MainContext::channel(PRIORITY_DEFAULT);
 
-            let button = Button::builder().label(name_parse(&movie_name)).build();
-            button.connect_clicked(move |_| {
-                dialog.show();
-            });
+            button.connect_clicked(clone!(@weak poster, @weak info => move |_| {
+                let sender = sender.clone();
+                let path = file.path().to_str().unwrap().to_string();
+                let movie_name = movie_name.clone();
+                thread::spawn(move ||{
+                    sender.send(None).expect("Couldn't send");
+                    let data = reqwest::blocking::get(format!(
+                            "https://api.themoviedb.org/3/search/movie?query={}&year={}&api_key={}",
+                            movie_name.0.replace(".", "%20"),
+                            movie_name.1,
+                            "f090bb54758cabf231fb605d3e3e0468")).unwrap().text().unwrap().to_string();
+                    let poster_path = &json::parse(&data).unwrap()["results"][0]["poster_path"];
+                    let result = reqwest::blocking::get(format!("https://image.tmdb.org/t/p/w185/{}", poster_path)).unwrap().bytes().unwrap().to_vec();
+                    let bytes = glib::Bytes::from(&result.to_vec());
+                    sender.send(Some(bytes)).expect("Couldn't send");
+                });
+                if info.last_child() != info.first_child() {
+                    info.remove(&info.last_child().unwrap());
+                }
+                let play_button = Button::builder().label("Play").build();
+                play_button.connect_clicked(move |_| {
+                    play_movie(path.clone(), false);
+                });
+                info.append(&play_button);
+            }));
+            reciever.attach(
+                None,
+                clone!(@weak poster => @default-return Continue(false), move |bytes| {
+                    match bytes {
+                        None => {
+                            let _ = &poster.set_filename(Some("./src/pictures/Loading_dark.png"));
+                            Continue(true)
+                        },
+                        Some(bytes) => {
+                            let stream = MemoryInputStream::from_bytes(&bytes);
+                            let pixbuf = Pixbuf::from_stream(&stream, Cancellable::NONE).unwrap();
+                            let _ = &poster.set_pixbuf(Some(&pixbuf));
+                            Continue(true)
+                        },
+                    }
+                }),
+            );
 
             list_box.append(&button);
-            button.parent().unwrap().set_focusable(false);
+            // button.parent().unwrap().set_focusable(false);
         }
     }
-    // main_window.connect_notify::<_>(Some("default-width"), |window, _| {
-    //     window.set_default_width(window.width());
-    //     window.child().unwrap().set_margin_start(window.width() / 3);
-    // });
     main_window.present();
 }
 
-fn name_parse(name: &str) -> String {
+fn name_parse(name: String) -> (String, String, String) {
     let re = Regex::new(r"^(.*)[\.| ]([0-9]{4})\.[\.|A-Z]*[0-9]+p\..*mp4").unwrap();
-    let binding = re.captures(name);
-    let name: String = match &binding {
-        Some(expr) => format!("{} ({})", &expr[1], &expr[2]),
-        None => name.to_string().replace(".mp4", ""),
-    };
-    name.replace(".", " ")
+    let binding = re.captures(&name);
+    match &binding {
+        Some(expr) => (
+            expr[1].to_string(),
+            expr[2].to_string(),
+            format!("{}{}", &expr[1], &expr[2]),
+        ),
+        None => ("".to_string(), "".to_string(), "".to_string()),
+    }
 }
 
 fn play_movie(path: String, from_start: bool) {
