@@ -8,7 +8,8 @@ use gtk::{
 };
 use libadwaita::Application;
 use regex::Regex;
-use std::{ffi::OsStr, process::Command, thread};
+use std::io::{BufReader, Read, Write};
+use std::{ffi::OsStr, fs, path::Path, process::Command, thread};
 use walkdir::WalkDir;
 
 fn main() -> ExitCode {
@@ -76,16 +77,24 @@ fn build_ui(app: &Application) {
                 let path = file.path().to_str().unwrap().to_string();
                 let movie_name = movie_name.clone();
                 thread::spawn(move ||{
-                    sender.send(None).expect("Couldn't send");
                     let data = reqwest::blocking::get(format!(
                             "https://api.themoviedb.org/3/search/movie?query={}&year={}&api_key={}",
                             movie_name.0.replace(".", "%20"),
                             movie_name.1,
                             "f090bb54758cabf231fb605d3e3e0468")).unwrap().text().unwrap().to_string();
                     let poster_path = &json::parse(&data).unwrap()["results"][0]["poster_path"];
-                    let result = reqwest::blocking::get(format!("https://image.tmdb.org/t/p/w185/{}", poster_path)).unwrap().bytes().unwrap().to_vec();
-                    let bytes = glib::Bytes::from(&result.to_vec());
-                    sender.send(Some(bytes)).expect("Couldn't send");
+                    if Path::new(&format!("./src/pictures/{}", poster_path)).exists() {
+                        let file = BufReader::new(fs::File::open(format!("./src/pictures/{}", poster_path)).unwrap());
+                        sender.send(Some(file.bytes().map(|a| a.unwrap()).collect())).expect("Couldn't send");
+                    }
+                    else {
+                        sender.send(None).expect("Couldn't send");
+                        let result = reqwest::blocking::get(format!("https://image.tmdb.org/t/p/w185/{}", poster_path)).unwrap().bytes().unwrap().to_vec();
+                        let bytes = glib::Bytes::from(&result.to_vec());
+                        sender.send(Some(bytes.to_vec())).expect("Couldn't send");
+                        let mut file = fs::File::create(format!("./src/pictures/{}", poster_path)).expect("Couldn't create file");
+                        file.write(&bytes.to_vec()).expect("Couldn't write to file");
+                    }
                 });
                 if info.last_child() != info.first_child() {
                     info.remove(&info.last_child().unwrap());
@@ -105,7 +114,7 @@ fn build_ui(app: &Application) {
                             Continue(true)
                         },
                         Some(bytes) => {
-                            let stream = MemoryInputStream::from_bytes(&bytes);
+                            let stream = MemoryInputStream::from_bytes(&glib::Bytes::from(&bytes));
                             let pixbuf = Pixbuf::from_stream(&stream, Cancellable::NONE).unwrap();
                             let _ = &poster.set_pixbuf(Some(&pixbuf));
                             Continue(true)
