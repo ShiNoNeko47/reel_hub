@@ -43,7 +43,6 @@ fn build_ui(app: &Application) {
         .filter_map(|file| file.ok())
         .filter_map(|file| {
             if file.path().extension() == Some(OsStr::new("mp4")) {
-                println!("{}", file.file_name().to_str().unwrap());
                 Some(file)
             } else {
                 None
@@ -104,22 +103,17 @@ fn build_ui(app: &Application) {
                 let path = file.path().to_str().unwrap().to_string();
                 let movie_name = movie_name.clone();
                 thread::spawn(move ||{
-                    let data = reqwest::blocking::get(format!(
-                            "https://api.themoviedb.org/3/search/movie?query={}&year={}&api_key={}",
-                            movie_name.0.replace(".", "%20"),
-                            movie_name.1,
-                            "f090bb54758cabf231fb605d3e3e0468")).unwrap().text().unwrap().to_string();
-                    let poster_path = &json::parse(&data).unwrap()["results"][0]["poster_path"];
-                    if Path::new(&format!("./src/pictures/cache/{}", poster_path)).exists() {
-                        let file = BufReader::new(fs::File::open(format!("./src/pictures/cache/{}", poster_path)).unwrap());
+                    let data = movie_data(&movie_name.0.replace(".", " "), &movie_name.1);
+                    if Path::new(&format!("./src/pictures/cache/{}", data["poster_path"].as_str().unwrap())).exists() {
+                        let file = BufReader::new(fs::File::open(format!("./src/pictures/cache/{}", data["poster_path"].as_str().unwrap())).unwrap());
                         sender.send(Some(file.bytes().map(|a| a.unwrap()).collect())).expect("Couldn't send");
                     }
                     else {
                         sender.send(None).expect("Couldn't send");
-                        let result = reqwest::blocking::get(format!("https://image.tmdb.org/t/p/w185/{}", poster_path)).unwrap().bytes().unwrap().to_vec();
+                        let result = reqwest::blocking::get(format!("https://image.tmdb.org/t/p/w185/{}", data["poster_path"].as_str().unwrap())).unwrap().bytes().unwrap().to_vec();
                         let bytes = glib::Bytes::from(&result.to_vec());
                         sender.send(Some(bytes.to_vec())).expect("Couldn't send");
-                        let mut file = fs::File::create(format!("./src/pictures/cache/{}", poster_path)).expect("Couldn't create file");
+                        let mut file = fs::File::create(format!("./src/pictures/cache{}", data["poster_path"].as_str().unwrap())).expect("Couldn't create file");
                         file.write(&bytes.to_vec()).expect("Couldn't write to file");
                     }
                 });
@@ -151,9 +145,30 @@ fn build_ui(app: &Application) {
         );
 
         list_box.append(&button);
-        // button.parent().unwrap().set_focusable(false);
     }
     main_window.present();
+}
+
+fn movie_data(name: &String, year: &String) -> serde_json::Value {
+    let data = reqwest::blocking::get(format!(
+        "https://api.themoviedb.org/3/search/movie?query={}&year={}&api_key={}",
+        name, year, "f090bb54758cabf231fb605d3e3e0468"
+    ))
+    .unwrap()
+    .text()
+    .unwrap()
+    .to_string();
+    let results: serde_json::Value = serde_json::from_str(&data).unwrap();
+    let mut movie_data = &results["results"][0];
+    for result in results["results"].as_array().unwrap() {
+        let title = result["title"].as_str().unwrap().to_string();
+        let release_date = result["release_date"].as_str().unwrap().to_string();
+        if title == name.to_string() && release_date.contains(year) {
+            movie_data = result;
+            break;
+        }
+    }
+    movie_data.clone()
 }
 
 fn user_dir(path: PathBuf) -> PathBuf {
