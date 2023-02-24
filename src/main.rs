@@ -1,15 +1,18 @@
-use glib::{clone, MainContext, PRIORITY_DEFAULT};
+use glib::{clone, user_data_dir, MainContext, PRIORITY_DEFAULT};
 use gtk::{
     gdk_pixbuf::Pixbuf,
     gio::{Cancellable, MemoryInputStream},
     glib::ExitCode,
     prelude::*,
-    Box, Button, ListBox, Orientation, Picture, ScrolledWindow, Window,
+    Box, Button, Label, ListBox, Orientation, Picture, ScrolledWindow, Window,
 };
 use libadwaita::Application;
 use regex::Regex;
-use std::io::{BufReader, Read, Write};
 use std::{ffi::OsStr, fs, path::Path, process::Command, thread};
+use std::{
+    io::{BufReader, Read, Write},
+    path::PathBuf,
+};
 use walkdir::WalkDir;
 
 fn main() -> ExitCode {
@@ -22,7 +25,41 @@ fn main() -> ExitCode {
 
 fn build_ui(app: &Application) {
     let hbox = Box::new(Orientation::Horizontal, 0);
-    let list_box = ListBox::new();
+    let main_window = Window::builder()
+        .application(app)
+        .title("movies")
+        .child(&hbox)
+        .build();
+
+    let walkdir = WalkDir::new(user_dir(user_data_dir())).follow_links(true);
+    let mut files = walkdir
+        .sort_by(|a, b| {
+            a.file_name()
+                .to_str()
+                .unwrap()
+                .cmp(&b.file_name().to_str().unwrap())
+        })
+        .into_iter()
+        .filter_map(|file| file.ok())
+        .filter_map(|file| {
+            if file.path().extension() == Some(OsStr::new("mp4")) {
+                println!("{}", file.file_name().to_str().unwrap());
+                Some(file)
+            } else {
+                None
+            }
+        })
+        .peekable();
+
+    if files.peek().is_none() {
+        hbox.set_halign(gtk::Align::Center);
+        hbox.append(&Label::new(Some(&format!(
+            "To get started add movies to {} or make a symlink to a directory that contains movies",
+            user_dir(user_data_dir()).to_str().unwrap()
+        ))));
+        main_window.present();
+        return;
+    }
 
     let info = Box::new(Orientation::Vertical, 5);
     info.set_halign(gtk::Align::Center);
@@ -34,6 +71,7 @@ fn build_ui(app: &Application) {
 
     hbox.append(&info);
 
+    let list_box = ListBox::new();
     list_box.set_margin_end(10);
     list_box.set_margin_start(10);
     list_box.set_margin_top(10);
@@ -53,26 +91,15 @@ fn build_ui(app: &Application) {
     scrolled_window.set_margin_bottom(10);
     scrolled_window.set_margin_start(10);
 
-    let main_window = Window::builder()
-        .application(app)
-        .title("movies")
-        .child(&hbox)
-        .build();
+    for file in files {
+        let movie_name = name_parse(file.file_name().to_str().unwrap().to_string());
 
-    for file in WalkDir::new("/home/nikola/Media/befafd9f-f32e-4121-978d-5abfe9b6bf6c/movies/")
-        .into_iter()
-        .filter_map(|file| file.ok())
-    {
-        if file.path().extension() == Some(OsStr::new("mp4")) {
-            let movie_name = name_parse(file.file_name().to_str().unwrap().to_string());
+        let button = Button::builder()
+            .label(movie_name.0.replace(".", " "))
+            .build();
+        let (sender, reciever) = MainContext::channel(PRIORITY_DEFAULT);
 
-            let button = Button::builder()
-                .label(movie_name.0.replace(".", " "))
-                .build();
-            // button.set_focusable(false);
-            let (sender, reciever) = MainContext::channel(PRIORITY_DEFAULT);
-
-            button.connect_clicked(clone!(@weak poster, @weak info => move |_| {
+        button.connect_clicked(clone!(@weak poster, @weak info => move |_| {
                 let sender = sender.clone();
                 let path = file.path().to_str().unwrap().to_string();
                 let movie_name = movie_name.clone();
@@ -83,8 +110,8 @@ fn build_ui(app: &Application) {
                             movie_name.1,
                             "f090bb54758cabf231fb605d3e3e0468")).unwrap().text().unwrap().to_string();
                     let poster_path = &json::parse(&data).unwrap()["results"][0]["poster_path"];
-                    if Path::new(&format!("./src/pictures/{}", poster_path)).exists() {
-                        let file = BufReader::new(fs::File::open(format!("./src/pictures/{}", poster_path)).unwrap());
+                    if Path::new(&format!("./src/pictures/cache/{}", poster_path)).exists() {
+                        let file = BufReader::new(fs::File::open(format!("./src/pictures/cache/{}", poster_path)).unwrap());
                         sender.send(Some(file.bytes().map(|a| a.unwrap()).collect())).expect("Couldn't send");
                     }
                     else {
@@ -92,7 +119,7 @@ fn build_ui(app: &Application) {
                         let result = reqwest::blocking::get(format!("https://image.tmdb.org/t/p/w185/{}", poster_path)).unwrap().bytes().unwrap().to_vec();
                         let bytes = glib::Bytes::from(&result.to_vec());
                         sender.send(Some(bytes.to_vec())).expect("Couldn't send");
-                        let mut file = fs::File::create(format!("./src/pictures/{}", poster_path)).expect("Couldn't create file");
+                        let mut file = fs::File::create(format!("./src/pictures/cache/{}", poster_path)).expect("Couldn't create file");
                         file.write(&bytes.to_vec()).expect("Couldn't write to file");
                     }
                 });
@@ -105,29 +132,35 @@ fn build_ui(app: &Application) {
                 });
                 info.append(&play_button);
             }));
-            reciever.attach(
-                None,
-                clone!(@weak poster => @default-return Continue(false), move |bytes| {
-                    match bytes {
-                        None => {
-                            let _ = &poster.set_filename(Some("./src/pictures/Loading_dark.png"));
-                            Continue(true)
-                        },
-                        Some(bytes) => {
-                            let stream = MemoryInputStream::from_bytes(&glib::Bytes::from(&bytes));
-                            let pixbuf = Pixbuf::from_stream(&stream, Cancellable::NONE).unwrap();
-                            let _ = &poster.set_pixbuf(Some(&pixbuf));
-                            Continue(true)
-                        },
-                    }
-                }),
-            );
+        reciever.attach(
+            None,
+            clone!(@weak poster => @default-return Continue(false), move |bytes| {
+                match bytes {
+                    None => {
+                        let _ = &poster.set_filename(Some("./src/pictures/Loading_dark.png"));
+                        Continue(true)
+                    },
+                    Some(bytes) => {
+                        let stream = MemoryInputStream::from_bytes(&glib::Bytes::from(&bytes));
+                        let pixbuf = Pixbuf::from_stream(&stream, Cancellable::NONE).unwrap();
+                        let _ = &poster.set_pixbuf(Some(&pixbuf));
+                        Continue(true)
+                    },
+                }
+            }),
+        );
 
-            list_box.append(&button);
-            // button.parent().unwrap().set_focusable(false);
-        }
+        list_box.append(&button);
+        // button.parent().unwrap().set_focusable(false);
     }
     main_window.present();
+}
+
+fn user_dir(path: PathBuf) -> PathBuf {
+    let mut path = path;
+    path.push("movies");
+    fs::create_dir_all(&path).expect("Couldn't create directory");
+    path
 }
 
 fn name_parse(name: String) -> (String, String, String) {
