@@ -1,4 +1,4 @@
-use glib::{clone, user_data_dir, MainContext, PRIORITY_DEFAULT};
+use glib::{clone, user_cache_dir, user_data_dir, MainContext, PRIORITY_DEFAULT};
 use gtk::{
     gdk_pixbuf::Pixbuf,
     gio::{Cancellable, MemoryInputStream},
@@ -8,7 +8,13 @@ use gtk::{
 };
 use libadwaita::Application;
 use regex::Regex;
-use std::{ffi::OsStr, fs, path::Path, process::Command, thread};
+use std::{
+    ffi::OsStr,
+    fs,
+    path::Path,
+    process::{Command, Stdio},
+    thread,
+};
 use std::{
     io::{BufReader, Read, Write},
     path::PathBuf,
@@ -54,21 +60,29 @@ fn build_ui(app: &Application) {
         hbox.set_halign(gtk::Align::Center);
         hbox.append(&Label::new(Some(&format!(
             "To get started add movies to {} or make a symlink to a directory that contains movies",
-            user_dir(user_data_dir()).to_str().unwrap()
+            user_dir(user_data_dir())
         ))));
         main_window.present();
         return;
     }
 
-    let info = Box::new(Orientation::Vertical, 5);
-    info.set_halign(gtk::Align::Center);
-    info.set_valign(gtk::Align::End);
+    let content = Box::new(Orientation::Vertical, 5);
+    content.set_halign(gtk::Align::Center);
+    content.set_valign(gtk::Align::End);
+
     let poster = Picture::new();
-    info.append(&poster);
+    poster.set_hexpand(true);
+    content.append(&poster);
+
+    let info = Box::new(Orientation::Vertical, 5);
     info.set_hexpand(true);
     info.set_halign(gtk::Align::Fill);
+    content.append(&info);
 
-    hbox.append(&info);
+    content.set_hexpand(true);
+    content.set_halign(gtk::Align::Fill);
+
+    hbox.append(&content);
 
     let list_box = ListBox::new();
     list_box.set_margin_end(10);
@@ -100,47 +114,57 @@ fn build_ui(app: &Application) {
 
         button.connect_clicked(clone!(@weak poster, @weak info => move |_| {
                 let sender = sender.clone();
-                let path = file.path().to_str().unwrap().to_string();
                 let movie_name = movie_name.clone();
+                poster.hide();
+                while info.last_child() != None {
+                    info.remove(&info.last_child().unwrap());
+                }
                 thread::spawn(move ||{
                     let data = movie_data(&movie_name.0.replace(".", " "), &movie_name.1);
-                    if Path::new(&format!("./src/pictures/cache/{}", data["poster_path"].as_str().unwrap())).exists() {
-                        let file = BufReader::new(fs::File::open(format!("./src/pictures/cache/{}", data["poster_path"].as_str().unwrap())).unwrap());
-                        sender.send(Some(file.bytes().map(|a| a.unwrap()).collect())).expect("Couldn't send");
+                    if Path::new(&format!("{}{}", user_dir(user_cache_dir()), data["poster_path"].as_str().unwrap())).exists() {
+                        let file = BufReader::new(fs::File::open(format!("{}{}", user_dir(user_cache_dir()), data["poster_path"].as_str().unwrap())).unwrap());
+                        sender.send((Some(file.bytes().map(|a| a.unwrap()).collect()), data.clone())).expect("Couldn't send");
                     }
                     else {
-                        sender.send(None).expect("Couldn't send");
+                        sender.send((None, data.clone())).expect("Couldn't send");
                         let result = reqwest::blocking::get(format!("https://image.tmdb.org/t/p/w185/{}", data["poster_path"].as_str().unwrap())).unwrap().bytes().unwrap().to_vec();
                         let bytes = glib::Bytes::from(&result.to_vec());
-                        sender.send(Some(bytes.to_vec())).expect("Couldn't send");
-                        let mut file = fs::File::create(format!("./src/pictures/cache{}", data["poster_path"].as_str().unwrap())).expect("Couldn't create file");
+                        sender.send((Some(bytes.to_vec()), data.clone())).expect("Couldn't send");
+                        let mut file = fs::File::create(format!("{}{}", user_dir(user_cache_dir()), data["poster_path"].as_str().unwrap())).expect("Couldn't create file");
                         file.write(&bytes.to_vec()).expect("Couldn't write to file");
                     }
                 });
-                if info.last_child() != info.first_child() {
-                    info.remove(&info.last_child().unwrap());
-                }
+            }));
+        reciever.attach(
+            None,
+            clone!(@weak poster, @weak info => @default-return Continue(false), move |(bytes, data)| {
+                let path = file.path().to_str().unwrap().to_string();
                 let play_button = Button::builder().label("Play").build();
                 play_button.connect_clicked(move |_| {
                     play_movie(path.clone(), false);
                 });
-                info.append(&play_button);
-            }));
-        reciever.attach(
-            None,
-            clone!(@weak poster => @default-return Continue(false), move |bytes| {
+                if info.last_child() == None {
+                    info.append(&Label::builder().label(&format!("<b>Original title:</b> {}", data["original_title"].as_str().unwrap())).use_markup(true).build());
+                    info.append(&Label::builder().label(&format!("<b>Original language:</b> {}", data["original_language"].as_str().unwrap())).use_markup(true).build());
+                    info.append(&Label::builder().label(&format!("<b>Overview:</b>\n {}", data["overview"].as_str().unwrap())).use_markup(true).wrap(true).justify(gtk::Justification::Center).build());
+                    info.append(&Label::builder().label(&format!("<b>Vote average (tmdb):</b> {}", data["vote_average"].as_f64().unwrap())).use_markup(true).build());
+                    info.append(&Label::builder().label(&format!("<b>Vote count (tmdb):</b> {}", data["vote_count"].as_f64().unwrap())).use_markup(true).build());
+                    info.append(&Label::builder().label(&format!("<b>Release date:</b> {}", data["release_date"].as_str().unwrap())).use_markup(true).build());
+                    info.append(&play_button);
+                }
                 match bytes {
                     None => {
                         let _ = &poster.set_filename(Some("./src/pictures/Loading_dark.png"));
-                        Continue(true)
+                        poster.show();
                     },
                     Some(bytes) => {
                         let stream = MemoryInputStream::from_bytes(&glib::Bytes::from(&bytes));
                         let pixbuf = Pixbuf::from_stream(&stream, Cancellable::NONE).unwrap();
                         let _ = &poster.set_pixbuf(Some(&pixbuf));
-                        Continue(true)
+                        poster.show();
                     },
                 }
+                Continue(true)
             }),
         );
 
@@ -150,6 +174,10 @@ fn build_ui(app: &Application) {
 }
 
 fn movie_data(name: &String, year: &String) -> serde_json::Value {
+    /*{adult: bool, backdrop_path: String, genre_ids: [i32], id: i32, original_language: String,
+     * original_title: String, overview: String, popularity: f32, poster_path: String,
+     * release_date: String, title: String, vote_average: f32, vote_count: i32}*/
+
     let data = reqwest::blocking::get(format!(
         "https://api.themoviedb.org/3/search/movie?query={}&year={}&api_key={}",
         name, year, "f090bb54758cabf231fb605d3e3e0468"
@@ -171,11 +199,11 @@ fn movie_data(name: &String, year: &String) -> serde_json::Value {
     movie_data.clone()
 }
 
-fn user_dir(path: PathBuf) -> PathBuf {
+fn user_dir(path: PathBuf) -> String {
     let mut path = path;
     path.push("movies");
     fs::create_dir_all(&path).expect("Couldn't create directory");
-    path
+    path.to_str().unwrap().to_string()
 }
 
 fn name_parse(name: String) -> (String, String, String) {
@@ -197,6 +225,8 @@ fn play_movie(path: String, from_start: bool) {
         .arg("--save-position-on-quit")
         // .arg("--write-filename-in-watch-later-config")
         .arg(if from_start { "--start=0%" } else { "" })
-        .output()
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn()
         .expect("Movie failed to play");
 }
