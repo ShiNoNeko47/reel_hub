@@ -4,7 +4,7 @@ use gtk::{
     gio::{Cancellable, MemoryInputStream},
     glib::ExitCode,
     prelude::*,
-    Box, Button, Label, ListBox, Orientation, Picture, ScrolledWindow, Window,
+    Box, Button, Label, ListBox, Orientation, Picture, ScrolledWindow, Widget, Window,
 };
 use libadwaita::Application;
 use regex::Regex;
@@ -67,6 +67,7 @@ fn build_ui(app: &Application) {
     }
 
     let content = Box::new(Orientation::Vertical, 5);
+    set_margins(10, &content);
     content.set_halign(gtk::Align::Center);
     content.set_valign(gtk::Align::End);
 
@@ -85,10 +86,7 @@ fn build_ui(app: &Application) {
     hbox.append(&content);
 
     let list_box = ListBox::new();
-    list_box.set_margin_end(10);
-    list_box.set_margin_start(10);
-    list_box.set_margin_top(10);
-    list_box.set_margin_bottom(10);
+    set_margins::<ListBox>(10, &list_box);
     list_box.set_selection_mode(gtk::SelectionMode::None);
 
     let scrolled_window = ScrolledWindow::builder()
@@ -99,10 +97,7 @@ fn build_ui(app: &Application) {
 
     hbox.append(&scrolled_window);
 
-    scrolled_window.set_margin_end(10);
-    scrolled_window.set_margin_top(10);
-    scrolled_window.set_margin_bottom(10);
-    scrolled_window.set_margin_start(10);
+    set_margins(10, &scrolled_window);
 
     for file in files {
         let movie_name = name_parse(file.file_name().to_str().unwrap().to_string());
@@ -120,16 +115,17 @@ fn build_ui(app: &Application) {
                     info.remove(&info.last_child().unwrap());
                 }
                 thread::spawn(move ||{
+                    sender.send((None, None)).expect("Couldn't send");
                     let data = movie_data(&movie_name.0.replace(".", " "), &movie_name.1);
                     if Path::new(&format!("{}{}", user_dir(user_cache_dir()), data["poster_path"].as_str().unwrap())).exists() {
                         let file = BufReader::new(fs::File::open(format!("{}{}", user_dir(user_cache_dir()), data["poster_path"].as_str().unwrap())).unwrap());
-                        sender.send((Some(file.bytes().map(|a| a.unwrap()).collect()), data.clone())).expect("Couldn't send");
+                        sender.send((Some(file.bytes().map(|a| a.unwrap()).collect()), Some(data.clone()))).expect("Couldn't send");
                     }
                     else {
-                        sender.send((None, data.clone())).expect("Couldn't send");
+                        sender.send((None, Some(data.clone()))).expect("Couldn't send");
                         let result = reqwest::blocking::get(format!("https://image.tmdb.org/t/p/w185/{}", data["poster_path"].as_str().unwrap())).unwrap().bytes().unwrap().to_vec();
                         let bytes = glib::Bytes::from(&result.to_vec());
-                        sender.send((Some(bytes.to_vec()), data.clone())).expect("Couldn't send");
+                        sender.send((Some(bytes.to_vec()), Some(data.clone()))).expect("Couldn't send");
                         let mut file = fs::File::create(format!("{}{}", user_dir(user_cache_dir()), data["poster_path"].as_str().unwrap())).expect("Couldn't create file");
                         file.write(&bytes.to_vec()).expect("Couldn't write to file");
                     }
@@ -143,18 +139,31 @@ fn build_ui(app: &Application) {
                 play_button.connect_clicked(move |_| {
                     play_movie(path.clone(), false);
                 });
-                if info.last_child() == None {
-                    info.append(&Label::builder().label(&format!("<b>Original title:</b> {}", data["original_title"].as_str().unwrap())).use_markup(true).build());
-                    info.append(&Label::builder().label(&format!("<b>Original language:</b> {}", data["original_language"].as_str().unwrap())).use_markup(true).build());
-                    info.append(&Label::builder().label(&format!("<b>Overview:</b>\n {}", data["overview"].as_str().unwrap())).use_markup(true).wrap(true).justify(gtk::Justification::Center).build());
-                    info.append(&Label::builder().label(&format!("<b>Vote average (tmdb):</b> {}", data["vote_average"].as_f64().unwrap())).use_markup(true).build());
-                    info.append(&Label::builder().label(&format!("<b>Vote count (tmdb):</b> {}", data["vote_count"].as_f64().unwrap())).use_markup(true).build());
-                    info.append(&Label::builder().label(&format!("<b>Release date:</b> {}", data["release_date"].as_str().unwrap())).use_markup(true).build());
-                    info.append(&play_button);
+                match data {
+                    Some(data) => {
+                        if info.first_child() == info.last_child() {
+                            info.remove(&info.last_child().unwrap());
+                        }
+                        if info.last_child() == None {
+                            info.append(&Label::builder().label(&format!("<b>Original title:</b> {}", data["original_title"].as_str().unwrap())).use_markup(true).build());
+                            info.append(&Label::builder().label(&format!("<b>Original language:</b> {}", data["original_language"].as_str().unwrap())).use_markup(true).build());
+                            info.append(&Label::builder().label(&format!("<b>Overview:</b>\n {}", data["overview"].as_str().unwrap())).use_markup(true).wrap(true).justify(gtk::Justification::Center).build());
+                            info.append(&Label::builder().label(&format!("<b>Vote average (tmdb):</b> {}", data["vote_average"].as_f64().unwrap())).use_markup(true).build());
+                            info.append(&Label::builder().label(&format!("<b>Vote count (tmdb):</b> {}", data["vote_count"].as_f64().unwrap())).use_markup(true).build());
+                            info.append(&Label::builder().label(&format!("<b>Release date:</b> {}", data["release_date"].as_str().unwrap())).use_markup(true).build());
+                            info.append(&play_button);
+                        }
+                    },
+                    None => {
+                        info.append(&Label::builder().label(&format!("<b>Loading...</b>")).use_markup(true).build());
+                    },
                 }
                 match bytes {
                     None => {
-                        let _ = &poster.set_filename(Some("./src/pictures/Loading_dark.png"));
+                        let bytes = glib::Bytes::from(include_bytes!("pictures/Loading_dark.png"));
+                        let stream = MemoryInputStream::from_bytes(&bytes);
+                        let pixbuf = Pixbuf::from_stream(&stream, Cancellable::NONE).unwrap();
+                        let _ = &poster.set_pixbuf(Some(&pixbuf));
                         poster.show();
                     },
                     Some(bytes) => {
@@ -171,6 +180,16 @@ fn build_ui(app: &Application) {
         list_box.append(&button);
     }
     main_window.present();
+}
+
+fn set_margins<T>(size: i32, widget: &T)
+where
+    T: IsA<Widget>,
+{
+    widget.set_margin_end(size);
+    widget.set_margin_start(size);
+    widget.set_margin_top(size);
+    widget.set_margin_bottom(size);
 }
 
 fn movie_data(name: &String, year: &String) -> serde_json::Value {
