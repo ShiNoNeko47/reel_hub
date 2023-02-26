@@ -108,29 +108,51 @@ fn build_ui(app: &Application) {
         let (sender, reciever) = MainContext::channel(PRIORITY_DEFAULT);
 
         button.connect_clicked(clone!(@weak poster, @weak info => move |_| {
-                let sender = sender.clone();
-                let movie_name = movie_name.clone();
-                poster.hide();
-                while info.last_child() != None {
-                    info.remove(&info.last_child().unwrap());
+            let sender = sender.clone();
+            let movie_name = movie_name.clone();
+            poster.hide();
+            while info.last_child() != None {
+                info.remove(&info.last_child().unwrap());
+            }
+            thread::spawn(move ||{
+                sender.send((None, None)).expect("Couldn't send");
+                let data = movie_data(&movie_name.0.replace(".", " "), &movie_name.1);
+                if Path::new(&format!(
+                        "{}{}",
+                        user_dir(user_cache_dir()),
+                        data["poster_path"].as_str().unwrap()))
+                    .exists() {
+                    let file = BufReader::new(fs::File::open(format!(
+                                "{}{}",
+                                user_dir(user_cache_dir()),
+                                data["poster_path"].as_str().unwrap()))
+                        .unwrap());
+                    sender.send(
+                        (Some(file.bytes().map(|a| a.unwrap()).collect()), Some(data.clone())))
+                        .expect("Couldn't send");
                 }
-                thread::spawn(move ||{
-                    sender.send((None, None)).expect("Couldn't send");
-                    let data = movie_data(&movie_name.0.replace(".", " "), &movie_name.1);
-                    if Path::new(&format!("{}{}", user_dir(user_cache_dir()), data["poster_path"].as_str().unwrap())).exists() {
-                        let file = BufReader::new(fs::File::open(format!("{}{}", user_dir(user_cache_dir()), data["poster_path"].as_str().unwrap())).unwrap());
-                        sender.send((Some(file.bytes().map(|a| a.unwrap()).collect()), Some(data.clone()))).expect("Couldn't send");
-                    }
-                    else {
-                        sender.send((None, Some(data.clone()))).expect("Couldn't send");
-                        let result = reqwest::blocking::get(format!("https://image.tmdb.org/t/p/w185/{}", data["poster_path"].as_str().unwrap())).unwrap().bytes().unwrap().to_vec();
-                        let bytes = glib::Bytes::from(&result.to_vec());
-                        sender.send((Some(bytes.to_vec()), Some(data.clone()))).expect("Couldn't send");
-                        let mut file = fs::File::create(format!("{}{}", user_dir(user_cache_dir()), data["poster_path"].as_str().unwrap())).expect("Couldn't create file");
-                        file.write(&bytes.to_vec()).expect("Couldn't write to file");
-                    }
-                });
-            }));
+                else {
+                    sender.send((None, Some(data.clone()))).expect("Couldn't send");
+                    let result = reqwest::blocking::get(format!(
+                            "https://image.tmdb.org/t/p/w185/{}",
+                            data["poster_path"].as_str().unwrap()))
+                        .unwrap()
+                        .bytes()
+                        .unwrap()
+                        .to_vec();
+                    let bytes = glib::Bytes::from(&result.to_vec());
+                    sender.send(
+                        (Some(bytes.to_vec()), Some(data.clone())))
+                        .expect("Couldn't send");
+                    let mut file = fs::File::create(format!(
+                            "{}{}",
+                            user_dir(user_cache_dir()),
+                            data["poster_path"].as_str().unwrap()))
+                        .expect("Couldn't create file");
+                    file.write(&bytes.to_vec()).expect("Couldn't write to file");
+                }
+            });
+        }));
         reciever.attach(
             None,
             clone!(@weak poster, @weak info => @default-return Continue(false), move |(bytes, data)| {
@@ -145,17 +167,52 @@ fn build_ui(app: &Application) {
                             info.remove(&info.last_child().unwrap());
                         }
                         if info.last_child() == None {
-                            info.append(&Label::builder().label(&format!("<b>Original title:</b> {}", data["original_title"].as_str().unwrap())).use_markup(true).build());
-                            info.append(&Label::builder().label(&format!("<b>Original language:</b> {}", data["original_language"].as_str().unwrap())).use_markup(true).build());
-                            info.append(&Label::builder().label(&format!("<b>Overview:</b>\n {}", data["overview"].as_str().unwrap())).use_markup(true).wrap(true).justify(gtk::Justification::Center).build());
-                            info.append(&Label::builder().label(&format!("<b>Vote average (tmdb):</b> {}", data["vote_average"].as_f64().unwrap())).use_markup(true).build());
-                            info.append(&Label::builder().label(&format!("<b>Vote count (tmdb):</b> {}", data["vote_count"].as_f64().unwrap())).use_markup(true).build());
-                            info.append(&Label::builder().label(&format!("<b>Release date:</b> {}", data["release_date"].as_str().unwrap())).use_markup(true).build());
+                            info.append(&Label::builder()
+                                        .label(&format!(
+                                                "<b>Original title:</b> {}",
+                                                data["original_title"].as_str().unwrap()))
+                                        .use_markup(true)
+                                        .build());
+                            info.append(&Label::builder()
+                                        .label(&format!(
+                                                "<b>Original language:</b> {}",
+                                                data["original_language"].as_str().unwrap()))
+                                        .use_markup(true)
+                                        .build());
+                            info.append(&Label::builder()
+                                        .label(&format!(
+                                                "<b>Overview:</b>\n {}",
+                                                data["overview"].as_str().unwrap()))
+                                        .use_markup(true)
+                                        .wrap(true)
+                                        .justify(gtk::Justification::Center)
+                                        .build());
+                            info.append(&Label::builder()
+                                        .label(&format!(
+                                                "<b>Vote average (tmdb):</b> {}",
+                                                data["vote_average"].as_f64().unwrap()))
+                                        .use_markup(true)
+                                        .build());
+                            info.append(&Label::builder()
+                                        .label(&format!(
+                                                "<b>Vote count (tmdb):</b> {}",
+                                                data["vote_count"].as_f64().unwrap()))
+                                        .use_markup(true)
+                                        .build());
+                            info.append(&Label::builder()
+                                        .label(&format!(
+                                                "<b>Release date:</b> {}",
+                                                data["release_date"].as_str().unwrap()))
+                                        .use_markup(true)
+                                        .build());
                             info.append(&play_button);
                         }
                     },
                     None => {
-                        info.append(&Label::builder().label(&format!("<b>Loading...</b>")).use_markup(true).build());
+                        info.append(&Label::builder()
+                                    .label("<b>Loading...</b>")
+                                    .use_markup(true)
+                                    .build());
                     },
                 }
                 match bytes {
