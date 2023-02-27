@@ -249,10 +249,15 @@ where
     widget.set_margin_bottom(size);
 }
 
-fn movie_data(name: &String, year: &String) -> serde_json::Value {
+fn movie_data(name: &String, year: &Option<String>) -> serde_json::Value {
     /*{adult: bool, backdrop_path: String, genre_ids: [i32], id: i32, original_language: String,
      * original_title: String, overview: String, popularity: f32, poster_path: String,
      * release_date: String, title: String, vote_average: f32, vote_count: i32}*/
+
+    let year = match year {
+        Some(year) => format!("&year={}", year),
+        None => "".to_string(),
+    };
 
     let data = reqwest::blocking::get(format!(
         "https://api.themoviedb.org/3/search/movie?query={}&year={}&api_key={}",
@@ -267,7 +272,7 @@ fn movie_data(name: &String, year: &String) -> serde_json::Value {
     for result in results["results"].as_array().unwrap() {
         let title = result["title"].as_str().unwrap().to_string();
         let release_date = result["release_date"].as_str().unwrap().to_string();
-        if title == name.to_string() && release_date.contains(year) {
+        if title == name.to_string() && release_date.contains(&year) {
             movie_data = result;
             break;
         }
@@ -282,16 +287,16 @@ fn user_dir(path: PathBuf) -> String {
     path.to_str().unwrap().to_string()
 }
 
-fn name_parse(name: String) -> (String, String, String) {
-    let re = Regex::new(r"^(.*)[\.| ]([0-9]{4})\.[\.|A-Z]*[0-9]+p\..*mp4").unwrap();
+fn name_parse(name: String) -> (String, Option<String>, String) {
+    let re = Regex::new(r"^(.*)[\.| ]([0-9]{4})\.[\.|A-Z]*[[0-9]+p]*.*mp4").unwrap();
     let binding = re.captures(&name);
     match &binding {
         Some(expr) => (
             expr[1].to_string(),
-            expr[2].to_string(),
+            Some(expr[2].to_string()),
             format!("{}{}", &expr[1], &expr[2]),
         ),
-        None => ("".to_string(), "".to_string(), "".to_string()),
+        None => (name.replace(".mp4", ""), None, "".to_string()),
     }
 }
 
