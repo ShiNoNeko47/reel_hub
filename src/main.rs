@@ -9,6 +9,8 @@ use gtk::{
 use libadwaita::Application;
 use regex::Regex;
 use std::{
+    cell::RefCell,
+    collections::HashMap,
     ffi::OsStr,
     fs,
     path::Path,
@@ -20,6 +22,10 @@ use std::{
     path::PathBuf,
 };
 use walkdir::WalkDir;
+
+thread_local! {
+    static MOVIE_DATA_CACHE: RefCell<HashMap<String, serde_json::Value>> = HashMap::new().into();
+}
 
 fn main() -> ExitCode {
     let app = Application::builder()
@@ -100,6 +106,7 @@ fn build_ui(app: &Application) {
     set_margins(10, &scrolled_window);
 
     for file in files {
+        let path = file.path().to_str().unwrap().to_string();
         let movie_name = name_parse(file.file_name().to_str().unwrap().to_string());
 
         let button = Button::builder()
@@ -114,44 +121,73 @@ fn build_ui(app: &Application) {
             while info.last_child() != None {
                 info.remove(&info.last_child().unwrap());
             }
-            thread::spawn(move ||{
-                sender.send((None, None)).expect("Couldn't send");
-                let data = movie_data(&movie_name.0.replace(".", " "), &movie_name.1);
-                if Path::new(&format!(
-                        "{}{}",
-                        user_dir(user_cache_dir()),
-                        data["poster_path"].as_str().unwrap()))
-                    .exists() {
-                    let file = BufReader::new(fs::File::open(format!(
+            let data = MOVIE_DATA_CACHE.with(|it| {
+                let movie_data_cache = it.borrow_mut();
+                if movie_data_cache.contains_key(&path) {
+                    Some(movie_data_cache[&path].clone())
+                }
+                else {
+                    None
+                }
+            });
+            match data {
+                Some(data) => {
+                        if Path::new(&format!(
                                 "{}{}",
                                 user_dir(user_cache_dir()),
                                 data["poster_path"].as_str().unwrap()))
-                        .unwrap());
-                    sender.send(
-                        (Some(file.bytes().map(|a| a.unwrap()).collect()), Some(data.clone())))
-                        .expect("Couldn't send");
-                }
-                else {
-                    sender.send((None, Some(data.clone()))).expect("Couldn't send");
-                    let result = reqwest::blocking::get(format!(
-                            "https://image.tmdb.org/t/p/w185/{}",
-                            data["poster_path"].as_str().unwrap()))
-                        .unwrap()
-                        .bytes()
-                        .unwrap()
-                        .to_vec();
-                    let bytes = glib::Bytes::from(&result.to_vec());
-                    sender.send(
-                        (Some(bytes.to_vec()), Some(data.clone())))
-                        .expect("Couldn't send");
-                    let mut file = fs::File::create(format!(
-                            "{}{}",
-                            user_dir(user_cache_dir()),
-                            data["poster_path"].as_str().unwrap()))
-                        .expect("Couldn't create file");
-                    file.write(&bytes.to_vec()).expect("Couldn't write to file");
-                }
-            });
+                            .exists() {
+                            let file = BufReader::new(fs::File::open(format!(
+                                        "{}{}",
+                                        user_dir(user_cache_dir()),
+                                        data["poster_path"].as_str().unwrap()))
+                                .unwrap());
+                            sender.send(
+                                (Some(file.bytes().map(|a| a.unwrap()).collect()), Some(data.clone())))
+                                .expect("Couldn't send");
+                        }
+                },
+                None => {
+                    thread::spawn(move ||{
+                        sender.send((None, None)).expect("Couldn't send");
+                        let data = movie_data(&movie_name.0.replace(".", " "), &movie_name.1);
+                        if Path::new(&format!(
+                                "{}{}",
+                                user_dir(user_cache_dir()),
+                                data["poster_path"].as_str().unwrap()))
+                            .exists() {
+                            let file = BufReader::new(fs::File::open(format!(
+                                        "{}{}",
+                                        user_dir(user_cache_dir()),
+                                        data["poster_path"].as_str().unwrap()))
+                                .unwrap());
+                            sender.send(
+                                (Some(file.bytes().map(|a| a.unwrap()).collect()), Some(data.clone())))
+                                .expect("Couldn't send");
+                        }
+                        else {
+                            sender.send((None, Some(data.clone()))).expect("Couldn't send");
+                            let result = reqwest::blocking::get(format!(
+                                    "https://image.tmdb.org/t/p/w185/{}",
+                                    data["poster_path"].as_str().unwrap()))
+                                .unwrap()
+                                .bytes()
+                                .unwrap()
+                                .to_vec();
+                            let bytes = glib::Bytes::from(&result.to_vec());
+                            sender.send(
+                                (Some(bytes.to_vec()), Some(data.clone())))
+                                .expect("Couldn't send");
+                            let mut file = fs::File::create(format!(
+                                    "{}{}",
+                                    user_dir(user_cache_dir()),
+                                    data["poster_path"].as_str().unwrap()))
+                                .expect("Couldn't create file");
+                            file.write(&bytes.to_vec()).expect("Couldn't write to file");
+                        }
+                    });
+                },
+            }
         }));
         reciever.attach(
             None,
@@ -159,54 +195,22 @@ fn build_ui(app: &Application) {
                 let path = file.path().to_str().unwrap().to_string();
                 let play_button = Button::builder().label("Play").build();
                 play_button.connect_clicked(move |_| {
-                    play_movie(path.clone(), false);
+                    play_movie(&path, false);
                 });
                 match data {
                     Some(data) => {
-                        if info.first_child() == info.last_child() {
+                        if info.first_child() == info.last_child() && info.last_child() != None {
                             info.remove(&info.last_child().unwrap());
                         }
                         if info.last_child() == None {
-                            info.append(&Label::builder()
-                                        .label(&format!(
-                                                "<b>Original title:</b> {}",
-                                                data["original_title"].as_str().unwrap()))
-                                        .use_markup(true)
-                                        .build());
-                            info.append(&Label::builder()
-                                        .label(&format!(
-                                                "<b>Original language:</b> {}",
-                                                data["original_language"].as_str().unwrap()))
-                                        .use_markup(true)
-                                        .build());
-                            info.append(&Label::builder()
-                                        .label(&format!(
-                                                "<b>Overview:</b>\n {}",
-                                                data["overview"].as_str().unwrap()))
-                                        .use_markup(true)
-                                        .wrap(true)
-                                        .justify(gtk::Justification::Center)
-                                        .build());
-                            info.append(&Label::builder()
-                                        .label(&format!(
-                                                "<b>Vote average (tmdb):</b> {}",
-                                                data["vote_average"].as_f64().unwrap()))
-                                        .use_markup(true)
-                                        .build());
-                            info.append(&Label::builder()
-                                        .label(&format!(
-                                                "<b>Vote count (tmdb):</b> {}",
-                                                data["vote_count"].as_f64().unwrap()))
-                                        .use_markup(true)
-                                        .build());
-                            info.append(&Label::builder()
-                                        .label(&format!(
-                                                "<b>Release date:</b> {}",
-                                                data["release_date"].as_str().unwrap()))
-                                        .use_markup(true)
-                                        .build());
+                            show_info(&info, &data);
                             info.append(&play_button);
                         }
+
+                        MOVIE_DATA_CACHE.with(|it| {
+                            let mut movie_data_cache = it.borrow_mut();
+                            movie_data_cache.insert(file.path().to_str().unwrap().to_string(), data);
+                        });
                     },
                     None => {
                         info.append(&Label::builder()
@@ -239,6 +243,65 @@ fn build_ui(app: &Application) {
     main_window.present();
 }
 
+fn show_info(info: &Box, data: &serde_json::Value) {
+    info.append(
+        &Label::builder()
+            .label(&format!(
+                "<b>Original title:</b> {}",
+                data["original_title"].as_str().unwrap()
+            ))
+            .use_markup(true)
+            .build(),
+    );
+    info.append(
+        &Label::builder()
+            .label(&format!(
+                "<b>Original language:</b> {}",
+                data["original_language"].as_str().unwrap()
+            ))
+            .use_markup(true)
+            .build(),
+    );
+    info.append(
+        &Label::builder()
+            .label(&format!(
+                "<b>Overview:</b>\n {}",
+                data["overview"].as_str().unwrap()
+            ))
+            .use_markup(true)
+            .wrap(true)
+            .justify(gtk::Justification::Center)
+            .build(),
+    );
+    info.append(
+        &Label::builder()
+            .label(&format!(
+                "<b>Vote average (tmdb):</b> {}",
+                data["vote_average"].as_f64().unwrap()
+            ))
+            .use_markup(true)
+            .build(),
+    );
+    info.append(
+        &Label::builder()
+            .label(&format!(
+                "<b>Vote count (tmdb):</b> {}",
+                data["vote_count"].as_f64().unwrap()
+            ))
+            .use_markup(true)
+            .build(),
+    );
+    info.append(
+        &Label::builder()
+            .label(&format!(
+                "<b>Release date:</b> {}",
+                data["release_date"].as_str().unwrap()
+            ))
+            .use_markup(true)
+            .build(),
+    );
+}
+
 fn set_margins<T>(size: i32, widget: &T)
 where
     T: IsA<Widget>,
@@ -260,7 +323,7 @@ fn movie_data(name: &String, year: &Option<String>) -> serde_json::Value {
     };
 
     let data = reqwest::blocking::get(format!(
-        "https://api.themoviedb.org/3/search/movie?query={}&year={}&api_key={}",
+        "https://api.themoviedb.org/3/search/movie?query={}{}&api_key={}",
         name, year, "f090bb54758cabf231fb605d3e3e0468"
     ))
     .unwrap()
@@ -272,12 +335,12 @@ fn movie_data(name: &String, year: &Option<String>) -> serde_json::Value {
     for result in results["results"].as_array().unwrap() {
         let title = result["title"].as_str().unwrap().to_string();
         let release_date = result["release_date"].as_str().unwrap().to_string();
-        if title == name.to_string() && release_date.contains(&year) {
+        if title == name.to_string() && release_date.contains(&year.replace("&year=", "")) {
             movie_data = result;
             break;
         }
     }
-    movie_data.clone()
+    movie_data.to_owned()
 }
 
 fn user_dir(path: PathBuf) -> String {
@@ -300,7 +363,7 @@ fn name_parse(name: String) -> (String, Option<String>, String) {
     }
 }
 
-fn play_movie(path: String, from_start: bool) {
+fn play_movie(path: &String, from_start: bool) {
     Command::new("mpv")
         .arg(OsStr::new(&path))
         .arg("--save-position-on-quit")
