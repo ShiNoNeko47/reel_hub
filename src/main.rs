@@ -45,12 +45,7 @@ fn build_ui(app: &Application) {
 
     let walkdir = WalkDir::new(user_dir(user_data_dir())).follow_links(true);
     let mut files = walkdir
-        .sort_by(|a, b| {
-            a.file_name()
-                .to_str()
-                .unwrap()
-                .cmp(&b.file_name().to_str().unwrap())
-        })
+        .sort_by_key(|a| a.file_name().to_str().unwrap().to_owned())
         .into_iter()
         .filter_map(|file| file.ok())
         .filter_map(|file| {
@@ -143,47 +138,53 @@ fn build_ui(app: &Application) {
                                         data["poster_path"].as_str().unwrap()))
                                 .unwrap());
                             sender.send(
-                                (Some(file.bytes().map(|a| a.unwrap()).collect()), Some(data.clone())))
+                                (Some(file.bytes().map(|a| a.unwrap()).collect()), Some(data.clone()), true))
                                 .expect("Couldn't send");
                         }
                 },
                 None => {
                     thread::spawn(move ||{
-                        sender.send((None, None)).expect("Couldn't send");
-                        let data = movie_data(&movie_name.0.replace(".", " "), &movie_name.1);
-                        if Path::new(&format!(
-                                "{}{}",
-                                user_dir(user_cache_dir()),
-                                data["poster_path"].as_str().unwrap()))
-                            .exists() {
-                            let file = BufReader::new(fs::File::open(format!(
+                        sender.send((None, None, true)).expect("Couldn't send");
+                        match movie_data(&movie_name.0.replace(".", " "), &movie_name.1) {
+                            Some(data) => {
+                                if Path::new(&format!(
                                         "{}{}",
                                         user_dir(user_cache_dir()),
                                         data["poster_path"].as_str().unwrap()))
-                                .unwrap());
-                            sender.send(
-                                (Some(file.bytes().map(|a| a.unwrap()).collect()), Some(data.clone())))
-                                .expect("Couldn't send");
-                        }
-                        else {
-                            sender.send((None, Some(data.clone()))).expect("Couldn't send");
-                            let result = reqwest::blocking::get(format!(
-                                    "https://image.tmdb.org/t/p/w185/{}",
-                                    data["poster_path"].as_str().unwrap()))
-                                .unwrap()
-                                .bytes()
-                                .unwrap()
-                                .to_vec();
-                            let bytes = glib::Bytes::from(&result.to_vec());
-                            sender.send(
-                                (Some(bytes.to_vec()), Some(data.clone())))
-                                .expect("Couldn't send");
-                            let mut file = fs::File::create(format!(
-                                    "{}{}",
-                                    user_dir(user_cache_dir()),
-                                    data["poster_path"].as_str().unwrap()))
-                                .expect("Couldn't create file");
-                            file.write(&bytes.to_vec()).expect("Couldn't write to file");
+                                    .exists() {
+                                    let file = BufReader::new(fs::File::open(format!(
+                                                "{}{}",
+                                                user_dir(user_cache_dir()),
+                                                data["poster_path"].as_str().unwrap()))
+                                        .unwrap());
+                                    sender.send(
+                                        (Some(file.bytes().map(|a| a.unwrap()).collect()), Some(data.clone()), true))
+                                        .expect("Couldn't send");
+                                }
+                                else {
+                                    sender.send((None, Some(data.clone()), true)).expect("Couldn't send");
+                                    let result = reqwest::blocking::get(format!(
+                                            "https://image.tmdb.org/t/p/w185/{}",
+                                            data["poster_path"].as_str().unwrap()))
+                                        .unwrap()
+                                        .bytes()
+                                        .unwrap()
+                                        .to_vec();
+                                    let bytes = glib::Bytes::from(&result.to_vec());
+                                    sender.send(
+                                        (Some(bytes.to_vec()), Some(data.clone()), true))
+                                        .expect("Couldn't send");
+                                    let mut file = fs::File::create(format!(
+                                            "{}{}",
+                                            user_dir(user_cache_dir()),
+                                            data["poster_path"].as_str().unwrap()))
+                                        .expect("Couldn't create file");
+                                    file.write(&bytes.to_vec()).expect("Couldn't write to file");
+                                }
+                            },
+                            None => {
+                                sender.send((None, None, false)).expect("Couldn't send");
+                            },
                         }
                     });
                 },
@@ -191,12 +192,22 @@ fn build_ui(app: &Application) {
         }));
         reciever.attach(
             None,
-            clone!(@weak poster, @weak info => @default-return Continue(false), move |(bytes, data)| {
+            clone!(@weak poster, @weak info => @default-return Continue(false), move |(bytes, data, connection)| {
                 let path = file.path().to_str().unwrap().to_string();
                 let play_button = Button::builder().label("Play").build();
                 play_button.connect_clicked(move |_| {
                     play_movie(&path, false);
                 });
+                if !connection {
+                    poster.hide();
+                    if info.first_child() == info.last_child() && info.last_child() != None {
+                        info.remove(&info.last_child().unwrap());
+                    }
+                    if info.last_child() == None {
+                        info.append(&play_button);
+                    }
+                    return Continue(true);
+                }
                 match data {
                     Some(data) => {
                         if info.first_child() == info.last_child() && info.last_child() != None {
@@ -312,7 +323,7 @@ where
     widget.set_margin_bottom(size);
 }
 
-fn movie_data(name: &String, year: &Option<String>) -> serde_json::Value {
+fn movie_data(name: &String, year: &Option<String>) -> Option<serde_json::Value> {
     /*{adult: bool, backdrop_path: String, genre_ids: [i32], id: i32, original_language: String,
      * original_title: String, overview: String, popularity: f32, poster_path: String,
      * release_date: String, title: String, vote_average: f32, vote_count: i32}*/
@@ -322,25 +333,26 @@ fn movie_data(name: &String, year: &Option<String>) -> serde_json::Value {
         None => "".to_string(),
     };
 
-    let data = reqwest::blocking::get(format!(
+    match reqwest::blocking::get(format!(
         "https://api.themoviedb.org/3/search/movie?query={}{}&api_key={}",
         name, year, "f090bb54758cabf231fb605d3e3e0468"
-    ))
-    .unwrap()
-    .text()
-    .unwrap()
-    .to_string();
-    let results: serde_json::Value = serde_json::from_str(&data).unwrap();
-    let mut movie_data = &results["results"][0];
-    for result in results["results"].as_array().unwrap() {
-        let title = result["title"].as_str().unwrap().to_string();
-        let release_date = result["release_date"].as_str().unwrap().to_string();
-        if title == name.to_string() && release_date.contains(&year.replace("&year=", "")) {
-            movie_data = result;
-            break;
+    )) {
+        Ok(response) => {
+            let data = response.text().unwrap().to_string();
+            let results: serde_json::Value = serde_json::from_str(&data).unwrap();
+            let mut movie_data = &results["results"][0];
+            for result in results["results"].as_array().unwrap() {
+                let title = result["title"].as_str().unwrap().to_string();
+                let release_date = result["release_date"].as_str().unwrap().to_string();
+                if title == name.to_string() && release_date.contains(&year.replace("&year=", "")) {
+                    movie_data = result;
+                    break;
+                }
+            }
+            Some(movie_data.to_owned())
         }
+        _ => None,
     }
-    movie_data.to_owned()
 }
 
 fn user_dir(path: PathBuf) -> String {
@@ -351,7 +363,7 @@ fn user_dir(path: PathBuf) -> String {
 }
 
 fn name_parse(name: String) -> (String, Option<String>, String) {
-    let re = Regex::new(r"^(.*)[\.| ]([0-9]{4})\.[\.|A-Z]*[[0-9]+p]*.*mp4").unwrap();
+    let re = Regex::new(r"^(.*)[\.| ]([0-9]{4})?\.[\.|A-Z]*[[0-9]+p]*.*mp4").unwrap();
     let binding = re.captures(&name);
     match &binding {
         Some(expr) => (
