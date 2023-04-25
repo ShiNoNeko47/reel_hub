@@ -127,20 +127,20 @@ fn build_ui(app: &Application) {
             });
             match data {
                 Some(data) => {
-                        if Path::new(&format!(
-                                "{}{}",
-                                user_dir(user_cache_dir()),
-                                data["poster_path"].as_str().unwrap()))
-                            .exists() {
-                            let file = BufReader::new(fs::File::open(format!(
-                                        "{}{}",
-                                        user_dir(user_cache_dir()),
-                                        data["poster_path"].as_str().unwrap()))
-                                .unwrap());
-                            sender.send(
-                                (Some(file.bytes().map(|a| a.unwrap()).collect()), Some(data.clone()), true))
-                                .expect("Couldn't send");
-                        }
+                    if Path::new(&format!(
+                            "{}{}",
+                            user_dir(user_cache_dir()),
+                            data["poster_path"].as_str().unwrap()))
+                        .exists() {
+                        let file = BufReader::new(fs::File::open(format!(
+                                    "{}{}",
+                                    user_dir(user_cache_dir()),
+                                    data["poster_path"].as_str().unwrap()))
+                            .unwrap());
+                        sender.send(
+                            (Some(file.bytes().map(|a| a.unwrap()).collect()), Some(data.clone()), true))
+                            .expect("Couldn't send");
+                    }
                 },
                 None => {
                     thread::spawn(move ||{
