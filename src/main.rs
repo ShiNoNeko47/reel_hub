@@ -89,6 +89,22 @@ fn build_ui(app: &Application) {
 
     set_margins(10, &scrolled_window);
 
+    let (movie_selected_sender, movie_selected_reciever) = MainContext::channel(PRIORITY_DEFAULT);
+    for movie in movies {
+        let button = Button::builder().label(movie.name.clone()).build();
+        let movie = movie.clone();
+        let movie_selected_sender = movie_selected_sender.clone();
+        button.connect_clicked(move |_| unsafe {
+            MOVIE_SELECTED = Some(movie.clone());
+            movie_selected_sender.send(()).expect("Couldn't send");
+        });
+        list_box.append(&button);
+    }
+    movie_selected_reciever.attach(None, move |_| {
+        play_button.set_sensitive(true);
+        Continue(true)
+    });
+
     // for movie in movies {
     //     println!("{:#?}", movie);
     // }
