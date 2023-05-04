@@ -1,5 +1,6 @@
 use glib::{clone, user_data_dir, MainContext, PRIORITY_DEFAULT};
 use gtk::{
+    ffi::GtkLabel,
     gdk_pixbuf::Pixbuf,
     gio::{Cancellable, MemoryInputStream},
     glib::ExitCode,
@@ -63,6 +64,15 @@ fn build_ui(app: &Application) {
     let info = Box::new(Orientation::Vertical, 5);
     info.set_hexpand(true);
     info.set_halign(gtk::Align::Fill);
+    for _ in 0..6 {
+        info.append(
+            &Label::builder()
+                .use_markup(true)
+                .wrap(true)
+                .justify(gtk::Justification::Center)
+                .build(),
+        );
+    }
     content.append(&info);
 
     let play_button = Button::builder().label("Play").build();
@@ -90,73 +100,43 @@ fn build_ui(app: &Application) {
     set_margins(10, &scrolled_window);
 
     let (movie_selected_sender, movie_selected_reciever) = MainContext::channel(PRIORITY_DEFAULT);
-    for movie in movies {
-        let button = Button::builder().label(movie.name.clone()).build();
-        let movie = movie.clone();
+    for mut movie in movies {
+        movie.fetch_data();
         let movie_selected_sender = movie_selected_sender.clone();
-        button.connect_clicked(move |_| unsafe {
-            MOVIE_SELECTED = Some(movie.clone());
-            movie_selected_sender.send(()).expect("Couldn't send");
-        });
+        let button = Button::builder().label(movie.name.clone()).build();
+        button.connect_clicked(clone!(@weak info => move |_| {
+            let movie = movie.clone();
+            show_info(&info, movie.data.clone().unwrap());
+            movie_selected_sender.send(movie).expect("Couldn't send");
+        }));
         list_box.append(&button);
     }
-    movie_selected_reciever.attach(None, move |_| {
+
+    movie_selected_reciever.attach(None, move |movie| {
+        unsafe {
+            MOVIE_SELECTED = Some(movie);
+        }
         play_button.set_sensitive(true);
         Continue(true)
     });
-
-    // for movie in movies {
-    //     println!("{:#?}", movie);
-    // }
 
     main_window.present();
 }
 
 fn show_info(info: &Box, data: MovieData) {
-    info.append(
-        &Label::builder()
-            .label(&format!("<b>Original title:</b> {}", data.original_title))
-            .use_markup(true)
-            .build(),
-    );
-    info.append(
-        &Label::builder()
-            .label(&format!(
-                "<b>Original language:</b> {}",
-                data.original_language
-            ))
-            .use_markup(true)
-            .build(),
-    );
-    info.append(
-        &Label::builder()
-            .label(&format!("<b>Overview:</b>\n {}", data.overview))
-            .use_markup(true)
-            .wrap(true)
-            .justify(gtk::Justification::Center)
-            .build(),
-    );
-    info.append(
-        &Label::builder()
-            .label(&format!(
-                "<b>Vote average (tmdb):</b> {}",
-                data.vote_average
-            ))
-            .use_markup(true)
-            .build(),
-    );
-    info.append(
-        &Label::builder()
-            .label(&format!("<b>Vote count (tmdb):</b> {}", data.vote_count))
-            .use_markup(true)
-            .build(),
-    );
-    info.append(
-        &Label::builder()
-            .label(&format!("<b>Release date:</b> {}", data.release_date))
-            .use_markup(true)
-            .build(),
-    );
+    let text = [
+        format!("<b>Original title:</b> {}", data.original_title),
+        format!("<b>Original language:</b> {}", data.original_language),
+        format!("<b>Overview:</b>\n {}", data.overview),
+        format!("<b>Vote average (tmdb):</b> {}", data.vote_average),
+        format!("<b>Vote count (tmdb):</b> {}", data.vote_count),
+        format!("<b>Release date:</b> {}", data.release_date),
+    ];
+    let mut i = 0;
+    info.observe_children().into_iter().for_each(|item| {
+        item.unwrap().set_property("label", &text[i]);
+        i += 1;
+    });
 }
 
 fn set_margins<T>(size: i32, widget: &T)

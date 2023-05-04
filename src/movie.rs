@@ -77,7 +77,22 @@ impl Clone for Movie {
             name: self.name.clone(),
             year: self.year,
             file: self.file.clone(),
-            data: None,
+            data: self.data.clone(),
+        }
+    }
+}
+
+impl Clone for MovieData {
+    fn clone(&self) -> Self {
+        MovieData {
+            title: self.title.clone(),
+            original_title: self.original_title.clone(),
+            original_language: self.original_language.clone(),
+            overview: self.overview.clone(),
+            vote_average: self.vote_average,
+            vote_count: self.vote_count,
+            release_date: self.release_date.clone(),
+            poster_path: self.poster_path.clone(),
         }
     }
 }

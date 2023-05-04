@@ -32,6 +32,5 @@ pub fn fetch_data_tmdb(name: &String, year: String) -> Option<MovieData> {
             })
         }
         _ => None,
-    };
-    None
+    }
 }
