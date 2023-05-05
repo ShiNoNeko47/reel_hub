@@ -1,28 +1,22 @@
-use glib::{clone, user_data_dir, MainContext, PRIORITY_DEFAULT};
+use glib::{user_data_dir, MainContext, PRIORITY_DEFAULT};
 use gtk::{
-    ffi::GtkLabel,
-    gdk_pixbuf::Pixbuf,
-    gio::{Cancellable, MemoryInputStream},
-    glib::ExitCode,
-    prelude::*,
-    Box, Button, Label, ListBox, Orientation, Picture, ScrolledWindow, Widget, Window,
+    glib::ExitCode, prelude::*, Box, Button, Label, ListBox, Orientation, Picture, ScrolledWindow,
+    Widget, Window,
 };
 use libadwaita::Application;
 
-use std::io::Read;
+use std::fs;
 use std::path::PathBuf;
-use std::{cell::RefCell, fs};
+use std::sync::Mutex;
 
 use movies::{
     detect,
     movie::{Movie, MovieData},
 };
 
-thread_local! {
-    static MOVIES: RefCell<Vec<Movie>> = vec![].into();
-}
+static MOVIES: Mutex<Vec<Movie>> = Mutex::new(vec![]);
 
-static mut MOVIE_SELECTED: Option<Movie> = None;
+static MOVIE_SELECTED: Mutex<usize> = Mutex::new(0);
 
 fn main() -> ExitCode {
     let app = Application::builder()
@@ -40,9 +34,9 @@ fn build_ui(app: &Application) {
         .child(&hbox)
         .build();
 
-    let movies = detect::get_movies(user_dir(user_data_dir()));
+    *MOVIES.lock().unwrap() = detect::get_movies(user_dir(user_data_dir()));
 
-    if movies.len() == 0 {
+    if MOVIES.lock().unwrap().len() == 0 {
         hbox.set_halign(gtk::Align::Center);
         hbox.append(&Label::new(Some(&format!(
             "To get started add movies to {} or make a symlink to a directory that contains movies",
@@ -64,7 +58,7 @@ fn build_ui(app: &Application) {
     let info = Box::new(Orientation::Vertical, 5);
     info.set_hexpand(true);
     info.set_halign(gtk::Align::Fill);
-    for _ in 0..6 {
+    for _ in 0..7 {
         info.append(
             &Label::builder()
                 .use_markup(true)
@@ -76,7 +70,9 @@ fn build_ui(app: &Application) {
     content.append(&info);
 
     let play_button = Button::builder().label("Play").build();
-    play_button.connect_clicked(move |_| unsafe { MOVIE_SELECTED.clone().unwrap().play(false) });
+    play_button.connect_clicked(move |_| {
+        MOVIES.lock().unwrap()[*MOVIE_SELECTED.lock().unwrap()].play(false)
+    });
     play_button.set_sensitive(false);
     content.append(&play_button);
 
@@ -100,22 +96,41 @@ fn build_ui(app: &Application) {
     set_margins(10, &scrolled_window);
 
     let (movie_selected_sender, movie_selected_reciever) = MainContext::channel(PRIORITY_DEFAULT);
-    for mut movie in movies {
-        movie.fetch_data();
+    let (info_loaded_sender, info_loaded_reciever) = MainContext::channel(PRIORITY_DEFAULT);
+    let movies_length = MOVIES.lock().unwrap().len();
+    for movie in 0..movies_length {
         let movie_selected_sender = movie_selected_sender.clone();
-        let button = Button::builder().label(movie.name.clone()).build();
-        button.connect_clicked(clone!(@weak info => move |_| {
-            let movie = movie.clone();
-            show_info(&info, movie.data.clone().unwrap());
-            movie_selected_sender.send(movie).expect("Couldn't send");
-        }));
+        let info_loaded_sender = info_loaded_sender.clone();
+        let button = Button::builder()
+            .label(MOVIES.lock().unwrap()[movie].name.clone())
+            .build();
+        button.connect_clicked(move |_| {
+            movie_selected_sender
+                .send(movie.clone())
+                .expect("Couldn't send");
+            let data = MOVIES.lock().unwrap()[movie].data.clone();
+            match data {
+                Some(data) => {
+                    info_loaded_sender.send(data).expect("Couldn't send");
+                }
+                None => {
+                    MOVIES.lock().unwrap()[movie].fetch_data();
+                    if let Some(data) = MOVIES.lock().unwrap()[movie].data.clone() {
+                        info_loaded_sender.send(data).expect("Couldn't send");
+                    };
+                }
+            }
+        });
         list_box.append(&button);
     }
 
+    info_loaded_reciever.attach(None, move |movie_data| {
+        show_info(&info, movie_data);
+        Continue(true)
+    });
+
     movie_selected_reciever.attach(None, move |movie| {
-        unsafe {
-            MOVIE_SELECTED = Some(movie);
-        }
+        *MOVIE_SELECTED.lock().unwrap() = movie;
         play_button.set_sensitive(true);
         Continue(true)
     });
@@ -125,6 +140,7 @@ fn build_ui(app: &Application) {
 
 fn show_info(info: &Box, data: MovieData) {
     let text = [
+        format!("<b>Title:</b> {}", data.title),
         format!("<b>Original title:</b> {}", data.original_title),
         format!("<b>Original language:</b> {}", data.original_language),
         format!("<b>Overview:</b>\n {}", data.overview),
