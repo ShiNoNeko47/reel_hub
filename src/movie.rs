@@ -24,8 +24,9 @@ pub struct Movie {
 
 impl Movie {
     pub fn get_from_file_name(file: walkdir::DirEntry) -> Movie {
-        let re = regex::Regex::new(r"^(.*)[\.| ]([0-9]{4})?\.[\.|A-Z]*[[0-9]+p]*.*mp4").unwrap();
-        let binding = re.captures(&file.file_name().to_str().unwrap());
+        let re: regex::Regex =
+            regex::Regex::new(r"^(.*)[\.| ]([0-9]{4})?\.[\.|A-Z]*[[0-9]+p]*.*mp4").unwrap();
+        let binding: Option<regex::Captures> = re.captures(&file.file_name().to_str().unwrap());
         match &binding {
             Some(expr) => Movie {
                 name: expr[1].to_string().replace(".", " "),
@@ -56,7 +57,7 @@ impl Movie {
     }
 
     pub fn fetch_data(&mut self) {
-        let year = match &self.year {
+        let year: String = match &self.year {
             Some(year) => format!("&year={}", year),
             None => "".to_string(),
         };

@@ -6,12 +6,12 @@ pub fn fetch_data_tmdb(name: &String, year: String) -> Option<MovieData> {
         name, year, "f090bb54758cabf231fb605d3e3e0468"
     )) {
         Ok(response) => {
-            let data = response.text().unwrap().to_string();
+            let data: String = response.text().unwrap().to_string();
             let results: serde_json::Value = serde_json::from_str(&data).unwrap();
-            let mut movie_data = &results["results"][0];
+            let mut movie_data: &serde_json::Value = &results["results"][0];
             for result in results["results"].as_array().unwrap() {
-                let title = result["title"].as_str().unwrap().to_string();
-                let release_date = result["release_date"].as_str().unwrap().to_string();
+                let title: String = result["title"].as_str().unwrap().to_string();
+                let release_date: String = result["release_date"].as_str().unwrap().to_string();
                 if title == name.to_string() && release_date.contains(&year.replace("&year=", "")) {
                     movie_data = result;
                     break;

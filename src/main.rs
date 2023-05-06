@@ -27,8 +27,8 @@ fn main() -> ExitCode {
 }
 
 fn build_ui(app: &Application) {
-    let hbox = Box::new(Orientation::Horizontal, 0);
-    let main_window = Window::builder()
+    let hbox: Box = Box::new(Orientation::Horizontal, 0);
+    let main_window: Window = Window::builder()
         .application(app)
         .title("movies")
         .child(&hbox)
@@ -46,16 +46,16 @@ fn build_ui(app: &Application) {
         return;
     }
 
-    let content = Box::new(Orientation::Vertical, 5);
+    let content: Box = Box::new(Orientation::Vertical, 5);
     set_margins(10, &content);
     content.set_halign(gtk::Align::Center);
     content.set_valign(gtk::Align::End);
 
-    let poster = Picture::new();
+    let poster: Picture = Picture::new();
     poster.set_hexpand(true);
     content.append(&poster);
 
-    let info = Box::new(Orientation::Vertical, 5);
+    let info: Box = Box::new(Orientation::Vertical, 5);
     info.set_hexpand(true);
     info.set_halign(gtk::Align::Fill);
     for _ in 0..7 {
@@ -69,7 +69,7 @@ fn build_ui(app: &Application) {
     }
     content.append(&info);
 
-    let play_button = Button::builder().label("Play").build();
+    let play_button: Button = Button::builder().label("Play").build();
     play_button.connect_clicked(move |_| {
         MOVIES.lock().unwrap()[*MOVIE_SELECTED.lock().unwrap()].play(false)
     });
@@ -81,11 +81,11 @@ fn build_ui(app: &Application) {
 
     hbox.append(&content);
 
-    let list_box = ListBox::new();
+    let list_box: ListBox = ListBox::new();
     set_margins::<ListBox>(10, &list_box);
     list_box.set_selection_mode(gtk::SelectionMode::None);
 
-    let scrolled_window = ScrolledWindow::builder()
+    let scrolled_window: ScrolledWindow = ScrolledWindow::builder()
         .child(&list_box)
         .has_frame(true)
         .build();
@@ -95,20 +95,25 @@ fn build_ui(app: &Application) {
 
     set_margins(10, &scrolled_window);
 
-    let (movie_selected_sender, movie_selected_reciever) = MainContext::channel(PRIORITY_DEFAULT);
-    let (info_loaded_sender, info_loaded_reciever) = MainContext::channel(PRIORITY_DEFAULT);
-    let movies_length = MOVIES.lock().unwrap().len();
+    let (movie_selected_sender, movie_selected_reciever): (
+        glib::Sender<usize>,
+        glib::Receiver<usize>,
+    ) = MainContext::channel(PRIORITY_DEFAULT);
+    let (info_loaded_sender, info_loaded_reciever): (
+        glib::Sender<MovieData>,
+        glib::Receiver<MovieData>,
+    ) = MainContext::channel(PRIORITY_DEFAULT);
+
+    let movies_length: usize = MOVIES.lock().unwrap().len();
     for movie in 0..movies_length {
-        let movie_selected_sender = movie_selected_sender.clone();
-        let info_loaded_sender = info_loaded_sender.clone();
-        let button = Button::builder()
+        let movie_selected_sender: glib::Sender<usize> = movie_selected_sender.clone();
+        let info_loaded_sender: glib::Sender<MovieData> = info_loaded_sender.clone();
+        let button: Button = Button::builder()
             .label(MOVIES.lock().unwrap()[movie].name.clone())
             .build();
         button.connect_clicked(move |_| {
-            movie_selected_sender
-                .send(movie.clone())
-                .expect("Couldn't send");
-            let data = MOVIES.lock().unwrap()[movie].data.clone();
+            movie_selected_sender.send(movie).expect("Couldn't send");
+            let data: Option<MovieData> = MOVIES.lock().unwrap()[movie].data.clone();
             match data {
                 Some(data) => {
                     info_loaded_sender.send(data).expect("Couldn't send");
@@ -139,7 +144,7 @@ fn build_ui(app: &Application) {
 }
 
 fn show_info(info: &Box, data: MovieData) {
-    let text = [
+    let text: [String; 7] = [
         format!("<b>Title:</b> {}", data.title),
         format!("<b>Original title:</b> {}", data.original_title),
         format!("<b>Original language:</b> {}", data.original_language),
@@ -148,7 +153,7 @@ fn show_info(info: &Box, data: MovieData) {
         format!("<b>Vote count (tmdb):</b> {}", data.vote_count),
         format!("<b>Release date:</b> {}", data.release_date),
     ];
-    let mut i = 0;
+    let mut i: usize = 0;
     info.observe_children().into_iter().for_each(|item| {
         item.unwrap().set_property("label", &text[i]);
         i += 1;
@@ -166,7 +171,7 @@ where
 }
 
 fn user_dir(path: PathBuf) -> String {
-    let mut path = path;
+    let mut path: PathBuf = path;
     path.push("movies");
     fs::create_dir_all(&path).expect("Couldn't create directory");
     path.to_str().unwrap().to_string()
