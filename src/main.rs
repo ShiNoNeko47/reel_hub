@@ -1,24 +1,32 @@
-use glib::{user_data_dir, MainContext, PRIORITY_DEFAULT};
+// mod window;
+
+use glib::{clone, user_data_dir, MainContext, PRIORITY_DEFAULT};
+// use gtk::gio::resources_register_include;
 use gtk::{
-    glib::ExitCode, prelude::*, Box, Button, Label, ListBox, Orientation, Picture, ScrolledWindow,
-    Widget, Window,
+    gdk_pixbuf::Pixbuf,
+    gio::{Cancellable, MemoryInputStream},
+    glib::ExitCode,
+    prelude::*,
+    Box, Button, Label, ListBox, Orientation, Picture, ScrolledWindow, Widget, Window,
 };
 use libadwaita::Application;
 
-use std::fs;
 use std::path::PathBuf;
 use std::sync::Mutex;
+use std::{fs, thread};
 
 use movies::{
     detect,
     movie::{Movie, MovieData},
 };
 
+static LOADING_IMAGE_DARK: &[u8; 2904] = include_bytes!("pictures/Loading_dark.png");
 static MOVIES: Mutex<Vec<Movie>> = Mutex::new(vec![]);
 
 static MOVIE_SELECTED: Mutex<usize> = Mutex::new(0);
 
 fn main() -> ExitCode {
+    // resources_register_include!("movies.gresource").expect("Failed loading resource");
     let app = Application::builder()
         // .application_id("com.gtk_rs.movies")
         .build();
@@ -82,7 +90,7 @@ fn build_ui(app: &Application) {
     hbox.append(&content);
 
     let list_box: ListBox = ListBox::new();
-    set_margins::<ListBox>(10, &list_box);
+    set_margins(10, &list_box);
     list_box.set_selection_mode(gtk::SelectionMode::None);
 
     let scrolled_window: ScrolledWindow = ScrolledWindow::builder()
@@ -95,52 +103,61 @@ fn build_ui(app: &Application) {
 
     set_margins(10, &scrolled_window);
 
-    let (movie_selected_sender, movie_selected_reciever): (
-        glib::Sender<usize>,
-        glib::Receiver<usize>,
-    ) = MainContext::channel(PRIORITY_DEFAULT);
-    let (info_loaded_sender, info_loaded_reciever): (
-        glib::Sender<MovieData>,
-        glib::Receiver<MovieData>,
-    ) = MainContext::channel(PRIORITY_DEFAULT);
+    let (sender, reciever) = MainContext::channel(PRIORITY_DEFAULT);
 
     let movies_length: usize = MOVIES.lock().unwrap().len();
     for movie in 0..movies_length {
-        let movie_selected_sender: glib::Sender<usize> = movie_selected_sender.clone();
-        let info_loaded_sender: glib::Sender<MovieData> = info_loaded_sender.clone();
+        let sender = sender.clone();
         let button: Button = Button::builder()
             .label(MOVIES.lock().unwrap()[movie].name.clone())
             .build();
-        button.connect_clicked(move |_| {
-            movie_selected_sender.send(movie).expect("Couldn't send");
-            let data: Option<MovieData> = MOVIES.lock().unwrap()[movie].data.clone();
-            match data {
-                Some(data) => {
-                    info_loaded_sender.send(data).expect("Couldn't send");
+        button.connect_clicked(
+            clone!(@weak info, @weak poster, @weak play_button => move |_| {
+                movie_selected(movie, poster, play_button);
+                let data: Option<MovieData> = MOVIES.lock().unwrap()[movie].data.clone();
+                let sender = sender.clone();
+                match data {
+                    Some(data) => show_info(&info, data),
+                    None => {
+                        MOVIES.lock().unwrap()[movie].fetch_data();
+                        thread::spawn(move || {MOVIES.lock().unwrap()[movie].fetch_poster(movie, sender.clone());});
+                        if let Some(data) = MOVIES.lock().unwrap()[movie].data.clone() {
+                            show_info(&info, data)
+                        };
+                    }
                 }
-                None => {
-                    MOVIES.lock().unwrap()[movie].fetch_data();
-                    if let Some(data) = MOVIES.lock().unwrap()[movie].data.clone() {
-                        info_loaded_sender.send(data).expect("Couldn't send");
-                    };
-                }
-            }
-        });
+            }),
+        );
         list_box.append(&button);
     }
-
-    info_loaded_reciever.attach(None, move |movie_data| {
-        show_info(&info, movie_data);
-        Continue(true)
-    });
-
-    movie_selected_reciever.attach(None, move |movie| {
-        *MOVIE_SELECTED.lock().unwrap() = movie;
-        play_button.set_sensitive(true);
+    reciever.attach(None, move |movie| {
+        let poster_bytes = &MOVIES.lock().unwrap()[movie].poster_bytes;
+        let bytes = match poster_bytes {
+            Some(bytes) => glib::Bytes::from(bytes.clone()),
+            None => glib::Bytes::from(LOADING_IMAGE_DARK),
+        };
+        let stream = MemoryInputStream::from_bytes(&bytes);
+        let pixbuf = Pixbuf::from_stream(&stream, Cancellable::NONE).unwrap();
+        let _ = &poster.set_pixbuf(Some(&pixbuf));
+        poster.show();
         Continue(true)
     });
 
     main_window.present();
+}
+
+fn movie_selected(movie: usize, poster: Picture, play_button: Button) {
+    let poster_bytes = &MOVIES.lock().unwrap()[movie].poster_bytes;
+    let bytes = match poster_bytes {
+        Some(bytes) => glib::Bytes::from(bytes.clone()),
+        None => glib::Bytes::from(LOADING_IMAGE_DARK),
+    };
+    let stream = MemoryInputStream::from_bytes(&bytes);
+    let pixbuf = Pixbuf::from_stream(&stream, Cancellable::NONE).unwrap();
+    let _ = &poster.set_pixbuf(Some(&pixbuf));
+    poster.show();
+    *MOVIE_SELECTED.lock().unwrap() = movie;
+    play_button.set_sensitive(true);
 }
 
 fn show_info(info: &Box, data: MovieData) {

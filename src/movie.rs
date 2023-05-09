@@ -1,5 +1,9 @@
 use std::process::{Command, Stdio};
 
+use glib::Bytes;
+
+use self::tmdb::fetch_poster_tmdb;
+
 mod tmdb;
 
 #[derive(Debug)]
@@ -20,6 +24,7 @@ pub struct Movie {
     pub year: Option<usize>,
     pub file: walkdir::DirEntry,
     pub data: Option<MovieData>,
+    pub poster_bytes: Option<Bytes>,
 }
 
 impl Movie {
@@ -33,12 +38,14 @@ impl Movie {
                 year: Some(expr[2].parse().unwrap()),
                 file,
                 data: None,
+                poster_bytes: None,
             },
             None => Movie {
                 name: file.file_name().to_str().unwrap().replace(".mp4", ""),
                 year: None,
                 file,
                 data: None,
+                poster_bytes: None,
             },
         }
     }
@@ -64,6 +71,13 @@ impl Movie {
 
         self.data = tmdb::fetch_data_tmdb(&self.name, year);
     }
+
+    pub fn fetch_poster(&mut self, movie: usize, sender: glib::Sender<usize>) {
+        self.poster_bytes = Some(glib::Bytes::from(
+            &fetch_poster_tmdb(self.data.as_ref().unwrap().poster_path.clone(), None).to_vec(),
+        ));
+        sender.send(movie).expect("Couldn't send");
+    }
 }
 
 impl PartialEq for Movie {
@@ -79,6 +93,7 @@ impl Clone for Movie {
             year: self.year,
             file: self.file.clone(),
             data: self.data.clone(),
+            poster_bytes: None,
         }
     }
 }

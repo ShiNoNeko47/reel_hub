@@ -34,3 +34,19 @@ pub fn fetch_data_tmdb(name: &String, year: String) -> Option<MovieData> {
         _ => None,
     }
 }
+
+pub fn fetch_poster_tmdb(poster_path: String, resolution: Option<u32>) -> Vec<u8> {
+    let resolution = match resolution {
+        Some(resolution) => resolution,
+        None => 185,
+    };
+
+    let result = reqwest::blocking::get(format!(
+        "https://image.tmdb.org/t/p/w{resolution}/{poster_path}"
+    ))
+    .unwrap()
+    .bytes()
+    .unwrap()
+    .to_vec();
+    result
+}
