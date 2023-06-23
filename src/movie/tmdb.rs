@@ -1,10 +1,9 @@
 use super::MovieData;
 
 pub fn fetch_data_tmdb(name: &String, year: String) -> Option<MovieData> {
-    match reqwest::blocking::get(format!(
-        "https://api.themoviedb.org/3/search/movie?query={}{}&api_key={}",
-        name, year, "f090bb54758cabf231fb605d3e3e0468"
-    )) {
+    let addr = format!("https://api.themoviedb.org/3/search/movie?query={}{}&api_key=f090bb54758cabf231fb605d3e3e0468", name, year);
+    println!("addr: {}", addr);
+    match reqwest::blocking::get(addr) {
         Ok(response) => {
             let data: String = response.text().unwrap().to_string();
             let results: serde_json::Value = serde_json::from_str(&data).unwrap();
@@ -17,19 +16,23 @@ pub fn fetch_data_tmdb(name: &String, year: String) -> Option<MovieData> {
                     break;
                 }
             }
-            Some(MovieData {
-                title: movie_data["title"].as_str().unwrap().to_string(),
-                original_title: movie_data["original_title"].as_str().unwrap().to_string(),
-                original_language: movie_data["original_language"]
-                    .as_str()
-                    .unwrap()
-                    .to_string(),
-                overview: movie_data["overview"].as_str().unwrap().to_string(),
-                vote_average: movie_data["vote_average"].as_f64().unwrap(),
-                vote_count: movie_data["vote_count"].as_u64().unwrap(),
-                release_date: movie_data["release_date"].as_str().unwrap().to_string(),
-                poster_path: movie_data["poster_path"].as_str().unwrap().to_string(),
-            })
+            if movie_data != &serde_json::Value::Null {
+                Some(MovieData {
+                    title: movie_data["title"].as_str().unwrap().to_string(),
+                    original_title: movie_data["original_title"].as_str().unwrap().to_string(),
+                    original_language: movie_data["original_language"]
+                        .as_str()
+                        .unwrap()
+                        .to_string(),
+                    overview: movie_data["overview"].as_str().unwrap().to_string(),
+                    vote_average: movie_data["vote_average"].as_f64().unwrap(),
+                    vote_count: movie_data["vote_count"].as_u64().unwrap(),
+                    release_date: movie_data["release_date"].as_str().unwrap().to_string(),
+                    poster_path: movie_data["poster_path"].as_str().unwrap().to_string(),
+                })
+            } else {
+                None
+            }
         }
         _ => None,
     }
