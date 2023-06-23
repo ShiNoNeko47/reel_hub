@@ -74,7 +74,7 @@ impl Movie {
 
     pub fn fetch_poster(&mut self, movie: usize, sender: glib::Sender<usize>) {
         self.poster_bytes = Some(glib::Bytes::from(
-            &fetch_poster_tmdb(self.data.as_ref().unwrap().poster_path.clone(), None).to_vec(),
+            &fetch_poster_tmdb(self.data.as_ref().unwrap().poster_path.clone(), Some(500)).to_vec(),
         ));
         sender.send(movie).expect("Couldn't send");
     }

@@ -1,15 +1,15 @@
 // mod window;
 
 use glib::{clone, user_data_dir, MainContext, PRIORITY_DEFAULT};
-// use gtk::gio::resources_register_include;
+use gtk::gio::resources_register_include;
+use gtk::Application;
 use gtk::{
     gdk_pixbuf::Pixbuf,
     gio::{Cancellable, MemoryInputStream},
     glib::ExitCode,
     prelude::*,
-    Box, Button, Label, ListBox, Orientation, Picture, ScrolledWindow, Widget, Window,
+    Box, Button, Image, Label, ListBox, Orientation, ScrolledWindow, Widget, Window,
 };
-use libadwaita::Application;
 
 use std::path::PathBuf;
 use std::sync::Mutex;
@@ -26,7 +26,7 @@ static MOVIES: Mutex<Vec<Movie>> = Mutex::new(vec![]);
 static MOVIE_SELECTED: Mutex<usize> = Mutex::new(0);
 
 fn main() -> ExitCode {
-    // resources_register_include!("movies.gresource").expect("Failed loading resource");
+    resources_register_include!("movies.gresource").expect("Failed loading resource");
     let app = Application::builder()
         // .application_id("com.gtk_rs.movies")
         .build();
@@ -35,6 +35,8 @@ fn main() -> ExitCode {
 }
 
 fn build_ui(app: &Application) {
+    // let window = window::Window::new(app);
+    // window.show_all();
     let hbox: Box = Box::new(Orientation::Horizontal, 0);
     let main_window: Window = Window::builder()
         .application(app)
@@ -46,11 +48,11 @@ fn build_ui(app: &Application) {
 
     if MOVIES.lock().unwrap().len() == 0 {
         hbox.set_halign(gtk::Align::Center);
-        hbox.append(&Label::new(Some(&format!(
+        hbox.add(&Label::new(Some(&format!(
             "To get started add movies to {} or make a symlink to a directory that contains movies",
             user_dir(user_data_dir())
         ))));
-        main_window.present();
+        main_window.show_all();
         return;
     }
 
@@ -59,15 +61,15 @@ fn build_ui(app: &Application) {
     content.set_halign(gtk::Align::Center);
     content.set_valign(gtk::Align::End);
 
-    let poster: Picture = Picture::new();
+    let poster: Image = Image::new();
     poster.set_hexpand(true);
-    content.append(&poster);
+    content.add(&poster);
 
     let info: Box = Box::new(Orientation::Vertical, 5);
     info.set_hexpand(true);
     info.set_halign(gtk::Align::Fill);
     for _ in 0..7 {
-        info.append(
+        info.add(
             &Label::builder()
                 .use_markup(true)
                 .wrap(true)
@@ -75,19 +77,19 @@ fn build_ui(app: &Application) {
                 .build(),
         );
     }
-    content.append(&info);
+    content.add(&info);
 
     let play_button: Button = Button::builder().label("Play").build();
     play_button.connect_clicked(move |_| {
         MOVIES.lock().unwrap()[*MOVIE_SELECTED.lock().unwrap()].play(false)
     });
     play_button.set_sensitive(false);
-    content.append(&play_button);
+    content.add(&play_button);
 
     content.set_hexpand(true);
     content.set_halign(gtk::Align::Fill);
 
-    hbox.append(&content);
+    hbox.add(&content);
 
     let list_box: ListBox = ListBox::new();
     set_margins(10, &list_box);
@@ -95,11 +97,11 @@ fn build_ui(app: &Application) {
 
     let scrolled_window: ScrolledWindow = ScrolledWindow::builder()
         .child(&list_box)
-        .has_frame(true)
+        // .has_frame(true)
         .build();
     scrolled_window.set_hscrollbar_policy(gtk::PolicyType::Never);
 
-    hbox.append(&scrolled_window);
+    hbox.add(&scrolled_window);
 
     set_margins(10, &scrolled_window);
 
@@ -113,22 +115,28 @@ fn build_ui(app: &Application) {
             .build();
         button.connect_clicked(
             clone!(@weak info, @weak poster, @weak play_button => move |_| {
-                movie_selected(movie, poster, play_button);
                 let data: Option<MovieData> = MOVIES.lock().unwrap()[movie].data.clone();
+                let poster_bytes: Option<glib::Bytes> = MOVIES.lock().unwrap()[movie].poster_bytes.clone();
                 let sender = sender.clone();
+                movie_selected(movie, poster_bytes, poster, play_button);
                 match data {
-                    Some(data) => show_info(&info, data),
+                    Some(data) => {
+                        show_info(&info, Some(data));
+                    },
                     None => {
+                        show_info(&info, None);
                         MOVIES.lock().unwrap()[movie].fetch_data();
-                        thread::spawn(move || {MOVIES.lock().unwrap()[movie].fetch_poster(movie, sender.clone());});
-                        if let Some(data) = MOVIES.lock().unwrap()[movie].data.clone() {
-                            show_info(&info, data)
-                        };
+                        if MOVIES.lock().unwrap()[movie].data.is_some() {
+                            thread::spawn(move || {MOVIES.lock().unwrap()[movie].fetch_poster(movie, sender.clone());});
+                            if let Some(data) = MOVIES.lock().unwrap()[movie].data.clone() {
+                                show_info(&info, Some(data))
+                            };
+                        }
                     }
                 }
             }),
         );
-        list_box.append(&button);
+        list_box.add(&button);
     }
     reciever.attach(None, move |movie| {
         let poster_bytes = &MOVIES.lock().unwrap()[movie].poster_bytes;
@@ -139,15 +147,20 @@ fn build_ui(app: &Application) {
         let stream = MemoryInputStream::from_bytes(&bytes);
         let pixbuf = Pixbuf::from_stream(&stream, Cancellable::NONE).unwrap();
         let _ = &poster.set_pixbuf(Some(&pixbuf));
+        // poster.set_can_shrink(true);
         poster.show();
         Continue(true)
     });
 
-    main_window.present();
+    main_window.show_all();
 }
 
-fn movie_selected(movie: usize, poster: Picture, play_button: Button) {
-    let poster_bytes = &MOVIES.lock().unwrap()[movie].poster_bytes;
+fn movie_selected(
+    movie: usize,
+    poster_bytes: Option<glib::Bytes>,
+    poster: Image,
+    play_button: Button,
+) {
     let bytes = match poster_bytes {
         Some(bytes) => glib::Bytes::from(bytes.clone()),
         None => glib::Bytes::from(LOADING_IMAGE_DARK),
@@ -160,21 +173,32 @@ fn movie_selected(movie: usize, poster: Picture, play_button: Button) {
     play_button.set_sensitive(true);
 }
 
-fn show_info(info: &Box, data: MovieData) {
-    let text: [String; 7] = [
-        format!("<b>Title:</b> {}", data.title),
-        format!("<b>Original title:</b> {}", data.original_title),
-        format!("<b>Original language:</b> {}", data.original_language),
-        format!("<b>Overview:</b>\n {}", data.overview),
-        format!("<b>Vote average (tmdb):</b> {}", data.vote_average),
-        format!("<b>Vote count (tmdb):</b> {}", data.vote_count),
-        format!("<b>Release date:</b> {}", data.release_date),
-    ];
-    let mut i: usize = 0;
-    info.observe_children().into_iter().for_each(|item| {
-        item.unwrap().set_property("label", &text[i]);
-        i += 1;
-    });
+fn show_info(info: &Box, data: Option<MovieData>) {
+    match data {
+        Some(data) => {
+            let text: [String; 7] = [
+                format!("<b>Title:</b> {}", data.title),
+                format!("<b>Original title:</b> {}", data.original_title),
+                format!("<b>Original language:</b> {}", data.original_language),
+                format!("<b>Overview:</b>\n {}", data.overview),
+                format!("<b>Vote average (tmdb):</b> {}", data.vote_average),
+                format!("<b>Vote count (tmdb):</b> {}", data.vote_count),
+                format!("<b>Release date:</b> {}", data.release_date),
+            ];
+            let mut i: usize = 0;
+            info.forall(|item| {
+                item.set_property("label", &text[i]);
+                i += 1;
+            });
+        }
+        None => {
+            let mut i: usize = 0;
+            info.forall(|item| {
+                item.set_property("label", &"".to_string());
+                i += 1;
+            });
+        }
+    }
 }
 
 fn set_margins<T>(size: i32, widget: &T)
