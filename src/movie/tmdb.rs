@@ -2,7 +2,6 @@ use super::MovieData;
 
 pub fn fetch_data_tmdb(name: &String, year: String) -> Option<MovieData> {
     let addr = format!("https://api.themoviedb.org/3/search/movie?query={}{}&api_key=f090bb54758cabf231fb605d3e3e0468", name, year);
-    println!("addr: {}", addr);
     match reqwest::blocking::get(addr) {
         Ok(response) => {
             let data: String = response.text().unwrap().to_string();
