@@ -56,10 +56,10 @@ fn build_ui(app: &Application) {
         return;
     }
 
-    let content: Box = Box::new(Orientation::Vertical, 5);
+    let content: Box = Box::new(Orientation::Horizontal, 5);
     set_margins(10, &content);
-    content.set_halign(gtk::Align::Center);
-    content.set_valign(gtk::Align::End);
+    content.set_halign(gtk::Align::Start);
+    content.set_valign(gtk::Align::Center);
 
     let poster: Image = Image::new();
     poster.set_hexpand(true);
@@ -68,6 +68,7 @@ fn build_ui(app: &Application) {
     let info: Box = Box::new(Orientation::Vertical, 5);
     info.set_hexpand(true);
     info.set_halign(gtk::Align::Fill);
+    info.set_valign(gtk::Align::Center);
     for _ in 0..7 {
         info.add(
             &Label::builder()
@@ -84,7 +85,7 @@ fn build_ui(app: &Application) {
         MOVIES.lock().unwrap()[*MOVIE_SELECTED.lock().unwrap()].play(false)
     });
     play_button.set_sensitive(false);
-    content.add(&play_button);
+    info.add(&play_button);
 
     content.set_hexpand(true);
     content.set_halign(gtk::Align::Fill);
@@ -176,7 +177,7 @@ fn movie_selected(
 fn show_info(info: &Box, data: Option<MovieData>) {
     match data {
         Some(data) => {
-            let text: [String; 7] = [
+            let text: [String; 8] = [
                 format!("<b>Title:</b> {}", data.title),
                 format!("<b>Original title:</b> {}", data.original_title),
                 format!("<b>Original language:</b> {}", data.original_language),
@@ -184,6 +185,7 @@ fn show_info(info: &Box, data: Option<MovieData>) {
                 format!("<b>Vote average (tmdb):</b> {}", data.vote_average),
                 format!("<b>Vote count (tmdb):</b> {}", data.vote_count),
                 format!("<b>Release date:</b> {}", data.release_date),
+                format!("Play \"{}\"", data.title),
             ];
             let mut i: usize = 0;
             info.forall(|item| {
