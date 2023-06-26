@@ -52,17 +52,18 @@ fn build_ui(app: &Application) {
             "To get started add movies to {} or make a symlink to a directory that contains movies",
             user_dir(user_data_dir())
         ))));
-        main_window.show_all();
+        main_window.show();
         return;
     }
 
     let content: Box = Box::new(Orientation::Horizontal, 5);
     set_margins(10, &content);
     content.set_halign(gtk::Align::Start);
+    content.set_hexpand(true);
     content.set_valign(gtk::Align::Center);
 
     let poster: Image = Image::new();
-    poster.set_hexpand(true);
+    // poster.set_hexpand(true);
     content.add(&poster);
 
     let info: Box = Box::new(Orientation::Vertical, 5);
@@ -81,6 +82,8 @@ fn build_ui(app: &Application) {
     content.add(&info);
 
     let play_button: Button = Button::builder().label("Play").build();
+    set_margins(25, &play_button);
+    play_button.set_halign(gtk::Align::Center);
     play_button.connect_clicked(move |_| {
         MOVIES.lock().unwrap()[*MOVIE_SELECTED.lock().unwrap()].play(false)
     });
@@ -185,7 +188,7 @@ fn show_info(info: &Box, data: Option<MovieData>) {
                 format!("<b>Vote average (tmdb):</b> {}", data.vote_average),
                 format!("<b>Vote count (tmdb):</b> {}", data.vote_count),
                 format!("<b>Release date:</b> {}", data.release_date),
-                format!("Play \"{}\"", data.title),
+                format!("  Play \"{}\"  ", data.title),
             ];
             let mut i: usize = 0;
             info.forall(|item| {
