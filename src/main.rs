@@ -157,6 +157,7 @@ fn build_ui(app: &Application) {
     });
 
     main_window.show_all();
+    play_button.set_visible(false);
 }
 
 fn movie_selected(
@@ -175,6 +176,7 @@ fn movie_selected(
     poster.show();
     *MOVIE_SELECTED.lock().unwrap() = movie;
     play_button.set_sensitive(true);
+    play_button.set_visible(true);
 }
 
 fn show_info(info: &Box, data: Option<MovieData>) {
@@ -197,10 +199,8 @@ fn show_info(info: &Box, data: Option<MovieData>) {
             });
         }
         None => {
-            let mut i: usize = 0;
             info.forall(|item| {
                 item.set_property("label", &"".to_string());
-                i += 1;
             });
         }
     }
