@@ -31,17 +31,22 @@ impl Movie {
     pub fn get_from_file_name(file: walkdir::DirEntry) -> Movie {
         let re: regex::Regex =
             regex::Regex::new(r"^(.*)[\.| ]([0-9]{4})?\.[\.|A-Z]*[[0-9]+p]*.*mp4").unwrap();
+        let size = file.metadata().unwrap().len();
+        let mut prefix = "";
+        if size == 0 {
+            prefix = "~ "
+        }
         let binding: Option<regex::Captures> = re.captures(&file.file_name().to_str().unwrap());
         match &binding {
             Some(expr) => Movie {
-                name: expr[1].to_string().replace(".", " "),
+                name: prefix.to_string() + &expr[1].to_string().replace(".", " "),
                 year: Some(expr[2].parse().unwrap()),
                 file,
                 data: None,
                 poster_bytes: None,
             },
             None => Movie {
-                name: file.file_name().to_str().unwrap().replace(".mp4", ""),
+                name: prefix.to_string() + &file.file_name().to_str().unwrap().replace(".mp4", ""),
                 year: None,
                 file,
                 data: None,
