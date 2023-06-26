@@ -1,7 +1,6 @@
 // mod window;
 
 use glib::{clone, user_data_dir, MainContext, PRIORITY_DEFAULT};
-use gtk::gio::resources_register_include;
 use gtk::Application;
 use gtk::{
     gdk_pixbuf::Pixbuf,
@@ -26,7 +25,6 @@ static MOVIES: Mutex<Vec<Movie>> = Mutex::new(vec![]);
 static MOVIE_SELECTED: Mutex<usize> = Mutex::new(0);
 
 fn main() -> ExitCode {
-    resources_register_include!("movies.gresource").expect("Failed loading resource");
     let app = Application::builder()
         // .application_id("com.gtk_rs.movies")
         .build();
@@ -35,8 +33,6 @@ fn main() -> ExitCode {
 }
 
 fn build_ui(app: &Application) {
-    // let window = window::Window::new(app);
-    // window.show_all();
     let hbox: Box = Box::new(Orientation::Horizontal, 0);
     let main_window: Window = Window::builder()
         .application(app)
@@ -157,6 +153,7 @@ fn build_ui(app: &Application) {
     });
 
     main_window.show_all();
+    play_button.set_visible(false);
 }
 
 fn movie_selected(
@@ -175,6 +172,7 @@ fn movie_selected(
     poster.show();
     *MOVIE_SELECTED.lock().unwrap() = movie;
     play_button.set_sensitive(true);
+    play_button.set_visible(true);
 }
 
 fn show_info(info: &Box, data: Option<MovieData>) {
@@ -197,10 +195,8 @@ fn show_info(info: &Box, data: Option<MovieData>) {
             });
         }
         None => {
-            let mut i: usize = 0;
             info.forall(|item| {
                 item.set_property("label", &"".to_string());
-                i += 1;
             });
         }
     }
