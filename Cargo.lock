@@ -379,12 +379,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "glib-build-tools"
-version = "0.17.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8f8480c9ba9cc06aa8d5baf446037f8dc237bee127e9b62080c4db7e293d8ea0"
-
-[[package]]
 name = "glib-macros"
 version = "0.17.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -695,7 +689,6 @@ name = "movies"
 version = "0.1.0"
 dependencies = [
  "glib",
- "glib-build-tools",
  "gtk",
  "regex",
  "reqwest",

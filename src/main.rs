@@ -1,7 +1,6 @@
-// mod window;
+mod window;
 
 use glib::{clone, user_data_dir, MainContext, PRIORITY_DEFAULT};
-use gtk::gio::resources_register_include;
 use gtk::Application;
 use gtk::{
     gdk_pixbuf::Pixbuf,
@@ -26,17 +25,22 @@ static MOVIES: Mutex<Vec<Movie>> = Mutex::new(vec![]);
 static MOVIE_SELECTED: Mutex<usize> = Mutex::new(0);
 
 fn main() -> ExitCode {
-    resources_register_include!("movies.gresource").expect("Failed loading resource");
     let app = Application::builder()
         // .application_id("com.gtk_rs.movies")
         .build();
-    app.connect_activate(build_ui);
+
+    app.connect_startup(|app| {
+        let window = window::Window::new(app);
+        window.show_all();
+    });
+
+    // app.connect_activate(build_ui);
     app.run()
 }
 
 fn build_ui(app: &Application) {
-    // let window = window::Window::new(app);
-    // window.show_all();
+    let window = window::Window::new(app);
+    window.show_all();
     let hbox: Box = Box::new(Orientation::Horizontal, 0);
     let main_window: Window = Window::builder()
         .application(app)
