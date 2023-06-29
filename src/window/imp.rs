@@ -1,7 +1,7 @@
-// use glib::subclass::InitializingObject;
-use gtk::glib;
 use gtk::subclass::prelude::*;
+use gtk::{glib, ListBox};
 use gtk::{prelude::*, Button, CompositeTemplate, Image};
+use movies::movie::Movie;
 
 #[derive(Debug, Default, CompositeTemplate)]
 #[template(file = "window.ui")]
@@ -10,6 +10,9 @@ pub struct Window {
     pub poster: TemplateChild<Image>,
     #[template_child]
     pub play_button: TemplateChild<Button>,
+    #[template_child]
+    pub list_box: TemplateChild<ListBox>,
+    pub movies: Vec<Movie>,
 }
 
 #[glib::object_subclass]

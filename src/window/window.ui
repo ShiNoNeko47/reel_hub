@@ -24,11 +24,69 @@
 						<child>
 							<object class="GtkBox" id="info">
 								<property name="orientation">vertical</property>
-							</object>
-						</child>
-						<child>
-							<object class="GtkButton" id="play_button">
-								<property name="label">Play</property>
+
+								<child>
+									<object class="GtkLabel" id="original_title">
+										<property name="use_markup">true</property>
+										<property name="justify">center</property>
+										<property name="wrap">true</property> 
+
+										<!-- <property name="label">Original Title</property> -->
+								</object>
+								</child>
+								<child>
+									<object class="GtkLabel" id="original_language">
+										<property name="use_markup">true</property>
+										<property name="justify">center</property>
+										<property name="wrap">true</property> 
+
+										<!-- <property name="label">Original Language</property> -->
+									</object>
+								</child>
+								<child>
+									<object class="GtkLabel" id="overview">
+										<property name="use_markup">true</property>
+										<property name="justify">center</property>
+										<property name="wrap">true</property> 
+
+										<!-- <property name="label">Overview</property> -->
+									</object>
+								</child>
+								<child>
+									<object class="GtkLabel" id="vote_average">
+										<property name="use_markup">true</property>
+										<property name="justify">center</property>
+										<property name="wrap">true</property> 
+
+										<!-- <property name="label">Vote Average</property> -->
+									</object>
+								</child>
+									<child>
+										<object class="GtkLabel" id="vote_count">
+										<property name="use_markup">true</property>
+										<property name="justify">center</property>
+										<property name="wrap">true</property> 
+
+										<!-- <property name="label">Vote Count</property> -->
+									</object>
+								</child>
+									<child>
+										<object class="GtkLabel" id="release_date">
+										<property name="use_markup">true</property>
+										<property name="justify">center</property>
+										<property name="wrap">true</property> 
+
+										<!-- <property name="label">Release Date</property> -->
+									</object>
+								</child>
+
+								<child>
+									<object class="GtkButton" id="play_button">
+										<property name="visible">false</property>
+										<property name="no-show-all">true</property>
+										<property name="label">Play</property>
+									</object>
+								</child>
 							</object>
 						</child>
 					</object>
@@ -40,12 +98,14 @@
 						<property name="margin-end">10</property>
 						<property name="margin-start">10</property>
 						<property name="margin-bottom">10</property>
+						<property name="hscrollbar-policy">never</property>
 						<child>
 							<object class="GtkListBox" id="list_box">
 								<property name="margin-top">10</property>
 								<property name="margin-end">10</property>
 								<property name="margin-start">10</property>
 								<property name="margin-bottom">10</property>
+								<property name="selection-mode">none</property>
 							</object>
 						</child>
 					</object>
