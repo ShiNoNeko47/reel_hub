@@ -1,6 +1,6 @@
-use std::process::{Command, Stdio};
+use std::{process::{Command, Stdio}, path::PathBuf, fs};
 
-use glib::Bytes;
+use glib::{Bytes, user_data_dir};
 
 use self::tmdb::fetch_poster_tmdb;
 
@@ -59,7 +59,9 @@ impl Movie {
         Command::new("mpv")
             .arg(&self.file.path())
             .arg("--save-position-on-quit")
-            // .arg("--write-filename-in-watch-later-config")
+            .arg(format!("--watch-later-directory={}/watch-later", user_dir(user_data_dir())))
+            .arg("--watch-later-options-remove=fullscreen")
+            .arg("--write-filename-in-watch-later-config")
             .arg(if from_start { "--start=0%" } else { "" })
             .stdout(Stdio::null())
             .stderr(Stdio::null())
@@ -116,4 +118,11 @@ impl Clone for MovieData {
             poster_path: self.poster_path.clone(),
         }
     }
+}
+
+fn user_dir(path: PathBuf) -> String {
+    let mut path: PathBuf = path;
+    path.push("movies");
+    fs::create_dir_all(&path).expect("Couldn't create directory");
+    path.to_str().unwrap().to_string()
 }

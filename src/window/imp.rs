@@ -1,3 +1,6 @@
+use std::cell::{RefCell, Cell};
+use std::rc::Rc;
+
 use gtk::subclass::prelude::*;
 use gtk::{glib, ListBox};
 use gtk::{prelude::*, Button, CompositeTemplate, Image};
@@ -12,7 +15,9 @@ pub struct Window {
     pub play_button: TemplateChild<Button>,
     #[template_child]
     pub list_box: TemplateChild<ListBox>,
-    pub movies: Vec<Movie>,
+    pub movies: Rc<RefCell<Vec<Movie>>>,
+    pub movies_len: Rc<Cell<usize>>,
+    pub movie_selected: Rc<Cell<Option<usize>>>,
 }
 
 #[glib::object_subclass]

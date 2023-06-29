@@ -1,12 +1,8 @@
 use gtk::{prelude::*, Application};
-use movies::movie::Movie;
-
 use crate::window;
 
 pub struct App {
     app: Application,
-    pub movies: Vec<Movie>,
-    pub movie_selected: Option<usize>,
 }
 
 impl App {
@@ -14,8 +10,6 @@ impl App {
         let app = Application::builder().build();
         let new_app = Self {
             app,
-            movies: vec![],
-            movie_selected: None,
         };
         new_app.app.connect_activate(Self::on_activate);
         new_app
