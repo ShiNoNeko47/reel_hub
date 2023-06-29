@@ -2,7 +2,7 @@ use std::cell::{RefCell, Cell};
 use std::rc::Rc;
 
 use gtk::subclass::prelude::*;
-use gtk::{glib, ListBox};
+use gtk::{glib, ListBox, Label};
 use gtk::{prelude::*, Button, CompositeTemplate, Image};
 use movies::movie::Movie;
 
@@ -15,6 +15,20 @@ pub struct Window {
     pub play_button: TemplateChild<Button>,
     #[template_child]
     pub list_box: TemplateChild<ListBox>,
+
+    #[template_child]
+    pub original_title: TemplateChild<Label>,
+    #[template_child]
+    pub original_language: TemplateChild<Label>,
+    #[template_child]
+    pub overview: TemplateChild<Label>,
+    #[template_child]
+    pub vote_average: TemplateChild<Label>,
+    #[template_child]
+    pub vote_count: TemplateChild<Label>,
+    #[template_child]
+    pub release_date: TemplateChild<Label>,
+
     pub movies: Rc<RefCell<Vec<Movie>>>,
     pub movies_len: Rc<Cell<usize>>,
     pub movie_selected: Rc<Cell<Option<usize>>>,

@@ -35,11 +35,23 @@ impl Window {
 
     pub fn setup_buttons(&self) {
         let list_box = self.imp().list_box.deref();
+
         for movie in 0..self.imp().movies_len.get() {
+            self.imp().movies.borrow_mut()[movie].fetch_data();
             let button = Button::builder()
                 .label(self.imp().movies.borrow()[movie].name.clone()).build();
             list_box.add(&button);
+
             button.connect_clicked(clone!(@weak self as window => move |_| {
+                let data = window.imp().movies.borrow()[movie].data.clone();
+
+                window.imp().original_title.deref().set_label(&format!("<b>Title:</b> {}", data.as_ref().unwrap().original_title));
+                window.imp().original_language.deref().set_label(&format!("<b>Original Language:</b> {}", data.as_ref().unwrap().original_language));
+                window.imp().overview.deref().set_label(&format!("<b>Overview:</b> {}", data.as_ref().unwrap().overview));
+                window.imp().vote_average.deref().set_label(&format!("<b>Vote Average:</b> {}", data.as_ref().unwrap().vote_average.to_string()));
+                window.imp().vote_count.deref().set_label(&format!("<b>Vote Count:</b> {}", data.as_ref().unwrap().vote_count.to_string()));
+                window.imp().release_date.deref().set_label(&format!("<b>Release Date:</b> {}", data.as_ref().unwrap().release_date));
+
                 window.imp().movie_selected.replace(Some(movie));
                 window.imp().play_button.deref().show();
             }));
