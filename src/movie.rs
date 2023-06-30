@@ -1,4 +1,4 @@
-use std::{process::{Command, Stdio}, path::PathBuf, fs};
+use std::process::{Command, Stdio};
 
 use glib::{Bytes, user_data_dir};
 
@@ -120,9 +120,9 @@ impl Clone for MovieData {
     }
 }
 
-fn user_dir(path: PathBuf) -> String {
-    let mut path: PathBuf = path;
+pub fn user_dir(path: std::path::PathBuf) -> String {
+    let mut path: std::path::PathBuf = path;
     path.push("movies");
-    fs::create_dir_all(&path).expect("Couldn't create directory");
+    std::fs::create_dir_all(&path).expect("Couldn't create directory");
     path.to_str().unwrap().to_string()
 }

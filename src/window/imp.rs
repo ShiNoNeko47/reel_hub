@@ -1,10 +1,13 @@
 use std::cell::{RefCell, Cell};
+use std::ops::Deref;
 use std::rc::Rc;
 
 use gtk::subclass::prelude::*;
 use gtk::{glib, ListBox, Label};
 use gtk::{prelude::*, Button, CompositeTemplate, Image};
 use movies::movie::Movie;
+
+use crate::res;
 
 #[derive(Debug, Default, CompositeTemplate)]
 #[template(file = "window.ui")]
@@ -16,6 +19,8 @@ pub struct Window {
     #[template_child]
     pub list_box: TemplateChild<ListBox>,
 
+    #[template_child]
+    pub title: TemplateChild<Label>,
     #[template_child]
     pub original_title: TemplateChild<Label>,
     #[template_child]
@@ -32,6 +37,26 @@ pub struct Window {
     pub movies: Rc<RefCell<Vec<Movie>>>,
     pub movies_len: Rc<Cell<usize>>,
     pub movie_selected: Rc<Cell<Option<usize>>>,
+}
+
+impl Window {
+    pub fn movie_select(&self, movie: usize) {
+                let data = self.movies.borrow()[movie].data.clone();
+
+                self.title.deref().set_label(&format!("<b>Title:</b> {}", data.as_ref().unwrap().title));
+                self.original_title.deref().set_label(&format!("<b>Original Title:</b> {}", data.as_ref().unwrap().original_title));
+                self.original_language.deref().set_label(&format!("<b>Original Language:</b> {}", data.as_ref().unwrap().original_language));
+                self.overview.deref().set_label(&format!("<b>Overview:</b> {}", data.as_ref().unwrap().overview));
+                self.vote_average.deref().set_label(&format!("<b>Vote Average:</b> {}", data.as_ref().unwrap().vote_average.to_string()));
+                self.vote_count.deref().set_label(&format!("<b>Vote Count:</b> {}", data.as_ref().unwrap().vote_count.to_string()));
+                self.release_date.deref().set_label(&format!("<b>Release Date:</b> {}", data.as_ref().unwrap().release_date));
+
+                self.movie_selected.replace(Some(movie));
+                self.play_button.deref().set_label(&format!("  Play \"{}\"  ", data.as_ref().unwrap().title));
+                self.play_button.deref().show();
+
+                self.poster.deref().set_pixbuf(Some(&res::loading()));
+    }
 }
 
 #[glib::object_subclass]
