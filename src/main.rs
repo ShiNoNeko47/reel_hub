@@ -1,5 +1,6 @@
 mod app;
 mod window;
+mod res;
 
 use gtk::glib::ExitCode;
 
