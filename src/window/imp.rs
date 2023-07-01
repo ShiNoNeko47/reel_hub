@@ -66,7 +66,7 @@ impl Window {
             }
         }
 
-        let mut path = movies::movie::user_dir(user_data_dir());
+        let mut path = movies::utils::user_dir(user_data_dir());
         path.push_str("/cache");
 
         let cache_data: Vec<MovieCache> = self.movies.borrow().iter().filter(|x| x.data.is_some()).map(|x| MovieCache{file: x.file.clone(), data: x.data.clone().unwrap()}).collect();

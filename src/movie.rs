@@ -1,4 +1,4 @@
-use std::{process::{Command, Stdio}, path::PathBuf, ops::Deref, fs::File};
+use std::{process::{Command, Stdio}, path::PathBuf, ops::Deref};
 
 use glib::{Bytes, user_data_dir};
 use serde::{Deserialize, Serialize};
@@ -66,7 +66,7 @@ impl Movie {
         Command::new("mpv")
             .arg(&self.file.deref())
             .arg("--save-position-on-quit")
-            .arg(format!("--watch-later-directory={}/watch-later", user_dir(user_data_dir())))
+            .arg(format!("--watch-later-directory={}/watch-later", super::utils::user_dir(user_data_dir())))
             .arg("--watch-later-options-remove=fullscreen")
             .arg("--write-filename-in-watch-later-config")
             .arg(if from_start { "--start=0%" } else { "" })
@@ -123,27 +123,6 @@ impl Clone for MovieData {
             vote_count: self.vote_count,
             release_date: self.release_date.clone(),
             poster_path: self.poster_path.clone(),
-        }
-    }
-}
-
-pub fn user_dir(path: std::path::PathBuf) -> String {
-    let mut path: std::path::PathBuf = path;
-    path.push("movies");
-    std::fs::create_dir_all(&path).expect("Couldn't create directory");
-    path.to_str().unwrap().to_string()
-}
-
-pub fn load_cache(movies: &mut Vec<Movie>) {
-    let mut path = user_dir(user_data_dir());
-    path.push_str("/cache");
-    let file = File::open(path).unwrap();
-    let cache: Vec<MovieCache> = serde_json::from_reader(file).unwrap();
-    for movie in movies {
-        for entry in cache.iter() {
-            if movie.file == entry.file {
-                movie.data = Some(entry.data.clone());
-            }
         }
     }
 }
