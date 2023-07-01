@@ -19,7 +19,8 @@ glib::wrapper! {
 impl Window {
     pub fn new(app: &Application) -> Self {
         let window: Self = glib::Object::builder().property("application", app).build();
-        let movies = movies::detect::get_movies(movies::movie::user_dir(user_data_dir()));
+        let mut movies = movies::detect::get_movies(movies::movie::user_dir(user_data_dir()));
+        movies::movie::load_cache(&mut movies);
         window.imp().movies_len.replace(movies.len());
         window.imp().movies.replace(movies);
         window.imp().play_button.deref().connect_clicked(clone!(@weak window => move |_| {

@@ -1,4 +1,4 @@
-use std::process::{Command, Stdio};
+use std::{process::{Command, Stdio}, path::PathBuf, ops::Deref, fs::File};
 
 use glib::{Bytes, user_data_dir};
 use serde::{Deserialize, Serialize};
@@ -23,9 +23,15 @@ pub struct MovieData {
 pub struct Movie {
     pub name: String,
     pub year: Option<usize>,
-    pub file: walkdir::DirEntry,
+    pub file: PathBuf,
     pub data: Option<MovieData>,
     pub poster_bytes: Option<Bytes>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct MovieCache {
+    pub file: PathBuf,
+    pub data: MovieData,
 }
 
 impl Movie {
@@ -42,14 +48,14 @@ impl Movie {
             Some(expr) => Movie {
                 name: prefix.to_string() + &expr[1].to_string().replace(".", " "),
                 year: Some(expr[2].parse().unwrap()),
-                file,
+                file: file.path().to_owned(),
                 data: None,
                 poster_bytes: None,
             },
             None => Movie {
                 name: prefix.to_string() + &file.file_name().to_str().unwrap().replace(".mp4", ""),
                 year: None,
-                file,
+                file: file.path().to_owned(),
                 data: None,
                 poster_bytes: None,
             },
@@ -58,7 +64,7 @@ impl Movie {
 
     pub fn play(&self, from_start: bool) {
         Command::new("mpv")
-            .arg(&self.file.path())
+            .arg(&self.file.deref())
             .arg("--save-position-on-quit")
             .arg(format!("--watch-later-directory={}/watch-later", user_dir(user_data_dir())))
             .arg("--watch-later-options-remove=fullscreen")
@@ -90,7 +96,7 @@ impl Movie {
 
 impl PartialEq for Movie {
     fn eq(&self, other: &Self) -> bool {
-        self.file.path() == other.file.path()
+        self.file == other.file
     }
 }
 
@@ -126,4 +132,18 @@ pub fn user_dir(path: std::path::PathBuf) -> String {
     path.push("movies");
     std::fs::create_dir_all(&path).expect("Couldn't create directory");
     path.to_str().unwrap().to_string()
+}
+
+pub fn load_cache(movies: &mut Vec<Movie>) {
+    let mut path = user_dir(user_data_dir());
+    path.push_str("/cache");
+    let file = File::open(path).unwrap();
+    let cache: Vec<MovieCache> = serde_json::from_reader(file).unwrap();
+    for movie in movies {
+        for entry in cache.iter() {
+            if movie.file == entry.file {
+                movie.data = Some(entry.data.clone());
+            }
+        }
+    }
 }

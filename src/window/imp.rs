@@ -6,7 +6,7 @@ use glib::user_data_dir;
 use gtk::subclass::prelude::*;
 use gtk::{glib, ListBox, Label};
 use gtk::{prelude::*, Button, CompositeTemplate, Image};
-use movies::movie::{Movie, MovieData};
+use movies::movie::{Movie, MovieCache};
 
 use crate::res;
 
@@ -69,7 +69,7 @@ impl Window {
         let mut path = movies::movie::user_dir(user_data_dir());
         path.push_str("/cache");
 
-        let cache_data: Vec<MovieData> = self.movies.borrow().iter().filter(|x| x.data.is_some()).map(|x| x.data.clone().unwrap()).collect();
+        let cache_data: Vec<MovieCache> = self.movies.borrow().iter().filter(|x| x.data.is_some()).map(|x| MovieCache{file: x.file.clone(), data: x.data.clone().unwrap()}).collect();
 
         let file = std::fs::File::create(path).expect("Could not create file");
         serde_json::to_writer(file, &cache_data).expect("Could not write to file");
