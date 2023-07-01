@@ -17,10 +17,11 @@ pub fn load_cache(movies: &mut Vec<Movie>) {
     let file = File::open(path).unwrap();
     let cache: Vec<MovieCache> = serde_json::from_reader(file).unwrap();
     for movie in movies {
-        for entry in cache.iter() {
-            if movie.file == entry.file {
+        match cache.iter().find(|entry| entry.file == movie.file) {
+            Some(entry) => {
                 movie.data = Some(entry.data.clone());
             }
+            None => {}
         }
     }
 }
