@@ -32,12 +32,15 @@ impl Window {
         let list_box = self.imp().list_box.deref();
 
         for movie in 0..self.imp().movies_len.get() {
-            self.imp().movies.borrow_mut()[movie].fetch_data();
+            // self.imp().movies.borrow_mut()[movie].fetch_data();
             let button = Button::builder()
                 .label(self.imp().movies.borrow()[movie].name.clone()).build();
             list_box.add(&button);
 
             button.connect_clicked(clone!(@weak self as window => move |_| {
+                if window.imp().movies.borrow()[movie].data.is_none() {
+                    window.imp().movies.borrow_mut()[movie].fetch_data();
+                }
                 window.imp().movie_select(movie);
             }));
         }

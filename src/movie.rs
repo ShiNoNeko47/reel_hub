@@ -1,12 +1,13 @@
 use std::process::{Command, Stdio};
 
 use glib::{Bytes, user_data_dir};
+use serde::{Deserialize, Serialize};
 
 use self::tmdb::fetch_poster_tmdb;
 
 mod tmdb;
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct MovieData {
     pub title: String,
     pub original_title: String,

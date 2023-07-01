@@ -2,10 +2,11 @@ use std::cell::{RefCell, Cell};
 use std::ops::Deref;
 use std::rc::Rc;
 
+use glib::user_data_dir;
 use gtk::subclass::prelude::*;
 use gtk::{glib, ListBox, Label};
 use gtk::{prelude::*, Button, CompositeTemplate, Image};
-use movies::movie::Movie;
+use movies::movie::{Movie, MovieData};
 
 use crate::res;
 
@@ -41,21 +42,37 @@ pub struct Window {
 
 impl Window {
     pub fn movie_select(&self, movie: usize) {
-                let data = self.movies.borrow()[movie].data.clone();
+        let data = self.movies.borrow()[movie].data.clone();
 
-                self.title.deref().set_label(&format!("<b>Title:</b> {}", data.as_ref().unwrap().title));
-                self.original_title.deref().set_label(&format!("<b>Original Title:</b> {}", data.as_ref().unwrap().original_title));
-                self.original_language.deref().set_label(&format!("<b>Original Language:</b> {}", data.as_ref().unwrap().original_language));
-                self.overview.deref().set_label(&format!("<b>Overview:</b> {}", data.as_ref().unwrap().overview));
-                self.vote_average.deref().set_label(&format!("<b>Vote Average:</b> {}", data.as_ref().unwrap().vote_average.to_string()));
-                self.vote_count.deref().set_label(&format!("<b>Vote Count:</b> {}", data.as_ref().unwrap().vote_count.to_string()));
-                self.release_date.deref().set_label(&format!("<b>Release Date:</b> {}", data.as_ref().unwrap().release_date));
+        self.title.deref().set_label(&format!("<b>Title:</b> {}", data.as_ref().unwrap().title));
+        self.original_title.deref().set_label(&format!("<b>Original Title:</b> {}", data.as_ref().unwrap().original_title));
+        self.original_language.deref().set_label(&format!("<b>Original Language:</b> {}", data.as_ref().unwrap().original_language));
+        self.overview.deref().set_label(&format!("<b>Overview:</b> {}", data.as_ref().unwrap().overview));
+        self.vote_average.deref().set_label(&format!("<b>Vote Average:</b> {}", data.as_ref().unwrap().vote_average.to_string()));
+        self.vote_count.deref().set_label(&format!("<b>Vote Count:</b> {}", data.as_ref().unwrap().vote_count.to_string()));
+        self.release_date.deref().set_label(&format!("<b>Release Date:</b> {}", data.as_ref().unwrap().release_date));
 
-                self.movie_selected.replace(Some(movie));
-                self.play_button.deref().set_label(&format!("  Play \"{}\"  ", data.as_ref().unwrap().title));
-                self.play_button.deref().show();
+        self.movie_selected.replace(Some(movie));
+        self.play_button.deref().set_label(&format!("  Play \"{}\"  ", data.as_ref().unwrap().title));
+        self.play_button.deref().show();
 
+        match self.movies.borrow()[movie].poster_bytes {
+            Some(_) => {
+                println!("Got bytes");
+            }
+            None => {
                 self.poster.deref().set_pixbuf(Some(&res::loading()));
+                println!("No bytes");
+            }
+        }
+
+        let mut path = movies::movie::user_dir(user_data_dir());
+        path.push_str("/cache");
+
+        let cache_data: Vec<MovieData> = self.movies.borrow().iter().filter(|x| x.data.is_some()).map(|x| x.data.clone().unwrap()).collect();
+
+        let file = std::fs::File::create(path).expect("Could not create file");
+        serde_json::to_writer(file, &cache_data).expect("Could not write to file");
     }
 }
 
