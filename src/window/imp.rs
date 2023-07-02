@@ -46,7 +46,23 @@ pub struct Window {
 impl Window {
     pub fn movie_select(&self, movie: usize) {
         let data = self.movies.borrow()[movie].data.clone();
-        // self.movies.borrow_mut()[movie].fetch_poster();
+
+        self.movie_selected.replace(Some(movie));
+
+        self.play_button.deref().set_label("  Play  ");
+        self.play_button.deref().show();
+
+        if data.is_none() {
+            self.poster.deref().set_pixbuf(Some(&res::loading()));
+            self.title.deref().set_label(&format!("<b>Title:</b> {}", self.movies.borrow()[movie].name.clone()));
+            self.original_title.deref().set_label("");
+            self.original_language.deref().set_label("");
+            self.overview.deref().set_label("");
+            self.vote_average.deref().set_label("");
+            self.vote_count.deref().set_label("");
+            self.release_date.deref().set_label("");
+            return;
+        }
 
         self.title.deref().set_label(&format!("<b>Title:</b> {}", data.as_ref().unwrap().title));
         self.original_title.deref().set_label(&format!("<b>Original Title:</b> {}", data.as_ref().unwrap().original_title));
@@ -55,10 +71,6 @@ impl Window {
         self.vote_average.deref().set_label(&format!("<b>Vote Average:</b> {}", data.as_ref().unwrap().vote_average.to_string()));
         self.vote_count.deref().set_label(&format!("<b>Vote Count:</b> {}", data.as_ref().unwrap().vote_count.to_string()));
         self.release_date.deref().set_label(&format!("<b>Release Date:</b> {}", data.as_ref().unwrap().release_date));
-
-        self.movie_selected.replace(Some(movie));
-        self.play_button.deref().set_label("  Play  ");
-        self.play_button.deref().show();
 
         let poster_file_path = format!("{}{}", movies::utils::user_dir(user_cache_dir()), data.as_ref().unwrap().poster_path);
 
