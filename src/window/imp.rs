@@ -1,4 +1,5 @@
 use std::cell::{RefCell, Cell};
+use std::fs::File;
 use std::ops::Deref;
 use std::rc::Rc;
 
@@ -57,11 +58,13 @@ impl Window {
         self.play_button.deref().set_label(&format!("  Play \"{}\"  ", data.as_ref().unwrap().title));
         self.play_button.deref().show();
 
-        match &self.movies.borrow()[movie].poster_file {
-            Some(file) => {
-                self.poster.deref().set_pixbuf(Some(&Pixbuf::from_file(file).unwrap()));
+        let poster_path = format!("{}{}", movies::utils::user_dir(user_cache_dir()), data.as_ref().unwrap().poster_path);
+
+        match File::open(&poster_path) {
+            Ok(_) => {
+                self.poster.deref().set_pixbuf(Some(&Pixbuf::from_file(poster_path).unwrap()));
             }
-            None => {
+            Err(_) => {
                 self.poster.deref().set_pixbuf(Some(&res::loading()));
             }
         }

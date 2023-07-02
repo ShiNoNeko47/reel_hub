@@ -27,7 +27,6 @@ pub struct Movie {
     pub year: Option<usize>,
     pub file: PathBuf,
     pub data: Option<MovieData>,
-    pub poster_file: Option<PathBuf>
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -52,14 +51,12 @@ impl Movie {
                 year: Some(expr[2].parse().unwrap()),
                 file: file.path().to_owned(),
                 data: None,
-                poster_file: None,
             },
             None => Movie {
                 name: prefix.to_string() + &file.file_name().to_str().unwrap().replace(".mp4", ""),
                 year: None,
                 file: file.path().to_owned(),
                 data: None,
-                poster_file: None,
             },
         }
     }
@@ -92,7 +89,6 @@ impl Movie {
         let path = PathBuf::from(format!("{}{}", user_dir(user_cache_dir()), self.data.as_ref().unwrap().poster_path));
         let mut file = File::create(&path).unwrap();
         file.write( &fetch_poster_tmdb(self.data.as_ref().unwrap().poster_path.clone(), Some(500)).to_vec().to_vec()).expect("Couldn't write to file");
-        self.poster_file = Some(path);
         // sender.send(movie).expect("Couldn't send");
     }
 }
@@ -110,7 +106,6 @@ impl Clone for Movie {
             year: self.year,
             file: self.file.clone(),
             data: self.data.clone(),
-            poster_file: None,
         }
     }
 }

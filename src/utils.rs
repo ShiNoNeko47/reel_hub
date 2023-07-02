@@ -1,4 +1,4 @@
-use std::{fs::File, path::PathBuf};
+use std::fs::File;
 
 use glib::user_cache_dir;
 
@@ -27,7 +27,7 @@ pub fn load_cache(movies: &mut Vec<Movie>) {
                     Ok(poster_path) => poster_path,
                     Err(_) => continue,
                 };
-                movie.poster_file = Some(PathBuf::from(poster_path));
+                // movie.poster_file = Some(PathBuf::from(poster_path));
             }
             None => {}
         }
