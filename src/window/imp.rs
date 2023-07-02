@@ -1,10 +1,11 @@
 use std::cell::{RefCell, Cell};
 use std::fs::File;
 use std::ops::Deref;
+use std::path::PathBuf;
 use std::rc::Rc;
 
 use gdk_pixbuf::Pixbuf;
-use glib::user_cache_dir;
+use glib::{user_cache_dir, Priority, clone};
 use gtk::subclass::prelude::*;
 use gtk::{glib, ListBox, Label};
 use gtk::{prelude::*, Button, CompositeTemplate, Image};
@@ -45,6 +46,7 @@ pub struct Window {
 impl Window {
     pub fn movie_select(&self, movie: usize) {
         let data = self.movies.borrow()[movie].data.clone();
+        // self.movies.borrow_mut()[movie].fetch_poster();
 
         self.title.deref().set_label(&format!("<b>Title:</b> {}", data.as_ref().unwrap().title));
         self.original_title.deref().set_label(&format!("<b>Original Title:</b> {}", data.as_ref().unwrap().original_title));
@@ -58,16 +60,25 @@ impl Window {
         self.play_button.deref().set_label(&format!("  Play \"{}\"  ", data.as_ref().unwrap().title));
         self.play_button.deref().show();
 
-        let poster_path = format!("{}{}", movies::utils::user_dir(user_cache_dir()), data.as_ref().unwrap().poster_path);
+        let poster_file_path = format!("{}{}", movies::utils::user_dir(user_cache_dir()), data.as_ref().unwrap().poster_path);
 
-        match File::open(&poster_path) {
+        let (sender, receiver) = glib::MainContext::channel::<PathBuf>(Priority::default());
+        match File::open(&poster_file_path) {
             Ok(_) => {
-                self.poster.deref().set_pixbuf(Some(&Pixbuf::from_file(poster_path).unwrap()));
+                self.poster.deref().set_pixbuf(Some(&Pixbuf::from_file(poster_file_path).unwrap()));
             }
             Err(_) => {
                 self.poster.deref().set_pixbuf(Some(&res::loading()));
+                let poster_path = data.as_ref().unwrap().poster_path.clone();
+                std::thread::spawn(move || {
+                    Movie::fetch_poster(poster_path, sender)
+                });
             }
         }
+        receiver.attach(None, clone!(@weak self as window => @default-return Continue(false), move |path| {
+            window.poster.deref().set_pixbuf(Some(&Pixbuf::from_file(path).unwrap()));
+            Continue(true)
+        }));
 
         let mut path = movies::utils::user_dir(user_cache_dir());
         path.push_str("/movie_data.json");

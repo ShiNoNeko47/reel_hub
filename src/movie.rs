@@ -85,11 +85,11 @@ impl Movie {
         self.data = tmdb::fetch_data_tmdb(&self.name, year);
     }
 
-    pub fn fetch_poster(&mut self,/* movie: usize, sender: glib::Sender<usize> */) {
-        let path = PathBuf::from(format!("{}{}", user_dir(user_cache_dir()), self.data.as_ref().unwrap().poster_path));
+    pub fn fetch_poster(poster_path: String, sender: glib::Sender<PathBuf> ) {
+        let path = PathBuf::from(format!("{}{}", user_dir(user_cache_dir()), poster_path));
         let mut file = File::create(&path).unwrap();
-        file.write( &fetch_poster_tmdb(self.data.as_ref().unwrap().poster_path.clone(), Some(500)).to_vec().to_vec()).expect("Couldn't write to file");
-        // sender.send(movie).expect("Couldn't send");
+        file.write( &fetch_poster_tmdb(poster_path, Some(500)).to_vec().to_vec()).expect("Couldn't write to file");
+        sender.send(path).expect("Couldn't send");
     }
 }
 
