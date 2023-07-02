@@ -57,7 +57,7 @@ impl Window {
         self.release_date.deref().set_label(&format!("<b>Release Date:</b> {}", data.as_ref().unwrap().release_date));
 
         self.movie_selected.replace(Some(movie));
-        self.play_button.deref().set_label(&format!("  Play \"{}\"  ", data.as_ref().unwrap().title));
+        self.play_button.deref().set_label("  Play  ");
         self.play_button.deref().show();
 
         let poster_file_path = format!("{}{}", movies::utils::user_dir(user_cache_dir()), data.as_ref().unwrap().poster_path);
