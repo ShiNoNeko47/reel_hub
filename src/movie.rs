@@ -1,7 +1,9 @@
-use std::{process::{Command, Stdio}, path::PathBuf, ops::Deref};
+use std::{process::{Command, Stdio}, path::PathBuf, ops::Deref, fs::File, io::Write};
 
-use glib::{Bytes, user_data_dir};
+use glib::{user_data_dir, user_cache_dir};
 use serde::{Deserialize, Serialize};
+
+use crate::utils::user_dir;
 
 use self::tmdb::fetch_poster_tmdb;
 
@@ -25,7 +27,7 @@ pub struct Movie {
     pub year: Option<usize>,
     pub file: PathBuf,
     pub data: Option<MovieData>,
-    pub poster_bytes: Option<Bytes>,
+    pub poster_file: Option<PathBuf>
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -50,14 +52,14 @@ impl Movie {
                 year: Some(expr[2].parse().unwrap()),
                 file: file.path().to_owned(),
                 data: None,
-                poster_bytes: None,
+                poster_file: None,
             },
             None => Movie {
                 name: prefix.to_string() + &file.file_name().to_str().unwrap().replace(".mp4", ""),
                 year: None,
                 file: file.path().to_owned(),
                 data: None,
-                poster_bytes: None,
+                poster_file: None,
             },
         }
     }
@@ -86,11 +88,12 @@ impl Movie {
         self.data = tmdb::fetch_data_tmdb(&self.name, year);
     }
 
-    pub fn fetch_poster(&mut self, movie: usize, sender: glib::Sender<usize>) {
-        self.poster_bytes = Some(glib::Bytes::from(
-            &fetch_poster_tmdb(self.data.as_ref().unwrap().poster_path.clone(), Some(500)).to_vec(),
-        ));
-        sender.send(movie).expect("Couldn't send");
+    pub fn fetch_poster(&mut self,/* movie: usize, sender: glib::Sender<usize> */) {
+        let path = PathBuf::from(format!("{}{}", user_dir(user_cache_dir()), self.data.as_ref().unwrap().poster_path));
+        let mut file = File::create(&path).unwrap();
+        file.write( &fetch_poster_tmdb(self.data.as_ref().unwrap().poster_path.clone(), Some(500)).to_vec().to_vec()).expect("Couldn't write to file");
+        self.poster_file = Some(path);
+        // sender.send(movie).expect("Couldn't send");
     }
 }
 
@@ -107,7 +110,7 @@ impl Clone for Movie {
             year: self.year,
             file: self.file.clone(),
             data: self.data.clone(),
-            poster_bytes: None,
+            poster_file: None,
         }
     }
 }

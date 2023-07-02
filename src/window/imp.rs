@@ -2,7 +2,8 @@ use std::cell::{RefCell, Cell};
 use std::ops::Deref;
 use std::rc::Rc;
 
-use glib::user_data_dir;
+use gdk_pixbuf::Pixbuf;
+use glib::user_cache_dir;
 use gtk::subclass::prelude::*;
 use gtk::{glib, ListBox, Label};
 use gtk::{prelude::*, Button, CompositeTemplate, Image};
@@ -56,18 +57,17 @@ impl Window {
         self.play_button.deref().set_label(&format!("  Play \"{}\"  ", data.as_ref().unwrap().title));
         self.play_button.deref().show();
 
-        match self.movies.borrow()[movie].poster_bytes {
-            Some(_) => {
-                println!("Got bytes");
+        match &self.movies.borrow()[movie].poster_file {
+            Some(file) => {
+                self.poster.deref().set_pixbuf(Some(&Pixbuf::from_file(file).unwrap()));
             }
             None => {
                 self.poster.deref().set_pixbuf(Some(&res::loading()));
-                println!("No bytes");
             }
         }
 
-        let mut path = movies::utils::user_dir(user_data_dir());
-        path.push_str("/cache");
+        let mut path = movies::utils::user_dir(user_cache_dir());
+        path.push_str("/movie_data.json");
 
         let cache_data: Vec<MovieCache> = self.movies.borrow().iter().filter(|x| x.data.is_some()).map(|x| MovieCache{file: x.file.clone(), data: x.data.clone().unwrap()}).collect();
 
