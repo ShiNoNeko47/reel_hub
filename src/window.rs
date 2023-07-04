@@ -7,8 +7,6 @@ use glib::user_data_dir;
 use gtk::Button;
 use gtk::prelude::*;
 use notify::Watcher;
-use notify::event::ModifyKind;
-use notify::event::RenameMode;
 use notify::recommended_watcher;
 use std::ops::Deref;
 use std::path::Path;
@@ -29,13 +27,9 @@ impl Window {
         window.update();
         let (sender, receiver) = glib::MainContext::channel(Priority::default());
         let mut watcher = recommended_watcher(move |event: Result<notify::Event, notify::Error>| {
-            if [notify::EventKind::Modify(ModifyKind::Name(RenameMode::From)),
-                notify::EventKind::Modify(ModifyKind::Name(RenameMode::To))].contains(&event.as_ref().unwrap().kind) {
-                // println!("{:?}", event.as_ref().unwrap());
-                sender.send(event.unwrap().attrs.tracker()).unwrap();
-            }
-
+            sender.send(event.unwrap().attrs.tracker()).unwrap();
         }).unwrap();
+
         receiver.attach(None, clone!(@weak window => @default-return Continue(false), move |tracker| {
             if tracker != window.imp().dir_watcher_tracker.get() {
                 window.imp().dir_watcher_tracker.replace(tracker);
@@ -45,6 +39,9 @@ impl Window {
         }));
         watcher.watch(Path::new(&movies::utils::user_dir(user_data_dir())), notify::RecursiveMode::Recursive).unwrap();
         window.imp().dir_watcher.replace(Some(watcher));
+        window.imp().play_button.deref().connect_clicked(clone!(@weak window => move |_| {
+            window.imp().movies.borrow()[window.imp().movie_selected.get().unwrap()].play(false);
+        }));
         window
     }
 
@@ -53,9 +50,6 @@ impl Window {
         movies::utils::load_cache(&mut movies);
         self.imp().movies_len.replace(movies.len());
         self.imp().movies.replace(movies);
-        self.imp().play_button.deref().connect_clicked(clone!(@weak self as window => move |_| {
-            window.imp().movies.borrow()[window.imp().movie_selected.get().unwrap()].play(false);
-        }));
         self.setup_buttons();
     }
 
