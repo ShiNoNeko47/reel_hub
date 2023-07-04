@@ -26,13 +26,7 @@ glib::wrapper! {
 impl Window {
     pub fn new(app: &Application) -> Self {
         let window: Self = glib::Object::builder().property("application", app).build();
-        let mut movies = movies::detect::get_movies(movies::utils::user_dir(user_data_dir()));
-        movies::utils::load_cache(&mut movies);
-        window.imp().movies_len.replace(movies.len());
-        window.imp().movies.replace(movies);
-        window.imp().play_button.deref().connect_clicked(clone!(@weak window => move |_| {
-            window.imp().movies.borrow()[window.imp().movie_selected.get().unwrap()].play(false);
-        }));
+        window.update();
         let (sender, receiver) = glib::MainContext::channel(Priority::default());
         let mut watcher = recommended_watcher(move |event: Result<notify::Event, notify::Error>| {
             if [notify::EventKind::Modify(ModifyKind::Name(RenameMode::From)),
@@ -45,6 +39,7 @@ impl Window {
         receiver.attach(None, clone!(@weak window => @default-return Continue(false), move |tracker| {
             if tracker != window.imp().dir_watcher_tracker.get() {
                 window.imp().dir_watcher_tracker.replace(tracker);
+                window.update();
             }
             Continue(true)
         }));
@@ -53,11 +48,22 @@ impl Window {
         window
     }
 
-    pub fn setup_buttons(&self) {
+    fn update(&self) {
+        let mut movies = movies::detect::get_movies(movies::utils::user_dir(user_data_dir()));
+        movies::utils::load_cache(&mut movies);
+        self.imp().movies_len.replace(movies.len());
+        self.imp().movies.replace(movies);
+        self.imp().play_button.deref().connect_clicked(clone!(@weak self as window => move |_| {
+            window.imp().movies.borrow()[window.imp().movie_selected.get().unwrap()].play(false);
+        }));
+        self.setup_buttons();
+    }
+
+    fn setup_buttons(&self) {
         let list_box = self.imp().list_box.deref();
+        list_box.forall(|widget| list_box.remove(widget));
 
         for movie in 0..self.imp().movies_len.get() {
-            // self.imp().movies.borrow_mut()[movie].fetch_data();
             let button = Button::builder()
                 .label(self.imp().movies.borrow()[movie].name.clone()).build();
             list_box.add(&button);
@@ -69,5 +75,6 @@ impl Window {
                 window.imp().movie_select(movie);
             }));
         }
+        self.show_all();
     }
 }

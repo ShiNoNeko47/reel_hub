@@ -20,8 +20,6 @@ impl App {
     }
 
     fn on_activate(app: &Application) {
-        let window = window::Window::new(app);
-        window.setup_buttons();
-        window.show_all();
+        window::Window::new(app);
     }
 }
