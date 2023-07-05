@@ -6,11 +6,7 @@ use glib::clone;
 use glib::user_data_dir;
 use gtk::Button;
 use gtk::prelude::*;
-use notify::EventKind;
-use notify::Watcher;
-use notify::event::CreateKind;
-use notify::event::ModifyKind;
-use notify::event::RemoveKind;
+use notify::{EventKind, Watcher, event::{CreateKind, ModifyKind, RemoveKind, RenameMode}};
 use notify::recommended_watcher;
 use std::ffi::OsStr;
 use std::ops::Deref;
@@ -39,13 +35,22 @@ impl Window {
         window.update();
         let (sender, receiver) = glib::MainContext::channel(Priority::default());
         let mut watcher = recommended_watcher(move |event: Result<notify::Event, notify::Error>| {
-            if [EventKind::Create(CreateKind::File),
-                EventKind::Modify(ModifyKind::Name(notify::event::RenameMode::To)),
-                EventKind::Remove(RemoveKind::File)]
-                    .contains(&event.as_ref().unwrap().kind) && event.as_ref().unwrap().paths.last().unwrap().extension() == Some(OsStr::new("mp4")) {
-                println!("event: {:?}", event.as_ref().unwrap().paths);
-                sender.send(()).unwrap();
-            }
+            match event.as_ref().unwrap().kind {
+                EventKind::Create(CreateKind::File) | EventKind::Remove(RemoveKind::File) => {
+                    if event.as_ref().unwrap().paths.last().unwrap().extension() == Some(OsStr::new("mp4")) {
+                        sender.send(()).unwrap();
+                    }
+                },
+                EventKind::Modify(ModifyKind::Name(RenameMode::To)) => {
+                    if event.as_ref().unwrap().paths.last().unwrap().is_dir() || event.as_ref().unwrap().paths.last().unwrap().extension() == Some(OsStr::new("mp4")){
+                        sender.send(()).unwrap();
+                    }
+                },
+                EventKind::Modify(ModifyKind::Name(RenameMode::From)) => {
+                    sender.send(()).unwrap();
+                },
+                _ => {}
+            };
         }).unwrap();
 
         receiver.attach(None, clone!(@weak window => @default-return Continue(false), move |_| {
