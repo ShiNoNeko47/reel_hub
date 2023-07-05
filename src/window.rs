@@ -33,32 +33,8 @@ impl Window {
         });
 
         window.update();
-        let (sender, receiver) = glib::MainContext::channel(Priority::default());
-        let mut watcher = recommended_watcher(move |event: Result<notify::Event, notify::Error>| {
-            match event.as_ref().unwrap().kind {
-                EventKind::Create(CreateKind::File) | EventKind::Remove(RemoveKind::File) => {
-                    if event.as_ref().unwrap().paths.last().unwrap().extension() == Some(OsStr::new("mp4")) {
-                        sender.send(()).unwrap();
-                    }
-                },
-                EventKind::Modify(ModifyKind::Name(RenameMode::To)) => {
-                    if event.as_ref().unwrap().paths.last().unwrap().is_dir() || event.as_ref().unwrap().paths.last().unwrap().extension() == Some(OsStr::new("mp4")){
-                        sender.send(()).unwrap();
-                    }
-                },
-                EventKind::Modify(ModifyKind::Name(RenameMode::From)) => {
-                    sender.send(()).unwrap();
-                },
-                _ => {}
-            };
-        }).unwrap();
+        window.setup_dir_watcher();
 
-        receiver.attach(None, clone!(@weak window => @default-return Continue(false), move |_| {
-            window.update();
-            Continue(true)
-        }));
-        watcher.watch(Path::new(&movies::utils::user_dir(user_data_dir())), notify::RecursiveMode::Recursive).unwrap();
-        window.imp().dir_watcher.replace(Some(watcher));
         window.imp().play_button.deref().connect_clicked(clone!(@weak window => move |_| {
             window.imp().movies.borrow()[window.imp().movie_selected.get().unwrap()].play(false);
         }));
@@ -90,5 +66,34 @@ impl Window {
             }));
         }
         self.show_all();
+    }
+    
+    fn setup_dir_watcher(&self) {
+        let (sender, receiver) = glib::MainContext::channel(Priority::default());
+        let mut watcher = recommended_watcher(move |event: Result<notify::Event, notify::Error>| {
+            match event.as_ref().unwrap().kind {
+                EventKind::Create(CreateKind::File) | EventKind::Remove(RemoveKind::File) => {
+                    if event.as_ref().unwrap().paths.last().unwrap().extension() == Some(OsStr::new("mp4")) {
+                        sender.send(()).unwrap();
+                    }
+                },
+                EventKind::Modify(ModifyKind::Name(RenameMode::To)) => {
+                    if event.as_ref().unwrap().paths.last().unwrap().is_dir() || event.as_ref().unwrap().paths.last().unwrap().extension() == Some(OsStr::new("mp4")){
+                        sender.send(()).unwrap();
+                    }
+                },
+                EventKind::Modify(ModifyKind::Name(RenameMode::From)) => {
+                    sender.send(()).unwrap();
+                },
+                _ => {}
+            };
+        }).unwrap();
+
+        receiver.attach(None, clone!(@weak self as window => @default-return Continue(false), move |_| {
+            window.update();
+            Continue(true)
+        }));
+        watcher.watch(Path::new(&movies::utils::user_dir(user_data_dir())), notify::RecursiveMode::Recursive).unwrap();
+        self.imp().dir_watcher.replace(Some(watcher));
     }
 }
