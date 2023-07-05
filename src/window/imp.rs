@@ -43,7 +43,6 @@ pub struct Window {
     pub movie_selected: Rc<Cell<Option<usize>>>,
 
     pub dir_watcher: Rc<RefCell<Option<notify::RecommendedWatcher>>>,
-    pub dir_watcher_tracker: Rc<Cell<Option<usize>>>
 }
 
 impl Window {

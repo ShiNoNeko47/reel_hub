@@ -6,8 +6,13 @@ use glib::clone;
 use glib::user_data_dir;
 use gtk::Button;
 use gtk::prelude::*;
+use notify::EventKind;
 use notify::Watcher;
+use notify::event::CreateKind;
+use notify::event::ModifyKind;
+use notify::event::RemoveKind;
 use notify::recommended_watcher;
+use std::ffi::OsStr;
 use std::ops::Deref;
 use std::path::Path;
 
@@ -27,14 +32,17 @@ impl Window {
         window.update();
         let (sender, receiver) = glib::MainContext::channel(Priority::default());
         let mut watcher = recommended_watcher(move |event: Result<notify::Event, notify::Error>| {
-            sender.send(event.unwrap().attrs.tracker()).unwrap();
+            if [EventKind::Create(CreateKind::File),
+                EventKind::Modify(ModifyKind::Name(notify::event::RenameMode::To)),
+                EventKind::Remove(RemoveKind::File)]
+                    .contains(&event.as_ref().unwrap().kind) && event.as_ref().unwrap().paths.last().unwrap().extension() == Some(OsStr::new("mp4")) {
+                println!("event: {:?}", event.as_ref().unwrap().paths);
+                sender.send(()).unwrap();
+            }
         }).unwrap();
 
-        receiver.attach(None, clone!(@weak window => @default-return Continue(false), move |tracker| {
-            if tracker != window.imp().dir_watcher_tracker.get() {
-                window.imp().dir_watcher_tracker.replace(tracker);
-                window.update();
-            }
+        receiver.attach(None, clone!(@weak window => @default-return Continue(false), move |_| {
+            window.update();
             Continue(true)
         }));
         watcher.watch(Path::new(&movies::utils::user_dir(user_data_dir())), notify::RecursiveMode::Recursive).unwrap();
