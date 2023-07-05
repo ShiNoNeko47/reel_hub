@@ -29,6 +29,13 @@ glib::wrapper! {
 impl Window {
     pub fn new(app: &Application) -> Self {
         let window: Self = glib::Object::builder().property("application", app).build();
+        window.connect_key_press_event(|window, key| {
+            match key.keycode() {
+                Some(71) => {window.update(); gtk::Inhibit(true)}
+                _ => gtk::Inhibit(false)
+            }
+        });
+
         window.update();
         let (sender, receiver) = glib::MainContext::channel(Priority::default());
         let mut watcher = recommended_watcher(move |event: Result<notify::Event, notify::Error>| {
