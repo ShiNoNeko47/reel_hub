@@ -5,6 +5,7 @@ pub fn fetch_data_tmdb(name: &String, year: String) -> Option<MovieData> {
     match reqwest::blocking::get(addr) {
         Ok(response) => {
             let data: String = response.text().unwrap().to_string();
+            println!("{data}");
             let results: serde_json::Value = serde_json::from_str(&data).unwrap();
             let mut movie_data: &serde_json::Value = &results["results"][0];
             for result in results["results"].as_array().unwrap() {
@@ -30,7 +31,16 @@ pub fn fetch_data_tmdb(name: &String, year: String) -> Option<MovieData> {
                     poster_path: movie_data["poster_path"].as_str().unwrap().to_string(),
                 })
             } else {
-                None
+                Some(MovieData {
+                    title: name.to_string(),
+                    original_title: "".to_string(),
+                    original_language: "".to_string(),
+                    overview: "".to_string(),
+                    vote_average: 0.0,
+                    vote_count: 0,
+                    release_date: "".to_string(),
+                    poster_path: "".to_string()
+                })
             }
         }
         _ => None,

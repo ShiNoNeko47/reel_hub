@@ -94,7 +94,11 @@ impl Window {
                 self.vote_count.deref().set_label(&format!("<b>Vote Count:</b> {}", data.vote_count.to_string()));
                 self.release_date.deref().set_label(&format!("<b>Release Date:</b> {}", data.release_date));
 
-                self.display_poster(data);
+                if data.poster_path != "".to_string() {
+                    self.display_poster(data);
+                } else {
+                    self.poster.deref().set_pixbuf(None);
+                }
             }
         }
     }
