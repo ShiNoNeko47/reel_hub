@@ -31,7 +31,7 @@ pub struct Movie {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MovieCache {
-    pub file: PathBuf,
+    pub file_name: String,
     pub data: MovieData,
 }
 
@@ -97,7 +97,7 @@ impl Movie {
 
 impl PartialEq for Movie {
     fn eq(&self, other: &Self) -> bool {
-        self.file == other.file
+        self.file.file_name() == other.file.file_name()
     }
 }
 

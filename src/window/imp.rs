@@ -123,7 +123,7 @@ impl Window {
         let mut path = movies::utils::user_dir(user_cache_dir());
         path.push_str("/movie_data.json");
 
-        let cache_data: Vec<MovieCache> = self.movies.borrow().iter().filter(|x| x.data.is_some()).map(|x| MovieCache{file: x.file.clone(), data: x.data.clone().unwrap()}).collect();
+        let cache_data: Vec<MovieCache> = self.movies.borrow().iter().filter(|x| x.data.is_some()).map(|x| MovieCache{file_name: x.file.file_name().unwrap().to_str().unwrap().to_string(), data: x.data.clone().unwrap()}).collect();
 
         let file = std::fs::File::create(path).expect("Could not create file");
         serde_json::to_writer(file, &cache_data).expect("Could not write to file");
