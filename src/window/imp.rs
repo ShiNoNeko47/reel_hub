@@ -9,7 +9,7 @@ use glib::{user_cache_dir, Priority, clone};
 use gtk::subclass::prelude::*;
 use gtk::{glib, ListBox, Label};
 use gtk::{prelude::*, Button, CompositeTemplate, Image};
-use movies::movie::{Movie, MovieCache};
+use movies::movie::{Movie, MovieCache, MovieData};
 
 use crate::res;
 
@@ -54,27 +54,39 @@ impl Window {
         self.play_button.deref().set_label("  Play  ");
         self.play_button.deref().show();
 
-        if data.is_none() {
-            self.poster.deref().set_pixbuf(Some(&res::loading()));
-            self.title.deref().set_label(&format!("<b>Title:</b> {}", self.movies.borrow()[movie].name.clone()));
-            self.original_title.deref().set_label("");
-            self.original_language.deref().set_label("");
-            self.overview.deref().set_label("");
-            self.vote_average.deref().set_label("");
-            self.vote_count.deref().set_label("");
-            self.release_date.deref().set_label("");
-            return;
+        self.display_data(data, Some(&self.movies.borrow()[movie].name));
+        self.cache();
+    }
+
+    fn display_data(&self, data: Option<MovieData>, name: Option<&str>) {
+        match data {
+            None => {
+                if let Some(name) = name {
+                    self.poster.deref().set_pixbuf(Some(&res::loading()));
+                    self.title.deref().set_label(&format!("<b>Title:</b> {name}"));
+                }
+                self.original_title.deref().set_label("");
+                self.original_language.deref().set_label("");
+                self.overview.deref().set_label("");
+                self.vote_average.deref().set_label("");
+                self.vote_count.deref().set_label("");
+                self.release_date.deref().set_label("");
+            },
+            Some(data) => {
+                self.title.deref().set_label(&format!("<b>Title:</b> {}", data.title));
+                self.original_title.deref().set_label(&format!("<b>Original Title:</b> {}", data.original_title));
+                self.original_language.deref().set_label(&format!("<b>Original Language:</b> {}", data.original_language));
+                self.overview.deref().set_label(&format!("<b>Overview:</b> {}", data.overview));
+                self.vote_average.deref().set_label(&format!("<b>Vote Average:</b> {}", data.vote_average.to_string()));
+                self.vote_count.deref().set_label(&format!("<b>Vote Count:</b> {}", data.vote_count.to_string()));
+                self.release_date.deref().set_label(&format!("<b>Release Date:</b> {}", data.release_date));
+
+                self.display_poster(data);
+            }
         }
-
-        self.title.deref().set_label(&format!("<b>Title:</b> {}", data.as_ref().unwrap().title));
-        self.original_title.deref().set_label(&format!("<b>Original Title:</b> {}", data.as_ref().unwrap().original_title));
-        self.original_language.deref().set_label(&format!("<b>Original Language:</b> {}", data.as_ref().unwrap().original_language));
-        self.overview.deref().set_label(&format!("<b>Overview:</b> {}", data.as_ref().unwrap().overview));
-        self.vote_average.deref().set_label(&format!("<b>Vote Average:</b> {}", data.as_ref().unwrap().vote_average.to_string()));
-        self.vote_count.deref().set_label(&format!("<b>Vote Count:</b> {}", data.as_ref().unwrap().vote_count.to_string()));
-        self.release_date.deref().set_label(&format!("<b>Release Date:</b> {}", data.as_ref().unwrap().release_date));
-
-        let poster_file_path = format!("{}{}", movies::utils::user_dir(user_cache_dir()), data.as_ref().unwrap().poster_path);
+    }
+    fn display_poster(&self, data: MovieData) {
+        let poster_file_path = format!("{}{}", movies::utils::user_dir(user_cache_dir()), data.poster_path);
 
         let (sender, receiver) = glib::MainContext::channel::<PathBuf>(Priority::default());
         match File::open(&poster_file_path) {
@@ -83,7 +95,7 @@ impl Window {
             }
             Err(_) => {
                 self.poster.deref().set_pixbuf(Some(&res::loading()));
-                let poster_path = data.as_ref().unwrap().poster_path.clone();
+                let poster_path = data.poster_path.clone();
                 std::thread::spawn(move || {
                     Movie::fetch_poster(poster_path, sender)
                 });
@@ -93,7 +105,8 @@ impl Window {
             window.poster.deref().set_pixbuf(Some(&Pixbuf::from_file(path).unwrap()));
             Continue(true)
         }));
-
+    }
+    fn cache(&self) {
         let mut path = movies::utils::user_dir(user_cache_dir());
         path.push_str("/movie_data.json");
 
