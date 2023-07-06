@@ -44,17 +44,19 @@ impl Window {
 
     fn update(&self) {
         let mut movies = movies::detect::get_movies(movies::utils::user_dir(user_data_dir()));
+        movies::utils::load_cache(&mut movies);
         match self.imp().movie_selected.get() {
             Some(movie_selected) => {
                 let movie = movies.iter().position(|x| &self.imp().movies.borrow()[movie_selected] == x);
+                self.imp().movies_len.replace(movies.len());
+                self.imp().movies.replace(movies);
                 self.imp().movie_select(movie);
             }
-            None => {}
+            None => {
+                self.imp().movies_len.replace(movies.len());
+                self.imp().movies.replace(movies);
+            }
         }
-        movies::utils::load_cache(&mut movies);
-        self.imp().movies_len.replace(movies.len());
-        self.imp().movies.replace(movies);
-
 
         self.setup_buttons();
     }
