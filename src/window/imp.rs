@@ -46,15 +46,25 @@ pub struct Window {
 }
 
 impl Window {
-    pub fn movie_select(&self, movie: usize) {
-        let data = self.movies.borrow()[movie].data.clone();
+    pub fn movie_select(&self, movie: Option<usize>) {
+        match movie {
+            Some(movie) => {
+                let data = self.movies.borrow()[movie].data.clone();
+                self.display_data(data, Some(&self.movies.borrow()[movie].name));
+            }
+            None => {
+                let data = None;
+                self.display_data(data, None);
+            }
+        }
+        self.movie_selected.replace(movie);
 
-        self.movie_selected.replace(Some(movie));
+        if let Some(_) = movie {
+            self.play_button.deref().show();
+        } else {
+            self.play_button.hide();
+        }
 
-        self.play_button.deref().set_label("  Play  ");
-        self.play_button.deref().show();
-
-        self.display_data(data, Some(&self.movies.borrow()[movie].name));
         self.cache();
     }
 
@@ -64,6 +74,9 @@ impl Window {
                 if let Some(name) = name {
                     self.poster.deref().set_pixbuf(Some(&res::loading()));
                     self.title.deref().set_label(&format!("<b>Title:</b> {name}"));
+                } else {
+                    self.poster.deref().set_pixbuf(None);
+                    self.title.deref().set_label("");
                 }
                 self.original_title.deref().set_label("");
                 self.original_language.deref().set_label("");

@@ -35,6 +35,7 @@ impl Window {
         window.update();
         window.setup_dir_watcher();
 
+        window.imp().play_button.deref().set_label("  Play  ");
         window.imp().play_button.deref().connect_clicked(clone!(@weak window => move |_| {
             window.imp().movies.borrow()[window.imp().movie_selected.get().unwrap()].play(false);
         }));
@@ -62,7 +63,7 @@ impl Window {
                 if window.imp().movies.borrow()[movie].data.is_none() {
                     window.imp().movies.borrow_mut()[movie].fetch_data();
                 }
-                window.imp().movie_select(movie);
+                window.imp().movie_select(Some(movie));
             }));
         }
         self.show_all();
