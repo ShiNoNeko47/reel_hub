@@ -38,8 +38,18 @@ impl Window {
         window.setup_dir_watcher();
 
         window.imp().play_button.deref().set_label("  Play  ");
-        window.imp().play_button.deref().connect_clicked(clone!(@weak window => move |_| {
-            window.imp().movies.borrow()[window.imp().movie_selected.get().unwrap()].play(false);
+        window.imp().play_button.deref().connect_clicked(clone!(@weak window => move |button| {
+            let mut handle = window.imp().movies.borrow()[window.imp().movie_selected.get().unwrap()].play(false);
+            button.set_sensitive(false);
+            let (sender, receiver) = glib::MainContext::channel(Priority::default());
+            std::thread::spawn(move || {
+                handle.wait().unwrap();
+                sender.send(()).unwrap();
+            });
+            receiver.attach(None, clone!(@weak button => @default-return Continue(false), move |_| {
+                button.set_sensitive(true);
+                Continue(true)
+            }));
         }));
         window
     }
