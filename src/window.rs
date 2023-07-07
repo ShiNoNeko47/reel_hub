@@ -16,6 +16,8 @@ use glib::subclass::prelude::*;
 use gtk::gio;
 use gtk::Application;
 
+use crate::res;
+
 glib::wrapper! {
     pub struct Window(ObjectSubclass<imp::Window>)
         @extends gtk::ApplicationWindow, gtk::Window, gtk::Widget,
@@ -83,8 +85,15 @@ impl Window {
                 }
             }));
             receiver.attach(None, clone!(@weak self as window => @default-return Continue(false), move |(movie, data)| {
-                window.imp().movies.borrow_mut()[movie].data.replace(data.unwrap());
-                window.imp().movie_select(Some(movie));
+                match data {
+                    Some(data) => {
+                        window.imp().movies.borrow_mut()[movie].data.replace(data);
+                        window.imp().movie_select(Some(movie));
+                    }
+                    None => {
+                        window.imp().poster.deref().set_pixbuf(Some(&res::check_connection()));
+                    }
+                }
                 Continue(true)
             }));
         }
