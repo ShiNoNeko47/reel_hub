@@ -78,15 +78,6 @@ impl Movie {
         println!("Playing {}", self.name);
     }
 
-    pub fn fetch_data(&mut self) {
-        let year: String = match &self.year {
-            Some(year) => format!("&year={}", year),
-            None => "".to_string(),
-        };
-
-        self.data = tmdb::fetch_data_tmdb(&self.name, year);
-    }
-
     pub fn fetch_poster(poster_path: String, sender: glib::Sender<PathBuf> ) {
         let path = PathBuf::from(format!("{}{}", user_dir(user_cache_dir()), poster_path));
         let mut file = File::create(&path).unwrap();
@@ -124,5 +115,17 @@ impl Clone for MovieData {
             release_date: self.release_date.clone(),
             poster_path: self.poster_path.clone(),
         }
+    }
+}
+
+impl MovieData {
+    pub fn fetch_data(year: Option<usize>, name: String) -> Option<MovieData> {
+        let year: String = match year {
+            Some(year) => format!("&year={}", year),
+            None => "".to_string(),
+        };
+
+        let data = tmdb::fetch_data_tmdb(&name, year);
+        data
     }
 }

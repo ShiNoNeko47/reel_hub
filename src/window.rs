@@ -70,11 +70,22 @@ impl Window {
                 .label(self.imp().movies.borrow()[movie].name.clone()).build();
             list_box.add(&button);
 
+            let (sender, receiver) = glib::MainContext::channel(Priority::default());
             button.connect_clicked(clone!(@weak self as window => move |_| {
-                if window.imp().movies.borrow()[movie].data.is_none() {
-                    window.imp().movies.borrow_mut()[movie].fetch_data();
-                }
+                let (name, year) = (window.imp().movies.borrow()[movie].name.clone(), window.imp().movies.borrow()[movie].year);
+                let sender = sender.clone();
                 window.imp().movie_select(Some(movie));
+                if window.imp().movies.borrow()[movie].data.is_none() {
+                    std::thread::spawn(move || {
+                        let data = movies::movie::MovieData::fetch_data(year, name);
+                        sender.send((movie, data)).unwrap();
+                    });
+                }
+            }));
+            receiver.attach(None, clone!(@weak self as window => @default-return Continue(false), move |(movie, data)| {
+                window.imp().movies.borrow_mut()[movie].data.replace(data.unwrap());
+                window.imp().movie_select(Some(movie));
+                Continue(true)
             }));
         }
         self.show_all();

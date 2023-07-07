@@ -53,8 +53,7 @@ impl Window {
                 self.display_data(data, Some(&self.movies.borrow()[movie].name));
             }
             None => {
-                let data = None;
-                self.display_data(data, None);
+                self.display_data(None, None);
             }
         }
         self.movie_selected.replace(movie);

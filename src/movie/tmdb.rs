@@ -5,7 +5,6 @@ pub fn fetch_data_tmdb(name: &String, year: String) -> Option<MovieData> {
     match reqwest::blocking::get(addr) {
         Ok(response) => {
             let data: String = response.text().unwrap().to_string();
-            println!("{data}");
             let results: serde_json::Value = serde_json::from_str(&data).unwrap();
             let mut movie_data: &serde_json::Value = &results["results"][0];
             for result in results["results"].as_array().unwrap() {
