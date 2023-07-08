@@ -67,10 +67,11 @@ impl Movie {
         println!("Playing {}", self.name);
         Command::new("mpv")
             .arg(&self.file.deref())
+            .arg("--no-config")
             .arg("--save-position-on-quit")
-            .arg(format!("--watch-later-directory={}/watch-later", super::utils::user_dir(user_data_dir())))
             .arg("--watch-later-options-remove=fullscreen")
-            .arg("--write-filename-in-watch-later-config")
+            .arg(format!("--watch-later-directory={}/watch-later", super::utils::user_dir(user_data_dir())))
+            .arg("--fs")
             .arg(if from_start { "--start=0%" } else { "" })
             .stdout(Stdio::null())
             .stderr(Stdio::null())
