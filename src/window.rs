@@ -41,6 +41,7 @@ impl Window {
         window.imp().play_button.deref().connect_clicked(clone!(@weak window => move |button| {
             let mut handle = window.imp().movies.borrow()[window.imp().movie_selected.get().unwrap()].play(false);
             button.set_sensitive(false);
+            window.imp().status_label.deref().set_label(&format!("Playing: <b>{}</b>", window.imp().movies.borrow()[window.imp().movie_selected.get().unwrap()].name));
             let (sender, receiver) = glib::MainContext::channel(Priority::default());
             std::thread::spawn(move || {
                 handle.wait().unwrap();
@@ -48,6 +49,7 @@ impl Window {
             });
             receiver.attach(None, clone!(@weak button => @default-return Continue(false), move |_| {
                 button.set_sensitive(true);
+                window.imp().status_label.deref().set_label("");
                 Continue(true)
             }));
         }));

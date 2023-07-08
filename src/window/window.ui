@@ -4,89 +4,120 @@
     <property name="title">Movies</property>
     <child>
       <object class="GtkBox">
-        <property name="orientation">horizontal</property>
+        <property name="orientation">vertical</property>
         <child>
-          <object class="GtkBox" id="content">
+          <object class="GtkBox">
             <property name="orientation">horizontal</property>
-            <property name="hexpand">true</property>
-            <property name="halign">fill</property>
-            <property name="valign">center</property>
-            <!-- <property name="has-frame">true</property> -->
-            <property name="margin-top">10</property>
-            <property name="margin-end">10</property>
-            <property name="margin-start">10</property>
-            <property name="margin-bottom">10</property>
-            <property name="spacing">10</property>
+            <property name="vexpand">true</property>
             <child>
-              <object class="GtkImage" id="poster"><!-- <property name="hexpand">true</property> --></object>
+              <object class="GtkScrolledWindow">
+                <property name="hscrollbar-policy">never</property>
+                <property name="vscrollbar-policy">never</property>
+                <child>
+                  <object class="GtkBox">
+                    <property name="orientation">horizontal</property>
+                    <property name="hexpand">true</property>
+                    <property name="halign">fill</property>
+                    <property name="valign">center</property>
+                    <!-- <property name="has-frame">true</property> -->
+                    <property name="margin-top">10</property>
+                    <property name="margin-end">10</property>
+                    <property name="margin-start">10</property>
+                    <property name="margin-bottom">10</property>
+                    <property name="spacing">10</property>
+                    <child>
+                      <object class="GtkImage" id="poster"><!-- <property name="hexpand">true</property> --></object>
+                    </child>
+                    <child>
+                      <object class="GtkBox">
+                        <property name="orientation">vertical</property>
+                        <property name="valign">center</property>
+                        <property name="hexpand">true</property>
+                        <property name="halign">fill</property>
+                        <child>
+                          <object class="GtkLabel" id="title">
+                            <property name="use_markup">true</property>
+                            <property name="justify">center</property>
+                            <property name="wrap">true</property>
+                            <!-- <property name="label">Original Title</property> -->
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkLabel" id="original_title">
+                            <property name="use_markup">true</property>
+                            <property name="justify">center</property>
+                            <property name="wrap">true</property>
+                            <!-- <property name="label">Original Title</property> -->
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkLabel" id="original_language">
+                            <property name="use_markup">true</property>
+                            <property name="justify">center</property>
+                            <property name="wrap">true</property>
+                            <!-- <property name="label">Original Language</property> -->
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkLabel" id="overview">
+                            <property name="use_markup">true</property>
+                            <property name="justify">center</property>
+                            <property name="wrap">true</property>
+                            <!-- <property name="label">Overview</property> -->
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkLabel" id="vote_average">
+                            <property name="use_markup">true</property>
+                            <property name="justify">center</property>
+                            <property name="wrap">true</property>
+                            <!-- <property name="label">Vote Average</property> -->
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkLabel" id="vote_count">
+                            <property name="use_markup">true</property>
+                            <property name="justify">center</property>
+                            <property name="wrap">true</property>
+                            <!-- <property name="label">Vote Count</property> -->
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkLabel" id="release_date">
+                            <property name="use_markup">true</property>
+                            <property name="justify">center</property>
+                            <property name="wrap">true</property>
+                            <!-- <property name="label">Release Date</property> -->
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkButton" id="play_button">
+                            <property name="no-show-all">true</property>
+                            <property name="halign">center</property>
+                            <property name="margin-top">25</property>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
             </child>
             <child>
-              <object class="GtkBox" id="info">
-                <property name="orientation">vertical</property>
-                <property name="valign">center</property>
-                <property name="hexpand">true</property>
-                <property name="halign">fill</property>
+              <object class="GtkScrolledWindow">
+                <!-- <property name="orientation">vertical</property> -->
+                <property name="margin-top">10</property>
+                <property name="margin-end">10</property>
+                <property name="margin-start">10</property>
+                <property name="margin-bottom">10</property>
+                <property name="hscrollbar-policy">never</property>
                 <child>
-                  <object class="GtkLabel" id="title">
-                    <property name="use_markup">true</property>
-                    <property name="justify">center</property>
-                    <property name="wrap">true</property>
-                    <!-- <property name="label">Original Title</property> -->
-                  </object>
-                </child>
-                <child>
-                  <object class="GtkLabel" id="original_title">
-                    <property name="use_markup">true</property>
-                    <property name="justify">center</property>
-                    <property name="wrap">true</property>
-                    <!-- <property name="label">Original Title</property> -->
-                  </object>
-                </child>
-                <child>
-                  <object class="GtkLabel" id="original_language">
-                    <property name="use_markup">true</property>
-                    <property name="justify">center</property>
-                    <property name="wrap">true</property>
-                    <!-- <property name="label">Original Language</property> -->
-                  </object>
-                </child>
-                <child>
-                  <object class="GtkLabel" id="overview">
-                    <property name="use_markup">true</property>
-                    <property name="justify">center</property>
-                    <property name="wrap">true</property>
-                    <!-- <property name="label">Overview</property> -->
-                  </object>
-                </child>
-                <child>
-                  <object class="GtkLabel" id="vote_average">
-                    <property name="use_markup">true</property>
-                    <property name="justify">center</property>
-                    <property name="wrap">true</property>
-                    <!-- <property name="label">Vote Average</property> -->
-                  </object>
-                </child>
-                <child>
-                  <object class="GtkLabel" id="vote_count">
-                    <property name="use_markup">true</property>
-                    <property name="justify">center</property>
-                    <property name="wrap">true</property>
-                    <!-- <property name="label">Vote Count</property> -->
-                  </object>
-                </child>
-                <child>
-                  <object class="GtkLabel" id="release_date">
-                    <property name="use_markup">true</property>
-                    <property name="justify">center</property>
-                    <property name="wrap">true</property>
-                    <!-- <property name="label">Release Date</property> -->
-                  </object>
-                </child>
-                <child>
-                  <object class="GtkButton" id="play_button">
-                    <property name="no-show-all">true</property>
-                    <property name="halign">center</property>
-                    <property name="margin-top">25</property>
+                  <object class="GtkListBox" id="list_box">
+                    <property name="margin-top">10</property>
+                    <property name="margin-end">10</property>
+                    <property name="margin-start">10</property>
+                    <property name="margin-bottom">10</property>
+                    <property name="selection-mode">none</property>
                   </object>
                 </child>
               </object>
@@ -94,22 +125,13 @@
           </object>
         </child>
         <child>
-          <object class="GtkScrolledWindow" id="scrolled_window">
-            <!-- <property name="orientation">vertical</property> -->
+          <object class="GtkLabel" id="status_label">
+            <property name="use_markup">true</property>
+            <property name="justify">center</property>
             <property name="margin-top">10</property>
             <property name="margin-end">10</property>
             <property name="margin-start">10</property>
             <property name="margin-bottom">10</property>
-            <property name="hscrollbar-policy">never</property>
-            <child>
-              <object class="GtkListBox" id="list_box">
-                <property name="margin-top">10</property>
-                <property name="margin-end">10</property>
-                <property name="margin-start">10</property>
-                <property name="margin-bottom">10</property>
-                <property name="selection-mode">none</property>
-              </object>
-            </child>
           </object>
         </child>
       </object>
