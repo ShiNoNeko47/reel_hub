@@ -1,4 +1,4 @@
-use std::{process::{Command, Stdio}, path::PathBuf, ops::Deref, fs::File, io::Write};
+use std::{process::{Command, Stdio, Child}, path::PathBuf, ops::Deref, fs::File, io::Write};
 
 use glib::{user_data_dir, user_cache_dir};
 use serde::{Deserialize, Serialize};
@@ -63,19 +63,20 @@ impl Movie {
         }
     }
 
-    pub fn play(&self, from_start: bool) {
+    pub fn play(&self, from_start: bool) -> Child {
+        println!("Playing {}", self.name);
         Command::new("mpv")
             .arg(&self.file.deref())
+            .arg("--no-config")
             .arg("--save-position-on-quit")
-            .arg(format!("--watch-later-directory={}/watch-later", super::utils::user_dir(user_data_dir())))
             .arg("--watch-later-options-remove=fullscreen")
-            .arg("--write-filename-in-watch-later-config")
+            .arg(format!("--watch-later-directory={}/watch-later", super::utils::user_dir(user_data_dir())))
+            .arg("--fs")
             .arg(if from_start { "--start=0%" } else { "" })
             .stdout(Stdio::null())
             .stderr(Stdio::null())
             .spawn()
-            .expect("Movie failed to play");
-        println!("Playing {}", self.name);
+            .expect("Movie failed to play")
     }
 
     pub fn fetch_poster(poster_path: String, sender: glib::Sender<PathBuf> ) {

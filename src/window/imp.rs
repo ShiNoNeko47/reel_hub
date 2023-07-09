@@ -38,6 +38,9 @@ pub struct Window {
     #[template_child]
     pub release_date: TemplateChild<Label>,
 
+    #[template_child]
+    pub status_label: TemplateChild<Label>,
+
     pub movies: Rc<RefCell<Vec<Movie>>>,
     pub movies_len: Rc<Cell<usize>>,
     pub movie_selected: Rc<Cell<Option<usize>>>,
