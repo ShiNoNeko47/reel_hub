@@ -6,7 +6,7 @@ use crate::movie::{Movie, MovieCache};
 
 pub fn user_dir(path: std::path::PathBuf) -> String {
     let mut path: std::path::PathBuf = path;
-    path.push("movies");
+    path.push("reel_hub");
     std::fs::create_dir_all(&path).expect("Couldn't create directory");
     path.to_str().unwrap().to_string()
 }

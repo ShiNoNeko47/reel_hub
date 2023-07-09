@@ -8,6 +8,9 @@ use gtk::Button;
 use gtk::prelude::*;
 use notify::{EventKind, Watcher, event::{CreateKind, ModifyKind, RemoveKind, RenameMode}};
 use notify::recommended_watcher;
+use reel_hub::detect;
+use reel_hub::movie::MovieData;
+use reel_hub::utils;
 use std::ffi::OsStr;
 use std::ops::Deref;
 use std::path::Path;
@@ -57,8 +60,8 @@ impl Window {
     }
 
     fn update(&self) {
-        let mut movies = movies::detect::get_movies(movies::utils::user_dir(user_data_dir()));
-        movies::utils::load_cache(&mut movies);
+        let mut movies = detect::get_movies(utils::user_dir(user_data_dir()));
+        utils::load_cache(&mut movies);
         match self.imp().movie_selected.get() {
             Some(movie_selected) => {
                 let movie = movies.iter().position(|x| &self.imp().movies.borrow()[movie_selected] == x);
@@ -91,7 +94,7 @@ impl Window {
                 window.imp().movie_select(Some(movie));
                 if window.imp().movies.borrow()[movie].data.is_none() {
                     std::thread::spawn(move || {
-                        let data = movies::movie::MovieData::fetch_data(year, name);
+                        let data = MovieData::fetch_data(year, name);
                         sender.send((movie, data)).unwrap();
                     });
                 }
@@ -137,7 +140,7 @@ impl Window {
             window.update();
             Continue(true)
         }));
-        watcher.watch(Path::new(&movies::utils::user_dir(user_data_dir())), notify::RecursiveMode::Recursive).unwrap();
+        watcher.watch(Path::new(&utils::user_dir(user_data_dir())), notify::RecursiveMode::Recursive).unwrap();
         self.imp().dir_watcher.replace(Some(watcher));
     }
 }

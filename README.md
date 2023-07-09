@@ -1,4 +1,4 @@
-## Movies
+## reel_hub
 This is a gtk movie library browser written in rust. 
 
 ## Features
@@ -13,28 +13,28 @@ This is a gtk movie library browser written in rust.
 ## Installation
 Clone this repository first:
 ```sh
-git clone https://github.com/ShiNoNeko47/movies
+git clone https://github.com/ShiNoNeko47/reel_hub
 ```
 ---
 If you just want to run the app:
 ```sh
-cd movies && cargo run -r
+cd reel_hub && cargo run -r
 ```
 ---
 To make it accessible your from application menu, first compile binary using
 ```sh
-cd movies && cargo build -r
+cd reel_hub && cargo build -r
 ```
 then copy the following:
 ```
 [Desktop Entry]
 Type = Application
-Name = Movies
-Exec = movies
+Name = reel_hub
+Exec = reel_hub
 ```
-to ```XDG_DATA_HOME/applications/movies.desktop``` and <b>either</b>
-replace ```Exec = movies```
-with ```Exec = FULL_PATH_TO_BINARY``` eg. ```Exec = /home/user/movies/target/movies```
+to ```XDG_DATA_HOME/applications/reel_hub.desktop``` and <b>either</b>
+replace ```Exec = reel_hub```
+with ```Exec = FULL_PATH_TO_BINARY``` eg. ```Exec = /home/user/reel_hub/target/reel_hub```
 <b>or</b>
 place the binary on path 
 

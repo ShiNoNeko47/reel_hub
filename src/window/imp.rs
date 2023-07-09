@@ -9,7 +9,8 @@ use glib::{user_cache_dir, Priority, clone};
 use gtk::subclass::prelude::*;
 use gtk::{glib, ListBox, Label};
 use gtk::{prelude::*, Button, CompositeTemplate, Image};
-use movies::movie::{Movie, MovieCache, MovieData};
+use reel_hub::movie::{Movie, MovieCache, MovieData};
+use reel_hub::utils;
 
 use crate::res;
 
@@ -105,7 +106,7 @@ impl Window {
         }
     }
     fn display_poster(&self, data: MovieData) {
-        let poster_file_path = format!("{}{}", movies::utils::user_dir(user_cache_dir()), data.poster_path);
+        let poster_file_path = format!("{}{}", utils::user_dir(user_cache_dir()), data.poster_path);
 
         let (sender, receiver) = glib::MainContext::channel::<PathBuf>(Priority::default());
         match File::open(&poster_file_path) {
@@ -126,7 +127,7 @@ impl Window {
         }));
     }
     fn cache(&self) {
-        let mut path = movies::utils::user_dir(user_cache_dir());
+        let mut path = utils::user_dir(user_cache_dir());
         path.push_str("/movie_data.json");
 
         let cache_data: Vec<MovieCache> = self.movies.borrow().iter().filter(|x| x.data.is_some()).map(|x| MovieCache{file_name: x.file.file_name().unwrap().to_str().unwrap().to_string(), data: x.data.clone().unwrap()}).collect();

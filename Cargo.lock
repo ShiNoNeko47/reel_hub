@@ -765,21 +765,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "movies"
-version = "0.1.0"
-dependencies = [
- "gdk-pixbuf",
- "glib",
- "gtk",
- "notify",
- "regex",
- "reqwest",
- "serde",
- "serde_json",
- "walkdir",
-]
-
-[[package]]
 name = "native-tls"
 version = "0.2.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1004,6 +989,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fb5a58c1855b4b6819d59012155603f0b22ad30cad752600aadfcb695265519a"
 dependencies = [
  "bitflags",
+]
+
+[[package]]
+name = "reel_hub"
+version = "1.0.0"
+dependencies = [
+ "gdk-pixbuf",
+ "glib",
+ "gtk",
+ "notify",
+ "regex",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "walkdir",
 ]
 
 [[package]]
