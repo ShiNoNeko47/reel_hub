@@ -20,6 +20,8 @@ use gtk::Application;
 
 use reel_hub::res;
 
+use crate::add_window;
+
 glib::wrapper! {
     pub struct Window(ObjectSubclass<imp::Window>)
         @extends gtk::ApplicationWindow, gtk::Window, gtk::Widget,
@@ -55,6 +57,16 @@ impl Window {
                 Continue(true)
             }));
         }));
+
+        window.imp().add_button.deref().connect_clicked(
+            clone!(@weak window => move |button| {
+                button.set_sensitive(false);
+                let window = add_window::Window::new(&window.application().unwrap());
+                window.connect_destroy(
+                    clone!(@weak button => move |_| {
+                        button.set_sensitive(true);
+                }));
+            }));
         window
     }
 

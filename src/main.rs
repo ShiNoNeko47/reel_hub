@@ -1,6 +1,5 @@
 mod app;
 mod main_window;
-mod res;
 mod add_window;
 
 use gtk::glib::ExitCode;
