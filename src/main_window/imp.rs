@@ -12,7 +12,7 @@ use gtk::{prelude::*, Button, CompositeTemplate, Image};
 use reel_hub::movie::{Movie, MovieCache, MovieData};
 use reel_hub::utils;
 
-use crate::res;
+use reel_hub::res;
 
 #[derive(Debug, Default, CompositeTemplate)]
 #[template(file = "main_window.ui")]
@@ -41,6 +41,8 @@ pub struct Window {
 
     #[template_child]
     pub status_label: TemplateChild<Label>,
+    #[template_child]
+    pub add_button: TemplateChild<Button>,
 
     pub movies: Rc<RefCell<Vec<Movie>>>,
     pub movies_len: Rc<Cell<usize>>,

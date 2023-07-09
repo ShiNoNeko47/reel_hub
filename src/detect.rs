@@ -1,7 +1,6 @@
-use std::ffi::OsStr;
 use walkdir::WalkDir;
 
-use crate::movie::Movie;
+use crate::{movie::Movie, res};
 
 pub fn get_movies(dir: String) -> Vec<Movie> {
     let walkdir = WalkDir::new(dir).follow_links(true);
@@ -10,7 +9,7 @@ pub fn get_movies(dir: String) -> Vec<Movie> {
         .into_iter()
         .filter_map(|file| file.ok())
         .filter_map(|file| {
-            if file.path().extension() == Some(OsStr::new("mp4")) {
+            if res::check_filetype(file.path().extension()) {
                 Some(file)
             } else {
                 None

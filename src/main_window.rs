@@ -11,7 +11,6 @@ use notify::recommended_watcher;
 use reel_hub::detect;
 use reel_hub::movie::MovieData;
 use reel_hub::utils;
-use std::ffi::OsStr;
 use std::ops::Deref;
 use std::path::Path;
 
@@ -19,7 +18,7 @@ use glib::subclass::prelude::*;
 use gtk::gio;
 use gtk::Application;
 
-use crate::res;
+use reel_hub::res;
 
 glib::wrapper! {
     pub struct Window(ObjectSubclass<imp::Window>)
@@ -120,12 +119,12 @@ impl Window {
         let mut watcher = recommended_watcher(move |event: Result<notify::Event, notify::Error>| {
             match event.as_ref().unwrap().kind {
                 EventKind::Create(CreateKind::File) | EventKind::Remove(RemoveKind::File) => {
-                    if event.as_ref().unwrap().paths.last().unwrap().extension() == Some(OsStr::new("mp4")) {
+                    if res::check_filetype(event.as_ref().unwrap().paths.last().unwrap().extension()) {
                         sender.send(()).unwrap();
                     }
                 },
                 EventKind::Modify(ModifyKind::Name(RenameMode::To)) => {
-                    if event.as_ref().unwrap().paths.last().unwrap().is_dir() || event.as_ref().unwrap().paths.last().unwrap().extension() == Some(OsStr::new("mp4")){
+                    if event.as_ref().unwrap().paths.last().unwrap().is_dir() || res::check_filetype(event.as_ref().unwrap().paths.last().unwrap().extension()) {
                         sender.send(()).unwrap();
                     }
                 },
