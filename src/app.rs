@@ -1,5 +1,5 @@
 use gtk::{prelude::*, Application};
-use crate::window;
+use crate::main_window;
 
 pub struct App {
     app: Application,
@@ -20,6 +20,6 @@ impl App {
     }
 
     fn on_activate(app: &Application) {
-        window::Window::new(app);
+        main_window::Window::new(app);
     }
 }

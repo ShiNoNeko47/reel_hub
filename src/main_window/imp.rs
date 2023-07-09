@@ -15,7 +15,7 @@ use reel_hub::utils;
 use crate::res;
 
 #[derive(Debug, Default, CompositeTemplate)]
-#[template(file = "window.ui")]
+#[template(file = "main_window.ui")]
 pub struct Window {
     #[template_child]
     pub poster: TemplateChild<Image>,
