@@ -60,40 +60,7 @@ impl Window {
         }));
 
         window.imp().add_button.deref().connect_clicked(clone!(@weak window => move |_| {
-            let filechooser = FileChooserDialog::with_buttons(
-                Some("Add movies"),
-                Some(&window),
-                FileChooserAction::SelectFolder,
-                &[("Add to library", ResponseType::Ok)]
-            );
-            filechooser.connect_response(clone!(@weak window => move |dialog, response| {
-                match response {
-                    ResponseType::Ok => {
-                        let filechooser = FileChooserDialog::with_buttons(
-                            Some("Save Library Item"),
-                            Some(&window),
-                            FileChooserAction::Save,
-                            &[("Save", ResponseType::Ok), ("Cancel", ResponseType::Cancel)]
-                        );
-                        filechooser.set_current_folder(utils::user_dir(user_data_dir()));
-                        filechooser.connect_response(clone!(@weak dialog => move |savedialog, response| {
-                            println!("Response: {:?}", response);
-                            match response {
-                                ResponseType::Ok => {
-                                    symlink::symlink_dir(dialog.file().unwrap().path().unwrap(), savedialog.file().unwrap().path().unwrap()).unwrap();
-                                },
-                                _ => {}
-                            }
-                            savedialog.close();
-                            dialog.close();
-                        }));
-                        filechooser.show();
-                    }
-                    _ => {}
-                }
-                dialog.hide();
-            }));
-            filechooser.show();
+            window.add_dir();
         }));
 
         window.imp().browse_button.deref().connect_clicked(clone!(@weak window => move |_| {
@@ -104,6 +71,44 @@ impl Window {
         }));
 
         window
+    }
+
+    fn add_dir(&self) {
+        let filechooser = FileChooserDialog::with_buttons(
+            Some("Add movies"),
+            Some(self),
+            FileChooserAction::SelectFolder,
+            &[("Add to library", ResponseType::Ok)]
+        );
+        filechooser.connect_response(clone!(@weak self as window => move |dialog, response| {
+            match response {
+                ResponseType::Ok => {
+                    let filechooser = FileChooserDialog::with_buttons(
+                        Some("Save Library Item"),
+                        Some(&window),
+                        FileChooserAction::Save,
+                        &[("Save", ResponseType::Ok), ("Cancel", ResponseType::Cancel)]
+                    );
+                    filechooser.set_current_folder(utils::user_dir(user_data_dir()));
+                    filechooser.connect_response(clone!(@weak dialog => move |savedialog, response| {
+                        println!("Response: {:?}", response);
+                        match response {
+                            ResponseType::Ok => {
+                                symlink::symlink_dir(dialog.file().unwrap().path().unwrap(), savedialog.file().unwrap().path().unwrap()).unwrap();
+                                window.update();
+                            },
+                            _ => {}
+                        }
+                        savedialog.close();
+                        dialog.close();
+                    }));
+                    filechooser.show();
+                }
+                _ => {}
+            }
+            dialog.hide();
+        }));
+        filechooser.show();
     }
 
     fn update(&self) {
