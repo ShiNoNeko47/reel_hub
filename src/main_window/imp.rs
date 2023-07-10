@@ -43,6 +43,8 @@ pub struct Window {
     pub status_label: TemplateChild<Label>,
     #[template_child]
     pub add_button: TemplateChild<Button>,
+    #[template_child]
+    pub browse_button: TemplateChild<Button>,
 
     pub movies: Rc<RefCell<Vec<Movie>>>,
     pub movies_len: Rc<Cell<usize>>,

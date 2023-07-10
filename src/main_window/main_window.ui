@@ -124,7 +124,15 @@
                 </child>
                 <child>
                   <object class="GtkButton" id="add_button">
-                    <property name="label">Add</property>
+                    <property name="label">Add to Library</property>
+                    <property name="margin-top">10</property>
+                    <property name="margin-end">10</property>
+                    <property name="margin-start">10</property>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkButton" id="browse_button">
+                    <property name="label">Browse Library</property>
                     <property name="margin-top">10</property>
                     <property name="margin-end">10</property>
                     <property name="margin-start">10</property>

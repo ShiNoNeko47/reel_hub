@@ -5,6 +5,9 @@ use glib::Priority;
 use glib::clone;
 use glib::user_data_dir;
 use gtk::Button;
+use gtk::FileChooserAction;
+use gtk::FileChooserDialog;
+use gtk::ResponseType;
 use gtk::prelude::*;
 use notify::{EventKind, Watcher, event::{CreateKind, ModifyKind, RemoveKind, RenameMode}};
 use notify::recommended_watcher;
@@ -19,8 +22,6 @@ use gtk::gio;
 use gtk::Application;
 
 use reel_hub::res;
-
-use crate::add_window;
 
 glib::wrapper! {
     pub struct Window(ObjectSubclass<imp::Window>)
@@ -58,15 +59,50 @@ impl Window {
             }));
         }));
 
-        window.imp().add_button.deref().connect_clicked(
-            clone!(@weak window => move |button| {
-                button.set_sensitive(false);
-                let window = add_window::Window::new(&window.application().unwrap());
-                window.connect_destroy(
-                    clone!(@weak button => move |_| {
-                        button.set_sensitive(true);
-                }));
+        window.imp().add_button.deref().connect_clicked(clone!(@weak window => move |_| {
+            let filechooser = FileChooserDialog::with_buttons(
+                Some("Add movies"),
+                Some(&window),
+                FileChooserAction::SelectFolder,
+                &[("Add to library", ResponseType::Ok)]
+            );
+            filechooser.connect_response(clone!(@weak window => move |dialog, response| {
+                match response {
+                    ResponseType::Ok => {
+                        let filechooser = FileChooserDialog::with_buttons(
+                            Some("Save Library Item"),
+                            Some(&window),
+                            FileChooserAction::Save,
+                            &[("Save", ResponseType::Ok), ("Cancel", ResponseType::Cancel)]
+                        );
+                        filechooser.set_current_folder(utils::user_dir(user_data_dir()));
+                        filechooser.connect_response(clone!(@weak dialog => move |savedialog, response| {
+                            println!("Response: {:?}", response);
+                            match response {
+                                ResponseType::Ok => {
+                                    symlink::symlink_dir(dialog.file().unwrap().path().unwrap(), savedialog.file().unwrap().path().unwrap()).unwrap();
+                                },
+                                _ => {}
+                            }
+                            savedialog.close();
+                            dialog.close();
+                        }));
+                        filechooser.show();
+                    }
+                    _ => {}
+                }
+                dialog.hide();
             }));
+            filechooser.show();
+        }));
+
+        window.imp().browse_button.deref().connect_clicked(clone!(@weak window => move |_| {
+            let filechooser = FileChooserDialog::new(Some("Browse"), Some(&window), gtk::FileChooserAction::CreateFolder);
+            filechooser.set_current_folder(utils::user_dir(user_data_dir()));
+            filechooser.set_decorated(false);
+            filechooser.show();
+        }));
+
         window
     }
 
