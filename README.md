@@ -39,8 +39,12 @@ with ```Exec = FULL_PATH_TO_BINARY``` eg. ```Exec = /home/user/reel_hub/target/r
 place the binary on path 
 
 ## Setup
+<b>NOTE:</b> The app searches for movies recursively
 
-To get started add movies to ```XDG_DATA_HOME``` or make a symlink to a directory that contains movies
+You can add directories with movies to library by clicking "Add to Library", this automatically creates a symlink without moving any of your files.
+
+### Manual
+Add movies to ```XDG_DATA_HOME``` or create symlinks to directories that contain movies
 
 ## Screenshot
 ![image](screenshot.jpg)
