@@ -1,0 +1,5 @@
+[Desktop Entry]
+Type = Application
+Name = reel_hub
+Exec = reel_hub
+Terminal = false
