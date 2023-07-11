@@ -11,6 +11,11 @@ This is a gtk movie library browser written in rust.
  - Playing the selected movie in <b>mpv</b>
 
 ## Installation
+### AUR
+
+Use your favourite package manager to install from AUR
+
+### Manual
 Clone this repository first:
 ```sh
 git clone https://github.com/ShiNoNeko47/reel_hub
@@ -25,14 +30,8 @@ To make it accessible your from application menu, first compile binary using
 ```sh
 cd reel_hub && cargo build -r
 ```
-then copy the following:
-```
-[Desktop Entry]
-Type = Application
-Name = reel_hub
-Exec = reel_hub
-```
-to ```XDG_DATA_HOME/applications/reel_hub.desktop``` and <b>either</b>
+then copy the desktop file to ```XDG_DATA_HOME/applications/reel_hub.desktop```
+and <b>either</b>
 replace ```Exec = reel_hub```
 with ```Exec = FULL_PATH_TO_BINARY``` eg. ```Exec = /home/user/reel_hub/target/reel_hub```
 <b>or</b>
