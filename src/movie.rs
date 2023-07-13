@@ -1,9 +1,10 @@
-use std::{process::{Command, Stdio, Child}, path::PathBuf, ops::Deref, fs::File, io::Write};
+use std::{process::{Command, Stdio, Child}, path::PathBuf, ops::Deref, fs::File, io::{prelude::*, Write, BufReader}};
+use md5;
 
 use glib::{user_data_dir, user_cache_dir};
 use serde::{Deserialize, Serialize};
 
-use crate::utils::user_dir;
+use crate::utils::{user_dir, self};
 
 use self::tmdb::fetch_poster_tmdb;
 
@@ -27,6 +28,7 @@ pub struct Movie {
     pub year: Option<usize>,
     pub file: PathBuf,
     pub data: Option<MovieData>,
+    pub current_time: Option<f32>
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -47,23 +49,32 @@ impl Movie {
             }
         }
         let captures: regex::Captures = re.captures(&file.file_name().to_str().unwrap()).unwrap();
-        println!("{:?}", captures);
+        let mut current_time: Option<f32> = None;
+        let hash = md5::compute::<String>(file.path().to_str().unwrap().to_string());
+        if let Ok(file) = File::open(utils::user_dir(user_data_dir()) + "/.watch-later/" + &format!("{:x}", hash).to_uppercase()) {
+            let mut reader = BufReader::new(file);
+            let mut line = String::new();
+            reader.read_line(&mut line).unwrap();
+            current_time = Some(line.trim().split("=").last().unwrap().parse().unwrap());
+        }
         Movie {
             name: prefix.to_string() + &if let Some(name) = captures.get(2) {name.as_str()} else {captures.get(6).unwrap().as_str()}.replace(".", " "),
             year: if let Some(year) = captures.get(4) { Some(year.as_str().parse().unwrap()) } else { None },
             file: file.path().to_owned(),
             data: None,
+            current_time: if current_time == Some(0.0) { None } else { current_time }
         }
     }
 
     pub fn play(&self, from_start: bool) -> Child {
-        println!("Playing {}", self.name);
+        print!("Playing {}", self.name);
+        println!("{}", if let Some(current_time) = self.current_time { format!(" from {current_time}s")} else {format!("")});
         Command::new("mpv")
             .arg(&self.file.deref())
             .arg("--no-config")
             .arg("--save-position-on-quit")
             .arg("--watch-later-options-remove=fullscreen")
-            .arg(format!("--watch-later-directory={}/watch-later", super::utils::user_dir(user_data_dir())))
+            .arg(format!("--watch-later-directory={}/.watch-later", super::utils::user_dir(user_data_dir())))
             .arg("--fs")
             .arg(if from_start { "--start=0%" } else { "" })
             .stdout(Stdio::null())
@@ -93,6 +104,7 @@ impl Clone for Movie {
             year: self.year,
             file: self.file.clone(),
             data: self.data.clone(),
+            current_time: self.current_time
         }
     }
 }
