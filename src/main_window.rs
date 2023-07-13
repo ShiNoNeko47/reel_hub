@@ -1,6 +1,5 @@
 mod imp;
 
-
 use glib::Priority;
 use glib::clone;
 use glib::user_data_dir;

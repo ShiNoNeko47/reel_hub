@@ -38,7 +38,7 @@ pub struct MovieCache {
 impl Movie {
     pub fn get_from_file_name(file: walkdir::DirEntry) -> Movie {
         let re: regex::Regex =
-            regex::Regex::new(r"^(.*)[\.| ]([0-9]{4})?\.[\.|A-Z]*[[0-9]+p]*.*mp4").unwrap();
+            regex::Regex::new(r"(?mU)^(([A-Za-z0-9\. \(\)]+)[\. -]+\(?((\d{4})[^p]).*)|((.*)\.[A-Za-z0-9]+)$").unwrap();
         let mut prefix = "";
         if file.metadata().is_ok() {
             let size = file.metadata().unwrap().len();
@@ -46,20 +46,13 @@ impl Movie {
                 prefix = "~ "
             }
         }
-        let binding: Option<regex::Captures> = re.captures(&file.file_name().to_str().unwrap());
-        match &binding {
-            Some(expr) => Movie {
-                name: prefix.to_string() + &expr[1].to_string().replace(".", " "),
-                year: Some(expr[2].parse().unwrap()),
-                file: file.path().to_owned(),
-                data: None,
-            },
-            None => Movie {
-                name: prefix.to_string() + &file.file_name().to_str().unwrap().replace(".mp4", ""),
-                year: None,
-                file: file.path().to_owned(),
-                data: None,
-            },
+        let captures: regex::Captures = re.captures(&file.file_name().to_str().unwrap()).unwrap();
+        println!("{:?}", captures);
+        Movie {
+            name: prefix.to_string() + &if let Some(name) = captures.get(2) {name.as_str()} else {captures.get(6).unwrap().as_str()}.replace(".", " "),
+            year: if let Some(year) = captures.get(4) { Some(year.as_str().parse().unwrap()) } else { None },
+            file: file.path().to_owned(),
+            data: None,
         }
     }
 
