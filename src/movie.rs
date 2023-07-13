@@ -28,7 +28,7 @@ pub struct Movie {
     pub year: Option<usize>,
     pub file: PathBuf,
     pub data: Option<MovieData>,
-    pub current_time: Option<f32>
+    pub current_time: Option<u32>
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -49,26 +49,26 @@ impl Movie {
             }
         }
         let captures: regex::Captures = re.captures(&file.file_name().to_str().unwrap()).unwrap();
-        let mut current_time: Option<f32> = None;
+        let mut current_time: Option<u32> = None;
         let hash = md5::compute::<String>(file.path().to_str().unwrap().to_string());
         if let Ok(file) = File::open(utils::user_dir(user_data_dir()) + "/.watch-later/" + &format!("{:x}", hash).to_uppercase()) {
             let mut reader = BufReader::new(file);
             let mut line = String::new();
             reader.read_line(&mut line).unwrap();
-            current_time = Some(line.trim().split("=").last().unwrap().parse().unwrap());
+            current_time = Some(line.trim().split("=").last().unwrap().parse::<f32>().unwrap() as u32);
         }
         Movie {
             name: prefix.to_string() + &if let Some(name) = captures.get(2) {name.as_str()} else {captures.get(6).unwrap().as_str()}.replace(".", " "),
             year: if let Some(year) = captures.get(4) { Some(year.as_str().parse().unwrap()) } else { None },
             file: file.path().to_owned(),
             data: None,
-            current_time: if current_time == Some(0.0) { None } else { current_time }
+            current_time: if current_time == Some(0) { None } else { current_time }
         }
     }
 
     pub fn play(&self, from_start: bool) -> Child {
         print!("Playing {}", self.name);
-        println!("{}", if let Some(current_time) = self.current_time { format!(" from {current_time}s")} else {format!("")});
+        println!("{}", if let Some(current_time) = self.current_time { format!(" from {}m {}s", current_time / 60, current_time - current_time / 60)} else {format!("")});
         Command::new("mpv")
             .arg(&self.file.deref())
             .arg("--no-config")
