@@ -68,7 +68,6 @@ impl Movie {
 
     pub fn play(&self, from_start: bool) -> Child {
         print!("Playing {}", self.name);
-        println!("{}", if let Some(current_time) = self.current_time { format!(" from {}m {}s", current_time / 60, current_time - current_time / 60)} else {format!("")});
         Command::new("mpv")
             .arg(&self.file.deref())
             .arg("--no-config")

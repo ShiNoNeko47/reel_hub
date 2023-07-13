@@ -4,8 +4,11 @@ use glib::Priority;
 use glib::clone;
 use glib::user_data_dir;
 use gtk::Button;
+use gtk::DialogFlags;
 use gtk::FileChooserAction;
 use gtk::FileChooserDialog;
+use gtk::MessageDialog;
+use gtk::MessageType;
 use gtk::ResponseType;
 use gtk::prelude::*;
 use notify::{EventKind, Watcher, event::{CreateKind, ModifyKind, RemoveKind, RenameMode}};
@@ -43,15 +46,47 @@ impl Window {
 
         window.imp().play_button.deref().set_label("  Play  ");
         window.imp().play_button.deref().connect_clicked(clone!(@weak window => move |button| {
-            let mut handle = window.imp().movies.borrow()[window.imp().movie_selected.get().unwrap()].play(false);
+            let movie = &window.imp().movies.borrow()[window.imp().movie_selected.get().unwrap()];
             button.set_sensitive(false);
-            window.imp().status_label.deref().set_label(&format!("Playing: <b>{}</b>", window.imp().movies.borrow()[window.imp().movie_selected.get().unwrap()].name));
+            window.imp().status_label.deref().set_label(&format!("Playing: <b>{}</b>", movie.name));
             let (sender, receiver) = glib::MainContext::channel(Priority::default());
-            std::thread::spawn(move || {
-                handle.wait().unwrap();
-                sender.send(()).unwrap();
-            });
-            receiver.attach(None, clone!(@weak button => @default-return Continue(false), move |_| {
+            if let Some(current_time) = movie.current_time {
+                let dialog = MessageDialog::new(
+                    Some(&window),
+                    DialogFlags::DESTROY_WITH_PARENT,
+                    MessageType::Question,
+                    gtk::ButtonsType::YesNo,
+                    &format!("Continue from {}m {}s?", current_time / 60, current_time % 60));
+                dialog.set_decorated(false);
+                dialog.show();
+                dialog.connect_response(clone!(@weak window => move |dialog, response| {
+                    let movie = &window.imp().movies.borrow()[window.imp().movie_selected.get().unwrap()];
+                    let mut handle;
+                    match response {
+                        ResponseType::Yes => {
+                            handle = movie.play(false);
+                        }
+                        ResponseType::No => {
+                            handle = movie.play(true);
+                        }
+                        _ => {return}
+                    };
+                    let sender = sender.clone();
+                    std::thread::spawn(move || {
+                        handle.wait().unwrap();
+                        sender.send(()).unwrap();
+                    });
+                    dialog.close();
+                }));
+            } else {
+                let mut handle = movie.play(false);
+                std::thread::spawn(move || {
+                    handle.wait().unwrap();
+                    sender.send(()).unwrap();
+                });
+            }
+
+            receiver.attach(None, clone!(@weak button, @weak window => @default-return Continue(false), move |_| {
                 button.set_sensitive(true);
                 window.imp().status_label.deref().set_label("");
                 Continue(true)
