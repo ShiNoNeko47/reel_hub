@@ -14,18 +14,15 @@ fn main() -> ExitCode {
         println!("Version: {}", env!("CARGO_PKG_VERSION"));
         exit(0)
     } else if args.contains(&"--help".to_string()) || args.contains(&"-h".to_string()) {
-        println!("Usage: {} [options]
+        println!("Usage: {} [option]
 
-Gtk movie library browser written in rust
-
-Options:
   -v, --version \t show version and exit
   -h, --help \t\t show this help and exit
   -l, --list \t\t list all movies in library and exit
 
 You can add to library from within the app, or you can create symlinks to
 directories with movies in \"{}/\"
-(eg. ln -s FULL_PATH_TO_DIRECTORY {}/NAME", args[0], reel_hub::utils::user_dir(user_data_dir()), reel_hub::utils::user_dir(user_data_dir()));
+(e.g. ln -s FULL_PATH_TO_DIRECTORY {}/NAME", args[0], reel_hub::utils::user_dir(user_data_dir()), reel_hub::utils::user_dir(user_data_dir()));
         exit(0)
     } else if args.contains(&"--list".to_string()) || args.contains(&"-l".to_string()) {
         let movies = reel_hub::detect::get_movies(reel_hub::utils::user_dir(user_data_dir()));
