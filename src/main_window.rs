@@ -74,10 +74,7 @@ impl Window {
                             window.imp().play_button.set_sensitive(false);
                             dialog.close();
                         }
-                        _ => {
-                            window.imp().play_button.deref().set_sensitive(true); 
-                            return
-                        }
+                        _ => { return }
                     };
                     let sender = sender.clone();
                     std::thread::spawn(move || {
