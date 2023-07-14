@@ -49,14 +49,7 @@ impl Movie {
             }
         }
         let captures: regex::Captures = re.captures(&file.file_name().to_str().unwrap()).unwrap();
-        let mut current_time: Option<u32> = None;
-        let hash = md5::compute::<String>(file.path().to_str().unwrap().to_string());
-        if let Ok(file) = File::open(utils::user_dir(user_data_dir()) + "/.watch-later/" + &format!("{:x}", hash).to_uppercase()) {
-            let mut reader = BufReader::new(file);
-            let mut line = String::new();
-            reader.read_line(&mut line).unwrap();
-            current_time = Some(line.trim().split("=").last().unwrap().parse::<f32>().unwrap() as u32);
-        }
+        let current_time = Self::get_current_time(file.path().to_str().unwrap().to_string());
         Movie {
             name: prefix.to_string() + &if let Some(name) = captures.get(2) {name.as_str()} else {captures.get(6).unwrap().as_str()}.replace(".", " "),
             year: if let Some(year) = captures.get(4) { Some(year.as_str().parse().unwrap()) } else { None },
@@ -66,16 +59,28 @@ impl Movie {
         }
     }
 
-    pub fn play(&self, from_start: bool) -> Child {
-        print!("Playing {}", self.name);
+    pub fn get_current_time(file_path: String) -> Option<u32> {
+        let mut current_time: Option<u32> = None;
+        let hash = md5::compute::<String>(file_path);
+        if let Ok(file) = File::open(utils::user_dir(user_data_dir()) + "/.watch-later/" + &format!("{:x}", hash).to_uppercase()) {
+            let mut reader = BufReader::new(file);
+            let mut line = String::new();
+            reader.read_line(&mut line).unwrap();
+            current_time = Some(line.trim().split("=").last().unwrap().parse::<f32>().unwrap() as u32);
+        }
+        current_time
+    }
+
+    pub fn play(&self, continue_watching: bool) -> Child {
+        println!("Playing {}", self.name);
         Command::new("mpv")
             .arg(&self.file.deref())
             .arg("--no-config")
             .arg("--save-position-on-quit")
-            .arg("--watch-later-options-remove=fullscreen")
+            .arg("--watch-later-options-clr")
             .arg(format!("--watch-later-directory={}/.watch-later", super::utils::user_dir(user_data_dir())))
             .arg("--fs")
-            .arg(if from_start { "--start=0%" } else { "" })
+            .arg(if !continue_watching { "--start=0%" } else { "" })
             .stdout(Stdio::null())
             .stderr(Stdio::null())
             .spawn()

@@ -14,6 +14,7 @@ use gtk::prelude::*;
 use notify::{EventKind, Watcher, event::{CreateKind, ModifyKind, RemoveKind, RenameMode}};
 use notify::recommended_watcher;
 use reel_hub::detect;
+use reel_hub::movie::Movie;
 use reel_hub::movie::MovieData;
 use reel_hub::utils;
 use std::ops::Deref;
@@ -47,13 +48,11 @@ impl Window {
         window.imp().play_button.deref().set_label("  Play  ");
         window.imp().play_button.deref().connect_clicked(clone!(@weak window => move |button| {
             let movie = &window.imp().movies.borrow()[window.imp().movie_selected.get().unwrap()];
-            button.set_sensitive(false);
-            window.imp().status_label.deref().set_label(&format!("Playing: <b>{}</b>", movie.name));
             let (sender, receiver) = glib::MainContext::channel(Priority::default());
             if let Some(current_time) = movie.current_time {
                 let dialog = MessageDialog::new(
                     Some(&window),
-                    DialogFlags::DESTROY_WITH_PARENT,
+                    DialogFlags::MODAL,
                     MessageType::Question,
                     gtk::ButtonsType::YesNo,
                     &format!("Continue from {}m {}s?", current_time / 60, current_time % 60));
@@ -64,19 +63,27 @@ impl Window {
                     let mut handle;
                     match response {
                         ResponseType::Yes => {
-                            handle = movie.play(false);
+                            handle = movie.play(true);
+                            window.imp().status_label.deref().set_label(&format!("Playing: <b>{}</b>", movie.name));
+                            window.imp().play_button.set_sensitive(false);
+                            dialog.close();
                         }
                         ResponseType::No => {
-                            handle = movie.play(true);
+                            handle = movie.play(false);
+                            window.imp().status_label.deref().set_label(&format!("Playing: <b>{}</b>", movie.name));
+                            window.imp().play_button.set_sensitive(false);
+                            dialog.close();
                         }
-                        _ => {return}
+                        _ => {
+                            window.imp().play_button.deref().set_sensitive(true); 
+                            return
+                        }
                     };
                     let sender = sender.clone();
                     std::thread::spawn(move || {
                         handle.wait().unwrap();
                         sender.send(()).unwrap();
                     });
-                    dialog.close();
                 }));
             } else {
                 let mut handle = movie.play(false);
@@ -87,6 +94,8 @@ impl Window {
             }
 
             receiver.attach(None, clone!(@weak button, @weak window => @default-return Continue(false), move |_| {
+                let file_path = window.imp().movies.borrow()[window.imp().movie_selected.get().unwrap()].file.clone().to_str().unwrap().to_string();
+                window.imp().movies.borrow_mut()[window.imp().movie_selected.get().unwrap()].current_time = Movie::get_current_time(file_path);
                 button.set_sensitive(true);
                 window.imp().status_label.deref().set_label("");
                 Continue(true)
