@@ -72,6 +72,7 @@ impl Movie {
     }
 
     pub fn play(&self, continue_watching: bool) -> Child {
+        std::fs::create_dir_all(utils::user_dir(user_data_dir()) + "/.watch-later").unwrap();
         println!("Playing {}", self.name);
         Command::new("mpv")
             .arg(&self.file.deref())
