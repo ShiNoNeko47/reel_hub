@@ -38,7 +38,7 @@ pub fn fetch_data_tmdb(name: &String, year: String) -> Option<MovieData> {
                     vote_average: 0.0,
                     vote_count: 0,
                     release_date: "".to_string(),
-                    poster_path: "".to_string()
+                    poster_path: "".to_string(),
                 })
             }
         }

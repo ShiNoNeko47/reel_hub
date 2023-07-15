@@ -1,10 +1,16 @@
-use std::{process::{Command, Stdio, Child}, path::PathBuf, ops::Deref, fs::File, io::{prelude::*, Write, BufReader}};
 use md5;
+use std::{
+    fs::File,
+    io::{prelude::*, BufReader, Write},
+    ops::Deref,
+    path::PathBuf,
+    process::{Child, Command, Stdio},
+};
 
-use glib::{user_data_dir, user_cache_dir};
+use glib::{user_cache_dir, user_data_dir};
 use serde::{Deserialize, Serialize};
 
-use crate::utils::{user_dir, self};
+use crate::utils::{self, user_dir};
 
 use self::tmdb::fetch_poster_tmdb;
 
@@ -28,7 +34,7 @@ pub struct Movie {
     pub year: Option<usize>,
     pub file: PathBuf,
     pub data: Option<MovieData>,
-    pub current_time: Option<u32>
+    pub current_time: Option<u32>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -39,8 +45,10 @@ pub struct MovieCache {
 
 impl Movie {
     pub fn get_from_file_name(file: walkdir::DirEntry) -> Movie {
-        let re: regex::Regex =
-            regex::Regex::new(r"(?mU)^(([A-Za-z0-9\. \(\)]+)[\. -]+\(?((\d{4})[^p]).*)|((.*)\.[A-Za-z0-9]+)$").unwrap();
+        let re: regex::Regex = regex::Regex::new(
+            r"(?mU)^(([A-Za-z0-9\. \(\)]+)[\. -]+\(?((\d{4})[^p]).*)|((.*)\.[A-Za-z0-9]+)$",
+        )
+        .unwrap();
         let mut prefix = "";
         if file.metadata().is_ok() {
             let size = file.metadata().unwrap().len();
@@ -51,22 +59,47 @@ impl Movie {
         let captures: regex::Captures = re.captures(&file.file_name().to_str().unwrap()).unwrap();
         let current_time = Self::get_current_time(file.path().to_str().unwrap().to_string());
         Movie {
-            name: prefix.to_string() + &if let Some(name) = captures.get(2) {name.as_str()} else {captures.get(6).unwrap().as_str()}.replace(".", " "),
-            year: if let Some(year) = captures.get(4) { Some(year.as_str().parse().unwrap()) } else { None },
+            name: prefix.to_string()
+                + &if let Some(name) = captures.get(2) {
+                    name.as_str()
+                } else {
+                    captures.get(6).unwrap().as_str()
+                }
+                .replace(".", " "),
+            year: if let Some(year) = captures.get(4) {
+                Some(year.as_str().parse().unwrap())
+            } else {
+                None
+            },
             file: file.path().to_owned(),
             data: None,
-            current_time: if current_time == Some(0) { None } else { current_time }
+            current_time: if current_time == Some(0) {
+                None
+            } else {
+                current_time
+            },
         }
     }
 
     pub fn get_current_time(file_path: String) -> Option<u32> {
         let mut current_time: Option<u32> = None;
         let hash = md5::compute::<String>(file_path);
-        if let Ok(file) = File::open(utils::user_dir(user_data_dir()) + "/.watch-later/" + &format!("{:x}", hash).to_uppercase()) {
+        if let Ok(file) = File::open(
+            utils::user_dir(user_data_dir())
+                + "/.watch-later/"
+                + &format!("{:x}", hash).to_uppercase(),
+        ) {
             let mut reader = BufReader::new(file);
             let mut line = String::new();
             reader.read_line(&mut line).unwrap();
-            current_time = Some(line.trim().split("=").last().unwrap().parse::<f32>().unwrap() as u32);
+            current_time = Some(
+                line.trim()
+                    .split("=")
+                    .last()
+                    .unwrap()
+                    .parse::<f32>()
+                    .unwrap() as u32,
+            );
         }
         current_time
     }
@@ -79,7 +112,10 @@ impl Movie {
             .arg("--no-config")
             .arg("--save-position-on-quit")
             .arg("--watch-later-options-clr")
-            .arg(format!("--watch-later-directory={}/.watch-later", super::utils::user_dir(user_data_dir())))
+            .arg(format!(
+                "--watch-later-directory={}/.watch-later",
+                super::utils::user_dir(user_data_dir())
+            ))
             .arg("--fs")
             .arg(if !continue_watching { "--start=0%" } else { "" })
             .stdout(Stdio::null())
@@ -88,10 +124,11 @@ impl Movie {
             .expect("Movie failed to play")
     }
 
-    pub fn fetch_poster(poster_path: String, sender: glib::Sender<PathBuf> ) {
+    pub fn fetch_poster(poster_path: String, sender: glib::Sender<PathBuf>) {
         let path = PathBuf::from(format!("{}{}", user_dir(user_cache_dir()), poster_path));
         let mut file = File::create(&path).unwrap();
-        file.write( &fetch_poster_tmdb(poster_path, Some(500)).to_vec().to_vec()).expect("Couldn't write to file");
+        file.write(&fetch_poster_tmdb(poster_path, Some(500)).to_vec().to_vec())
+            .expect("Couldn't write to file");
         sender.send(path).expect("Couldn't send");
     }
 }
@@ -109,7 +146,7 @@ impl Clone for Movie {
             year: self.year,
             file: self.file.clone(),
             data: self.data.clone(),
-            current_time: self.current_time
+            current_time: self.current_time,
         }
     }
 }

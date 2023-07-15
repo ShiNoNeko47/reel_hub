@@ -1,4 +1,4 @@
-use std::{fs::File, ffi::OsStr};
+use std::{ffi::OsStr, fs::File};
 
 use glib::user_cache_dir;
 
@@ -19,7 +19,10 @@ pub fn load_cache(movies: &mut Vec<Movie>) {
     };
     let cache: Vec<MovieCache> = serde_json::from_reader(file).unwrap();
     for movie in movies {
-        match cache.iter().find(|entry| OsStr::new(&entry.file_name) == movie.file.file_name().unwrap()) {
+        match cache
+            .iter()
+            .find(|entry| OsStr::new(&entry.file_name) == movie.file.file_name().unwrap())
+        {
             Some(entry) => {
                 movie.data = Some(entry.data.clone());
                 let poster_path = format!("{}{}", path, entry.data.poster_path);

@@ -1,8 +1,9 @@
 mod imp;
 
-use glib::Priority;
 use glib::clone;
 use glib::user_data_dir;
+use glib::Priority;
+use gtk::prelude::*;
 use gtk::Button;
 use gtk::DialogFlags;
 use gtk::FileChooserAction;
@@ -10,9 +11,11 @@ use gtk::FileChooserDialog;
 use gtk::MessageDialog;
 use gtk::MessageType;
 use gtk::ResponseType;
-use gtk::prelude::*;
-use notify::{EventKind, Watcher, event::{CreateKind, ModifyKind, RemoveKind, RenameMode}};
 use notify::recommended_watcher;
+use notify::{
+    event::{CreateKind, ModifyKind, RemoveKind, RenameMode},
+    EventKind, Watcher,
+};
 use reel_hub::detect;
 use reel_hub::movie::Movie;
 use reel_hub::movie::MovieData;
@@ -35,11 +38,12 @@ glib::wrapper! {
 impl Window {
     pub fn new(app: &Application) -> Self {
         let window: Self = glib::Object::builder().property("application", app).build();
-        window.connect_key_press_event(|window, key| {
-            match key.keycode() {
-                Some(71) => {window.update(); gtk::Inhibit(true)}
-                _ => gtk::Inhibit(false)
+        window.connect_key_press_event(|window, key| match key.keycode() {
+            Some(71) => {
+                window.update();
+                gtk::Inhibit(true)
             }
+            _ => gtk::Inhibit(false),
         });
 
         window.update();
@@ -99,9 +103,13 @@ impl Window {
             }));
         }));
 
-        window.imp().add_button.deref().connect_clicked(clone!(@weak window => move |_| {
-            window.add_dir();
-        }));
+        window
+            .imp()
+            .add_button
+            .deref()
+            .connect_clicked(clone!(@weak window => move |_| {
+                window.add_dir();
+            }));
 
         window.imp().browse_button.deref().connect_clicked(clone!(@weak window => move |_| {
             let filechooser = FileChooserDialog::new(Some("Browse"), Some(&window), gtk::FileChooserAction::CreateFolder);
@@ -118,7 +126,7 @@ impl Window {
             Some("Add movies"),
             Some(self),
             FileChooserAction::SelectFolder,
-            &[("Add to library", ResponseType::Ok)]
+            &[("Add to library", ResponseType::Ok)],
         );
         filechooser.connect_response(clone!(@weak self as window => move |dialog, response| {
             match response {
@@ -156,7 +164,9 @@ impl Window {
         utils::load_cache(&mut movies);
         match self.imp().movie_selected.get() {
             Some(movie_selected) => {
-                let movie = movies.iter().position(|x| &self.imp().movies.borrow()[movie_selected] == x);
+                let movie = movies
+                    .iter()
+                    .position(|x| &self.imp().movies.borrow()[movie_selected] == x);
                 self.imp().movies_len.replace(movies.len());
                 self.imp().movies.replace(movies);
                 self.imp().movie_select(movie);
@@ -176,7 +186,8 @@ impl Window {
 
         for movie in 0..self.imp().movies_len.get() {
             let button = Button::builder()
-                .label(self.imp().movies.borrow()[movie].name.clone()).build();
+                .label(self.imp().movies.borrow()[movie].name.clone())
+                .build();
             list_box.add(&button);
 
             let (sender, receiver) = glib::MainContext::channel(Priority::default());
@@ -206,33 +217,49 @@ impl Window {
         }
         self.show_all();
     }
-    
+
     fn setup_dir_watcher(&self) {
         let (sender, receiver) = glib::MainContext::channel(Priority::default());
-        let mut watcher = recommended_watcher(move |event: Result<notify::Event, notify::Error>| {
-            match event.as_ref().unwrap().kind {
-                EventKind::Create(CreateKind::File) | EventKind::Remove(RemoveKind::File) => {
-                    if res::check_filetype(event.as_ref().unwrap().paths.last().unwrap().extension()) {
+        let mut watcher =
+            recommended_watcher(move |event: Result<notify::Event, notify::Error>| {
+                match event.as_ref().unwrap().kind {
+                    EventKind::Create(CreateKind::File) | EventKind::Remove(RemoveKind::File) => {
+                        if res::check_filetype(
+                            event.as_ref().unwrap().paths.last().unwrap().extension(),
+                        ) {
+                            sender.send(()).unwrap();
+                        }
+                    }
+                    EventKind::Modify(ModifyKind::Name(RenameMode::To)) => {
+                        if event.as_ref().unwrap().paths.last().unwrap().is_dir()
+                            || res::check_filetype(
+                                event.as_ref().unwrap().paths.last().unwrap().extension(),
+                            )
+                        {
+                            sender.send(()).unwrap();
+                        }
+                    }
+                    EventKind::Modify(ModifyKind::Name(RenameMode::From)) => {
                         sender.send(()).unwrap();
                     }
-                },
-                EventKind::Modify(ModifyKind::Name(RenameMode::To)) => {
-                    if event.as_ref().unwrap().paths.last().unwrap().is_dir() || res::check_filetype(event.as_ref().unwrap().paths.last().unwrap().extension()) {
-                        sender.send(()).unwrap();
-                    }
-                },
-                EventKind::Modify(ModifyKind::Name(RenameMode::From)) => {
-                    sender.send(()).unwrap();
-                },
-                _ => {}
-            };
-        }).unwrap();
+                    _ => {}
+                };
+            })
+            .unwrap();
 
-        receiver.attach(None, clone!(@weak self as window => @default-return Continue(false), move |_| {
-            window.update();
-            Continue(true)
-        }));
-        watcher.watch(Path::new(&utils::user_dir(user_data_dir())), notify::RecursiveMode::Recursive).unwrap();
+        receiver.attach(
+            None,
+            clone!(@weak self as window => @default-return Continue(false), move |_| {
+                window.update();
+                Continue(true)
+            }),
+        );
+        watcher
+            .watch(
+                Path::new(&utils::user_dir(user_data_dir())),
+                notify::RecursiveMode::Recursive,
+            )
+            .unwrap();
         self.imp().dir_watcher.replace(Some(watcher));
     }
 }
