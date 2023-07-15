@@ -55,7 +55,7 @@ impl Window {
                     DialogFlags::MODAL,
                     MessageType::Question,
                     gtk::ButtonsType::YesNo,
-                    &format!("Continue from {}:{}:{}?", current_time / 3600, current_time / 60 % 60, current_time % 60));
+                    &format!("Continue watching from {}:{:02}:{:02}?", current_time / 3600, current_time / 60 % 60, current_time % 60));
                 dialog.set_decorated(false);
                 dialog.show();
                 dialog.connect_response(clone!(@weak window => move |dialog, response| {
