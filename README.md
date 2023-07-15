@@ -11,7 +11,7 @@ This is a gtk movie library browser written in rust.
  - Playing the selected movie in <b>mpv</b>
 
 ## Installation
-### AUR
+### Arch linux
 
 Use your favourite package manager to install from AUR
 
@@ -37,13 +37,15 @@ with ```Exec = FULL_PATH_TO_BINARY``` eg. ```Exec = /home/user/reel_hub/target/r
 <b>or</b>
 place the binary on path 
 
-## Setup
-<b>NOTE:</b> The app searches for movies recursively
+## Usage
+```
+Usage: reel_hub [option]
 
-You can add directories with movies to library by clicking "Add to Library", this automatically creates a symlink without moving any of your files.
-
-### Manual
-Add movies to ```XDG_DATA_HOME``` or create symlinks to directories that contain movies
-
+ -v, --version		show varsion and exit
+ -h, --help		show this help and exit
+ -l, --list		list all movies in library and exit
+ -c, --clear-cache	clear cache and exit (does not clear time positions)
+```
+<b>Note:</b> running without arguments runs the app
 ## Screenshot
 ![image](screenshot.jpg)
