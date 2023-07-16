@@ -84,11 +84,13 @@ impl Window {
             None => {
                 if let Some(name) = name {
                     self.poster.deref().set_pixbuf(Some(&res::loading()));
+                    self.backdrop.deref().set_pixbuf(None);
                     self.title
                         .deref()
                         .set_label(&format!("<b>Title:</b> {name}"));
                 } else {
                     self.poster.deref().set_pixbuf(None);
+                    self.backdrop.deref().set_pixbuf(None);
                     self.title.deref().set_label("");
                 }
                 self.original_title.deref().set_label("");

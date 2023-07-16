@@ -214,6 +214,7 @@ impl Window {
                         sender.send((movie, data)).unwrap();
                     });
                 }
+                window.autohide_backdrop();
             }));
             receiver.attach(None, clone!(@weak self as window => @default-return Continue(false), move |(movie, data)| {
                 match data {
@@ -223,6 +224,7 @@ impl Window {
                     }
                     None => {
                         window.imp().poster.deref().set_pixbuf(Some(&res::check_connection()));
+                        window.imp().backdrop.hide();
                     }
                 }
                 Continue(true)
