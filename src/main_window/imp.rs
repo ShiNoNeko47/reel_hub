@@ -20,6 +20,8 @@ pub struct Window {
     #[template_child]
     pub poster: TemplateChild<Image>,
     #[template_child]
+    pub backdrop: TemplateChild<Image>,
+    #[template_child]
     pub play_button: TemplateChild<Button>,
     #[template_child]
     pub list_box: TemplateChild<ListBox>,
@@ -121,33 +123,57 @@ impl Window {
                     .set_label(&format!("<b>Release Date:</b> {}", data.release_date));
 
                 if data.poster_path != "".to_string() {
-                    self.display_poster(data);
+                    self.display_image(
+                        data.poster_path.clone(),
+                        reel_hub::movie::ImageType::Poster,
+                    );
                 } else {
                     self.poster.deref().set_pixbuf(None);
+                }
+
+                if data.backdrop_path != "".to_string() {
+                    self.display_image(
+                        data.backdrop_path.clone(),
+                        reel_hub::movie::ImageType::Backdrop,
+                    );
+                } else {
+                    self.backdrop.deref().set_pixbuf(None);
                 }
             }
         }
     }
-    fn display_poster(&self, data: MovieData) {
-        let poster_file_path = format!("{}{}", utils::user_dir(user_cache_dir()), data.poster_path);
+    fn display_image(&self, image_path: String, image_type: reel_hub::movie::ImageType) {
+        let image_file_path = format!("{}{}", utils::user_dir(user_cache_dir()), image_path);
 
-        let (sender, receiver) = glib::MainContext::channel::<PathBuf>(Priority::default());
-        match File::open(&poster_file_path) {
+        let (sender, receiver) = glib::MainContext::channel::<(PathBuf, reel_hub::movie::ImageType)>(
+            Priority::default(),
+        );
+        let image_widget = match image_type {
+            reel_hub::movie::ImageType::Poster => &self.poster,
+            reel_hub::movie::ImageType::Backdrop => &self.backdrop,
+        };
+        match File::open(&image_file_path) {
             Ok(_) => {
-                self.poster
+                image_widget
                     .deref()
-                    .set_pixbuf(Some(&Pixbuf::from_file(poster_file_path).unwrap()));
+                    .set_pixbuf(Some(&Pixbuf::from_file(image_file_path).unwrap()));
             }
             Err(_) => {
-                self.poster.deref().set_pixbuf(Some(&res::loading()));
-                let poster_path = data.poster_path.clone();
-                std::thread::spawn(move || Movie::fetch_poster(poster_path, sender));
+                image_widget.deref().set_pixbuf(Some(&res::loading()));
+                std::thread::spawn(move || Movie::fetch_image(image_path, image_type, sender));
             }
         }
         receiver.attach(
             None,
-            clone!(@weak self as window => @default-return Continue(false), move |path| {
-                window.poster.deref().set_pixbuf(Some(&Pixbuf::from_file(path).unwrap()));
+            clone!(@weak self as window => @default-return Continue(false), move |(path, image_type)| {
+                match image_type {
+                    reel_hub::movie::ImageType::Poster => {
+                        window.poster.deref().set_pixbuf(Some(&Pixbuf::from_file(path).unwrap()));
+                    }
+                    reel_hub::movie::ImageType::Backdrop => {
+                        window.backdrop.deref().set_pixbuf(Some(&Pixbuf::from_file(path).unwrap()));
+                    }
+                }
                 Continue(true)
             }),
         );

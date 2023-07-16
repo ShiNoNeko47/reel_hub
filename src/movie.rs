@@ -12,9 +12,14 @@ use serde::{Deserialize, Serialize};
 
 use crate::utils::{self, user_dir};
 
-use self::tmdb::fetch_poster_tmdb;
+use self::tmdb::fetch_image_tmdb;
 
 mod tmdb;
+
+pub enum ImageType {
+    Poster,
+    Backdrop,
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MovieData {
@@ -26,6 +31,7 @@ pub struct MovieData {
     pub vote_count: u64,
     pub release_date: String,
     pub poster_path: String,
+    pub backdrop_path: String,
 }
 
 #[derive(Debug)]
@@ -124,12 +130,24 @@ impl Movie {
             .expect("Movie failed to play")
     }
 
-    pub fn fetch_poster(poster_path: String, sender: glib::Sender<PathBuf>) {
-        let path = PathBuf::from(format!("{}{}", user_dir(user_cache_dir()), poster_path));
+    pub fn fetch_image(
+        image_path: String,
+        image_type: ImageType,
+        sender: glib::Sender<(PathBuf, ImageType)>,
+    ) {
+        let path = PathBuf::from(format!("{}{}", user_dir(user_cache_dir()), image_path));
         let mut file = File::create(&path).unwrap();
-        file.write(&fetch_poster_tmdb(poster_path, Some(500)).to_vec().to_vec())
-            .expect("Couldn't write to file");
-        sender.send(path).expect("Couldn't send");
+        let resolution = match image_type {
+            ImageType::Poster => 500,
+            ImageType::Backdrop => 780,
+        };
+        file.write(
+            &fetch_image_tmdb(image_path, Some(resolution))
+                .to_vec()
+                .to_vec(),
+        )
+        .expect("Couldn't write to file");
+        sender.send((path, image_type)).expect("Couldn't send");
     }
 }
 
@@ -162,6 +180,7 @@ impl Clone for MovieData {
             vote_count: self.vote_count,
             release_date: self.release_date.clone(),
             poster_path: self.poster_path.clone(),
+            backdrop_path: self.backdrop_path.clone(),
         }
     }
 }

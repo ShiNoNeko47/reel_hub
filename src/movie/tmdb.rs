@@ -28,6 +28,7 @@ pub fn fetch_data_tmdb(name: &String, year: String) -> Option<MovieData> {
                     vote_count: movie_data["vote_count"].as_u64().unwrap(),
                     release_date: movie_data["release_date"].as_str().unwrap().to_string(),
                     poster_path: movie_data["poster_path"].as_str().unwrap().to_string(),
+                    backdrop_path: movie_data["backdrop_path"].as_str().unwrap().to_string(),
                 })
             } else {
                 Some(MovieData {
@@ -39,6 +40,7 @@ pub fn fetch_data_tmdb(name: &String, year: String) -> Option<MovieData> {
                     vote_count: 0,
                     release_date: "".to_string(),
                     poster_path: "".to_string(),
+                    backdrop_path: "".to_string(),
                 })
             }
         }
@@ -46,7 +48,7 @@ pub fn fetch_data_tmdb(name: &String, year: String) -> Option<MovieData> {
     }
 }
 
-pub fn fetch_poster_tmdb(poster_path: String, resolution: Option<u32>) -> Vec<u8> {
+pub fn fetch_image_tmdb(poster_path: String, resolution: Option<u32>) -> Vec<u8> {
     let resolution = match resolution {
         Some(resolution) => resolution,
         None => 185,
