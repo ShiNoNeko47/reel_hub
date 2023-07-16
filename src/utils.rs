@@ -17,22 +17,18 @@ pub fn load_cache(movies: &mut Vec<Movie>) {
         Ok(file) => file,
         Err(_) => return,
     };
-    let cache: Vec<MovieCache> = serde_json::from_reader(file).unwrap();
-    for movie in movies {
-        match cache
-            .iter()
-            .find(|entry| OsStr::new(&entry.file_name) == movie.file.file_name().unwrap())
-        {
-            Some(entry) => {
-                movie.data = Some(entry.data.clone());
-                let poster_path = format!("{}{}", path, entry.data.poster_path);
-                match File::open(&poster_path) {
-                    Ok(poster_path) => poster_path,
-                    Err(_) => continue,
-                };
-                // movie.poster_file = Some(PathBuf::from(poster_path));
+    let cache: Result<Vec<MovieCache>, serde_json::Error> = serde_json::from_reader(file);
+    if let Ok(cache) = cache {
+        for movie in movies {
+            match cache
+                .iter()
+                .find(|entry| OsStr::new(&entry.file_name) == movie.file.file_name().unwrap())
+            {
+                Some(entry) => {
+                    movie.data = Some(entry.data.clone());
+                }
+                None => {}
             }
-            None => {}
         }
     }
 }
