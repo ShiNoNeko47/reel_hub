@@ -3,6 +3,7 @@ mod imp;
 use glib::clone;
 use glib::user_data_dir;
 use glib::Priority;
+use gtk::gdk::EventMask;
 use gtk::prelude::*;
 use gtk::Button;
 use gtk::DialogFlags;
@@ -46,7 +47,19 @@ impl Window {
             _ => gtk::Inhibit(false),
         });
 
+        window.add_events(EventMask::PROPERTY_CHANGE_MASK);
+        window.connect_size_allocate(|window, event| {
+            println!("Width: {}", window.allocation().width());
+            println!("{:?}", event);
+            if window.allocation().width() < 1500 {
+                window.imp().backdrop.hide();
+            } else {
+                window.imp().backdrop.show();
+            }
+        });
+
         window.update();
+        window.imp().backdrop.hide();
         window.setup_dir_watcher();
 
         window.imp().play_button.deref().set_label("  Play  ");
