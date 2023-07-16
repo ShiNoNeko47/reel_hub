@@ -47,13 +47,7 @@ impl Window {
         });
 
         window.connect_size_allocate(|window, _event| {
-            if let Some(backdrop) = window.imp().backdrop.pixbuf() {
-                if window.imp().backdrop_container.allocated_width() > backdrop.width() {
-                    window.imp().backdrop.show();
-                } else {
-                    window.imp().backdrop.hide();
-                }
-            }
+            window.autohide_backdrop();
         });
 
         window.update();
@@ -129,6 +123,16 @@ impl Window {
         }));
 
         window
+    }
+
+    fn autohide_backdrop(&self) {
+        if let Some(backdrop) = self.imp().backdrop.pixbuf() {
+            if self.imp().backdrop_container.allocated_width() > backdrop.width() {
+                self.imp().backdrop.show();
+            } else {
+                self.imp().backdrop.hide();
+            }
+        }
     }
 
     fn add_dir(&self) {
@@ -225,6 +229,7 @@ impl Window {
             }));
         }
         self.show_all();
+        self.autohide_backdrop();
     }
 
     fn setup_dir_watcher(&self) {
