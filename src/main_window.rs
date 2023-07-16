@@ -48,14 +48,16 @@ impl Window {
         });
 
         window.add_events(EventMask::PROPERTY_CHANGE_MASK);
-        window.connect_size_allocate(|window, event| {
-            println!("Width: {}", window.allocation().width());
-            println!("{:?}", event);
-            if window.allocation().width() < 1500 {
-                window.imp().backdrop.hide();
-            } else {
-                window.imp().backdrop.show();
+        window.connect_configure_event(|window, _event| {
+            match window.imp().backdrop.get_visible() {
+                true => window.imp().backdrop.hide(),
+                false => {
+                    if window.size().0 > 1500 {
+                        window.imp().backdrop.show();
+                    }
+                }
             }
+            false
         });
 
         window.update();
