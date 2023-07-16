@@ -7,7 +7,7 @@ use std::rc::Rc;
 use gdk_pixbuf::Pixbuf;
 use glib::{clone, user_cache_dir, Priority};
 use gtk::subclass::prelude::*;
-use gtk::{glib, Label, ListBox};
+use gtk::{glib, Label, ListBox, ScrolledWindow};
 use gtk::{prelude::*, Button, CompositeTemplate, Image};
 use reel_hub::movie::{Movie, MovieCache, MovieData};
 use reel_hub::utils;
@@ -21,6 +21,8 @@ pub struct Window {
     pub poster: TemplateChild<Image>,
     #[template_child]
     pub backdrop: TemplateChild<Image>,
+    #[template_child]
+    pub backdrop_container: TemplateChild<ScrolledWindow>,
     #[template_child]
     pub play_button: TemplateChild<Button>,
     #[template_child]

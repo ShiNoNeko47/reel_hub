@@ -3,7 +3,6 @@ mod imp;
 use glib::clone;
 use glib::user_data_dir;
 use glib::Priority;
-use gtk::gdk::EventMask;
 use gtk::prelude::*;
 use gtk::Button;
 use gtk::DialogFlags;
@@ -47,21 +46,17 @@ impl Window {
             _ => gtk::Inhibit(false),
         });
 
-        window.add_events(EventMask::PROPERTY_CHANGE_MASK);
-        window.connect_configure_event(|window, _event| {
-            match window.imp().backdrop.get_visible() {
-                true => window.imp().backdrop.hide(),
-                false => {
-                    if window.size().0 > 1500 {
-                        window.imp().backdrop.show();
-                    }
+        window.connect_size_allocate(|window, _event| {
+            if let Some(backdrop) = window.imp().backdrop.pixbuf() {
+                if window.imp().backdrop_container.allocated_width() > backdrop.width() {
+                    window.imp().backdrop.show();
+                } else {
+                    window.imp().backdrop.hide();
                 }
             }
-            false
         });
 
         window.update();
-        window.imp().backdrop.hide();
         window.setup_dir_watcher();
 
         window.imp().play_button.deref().set_label("  Play  ");
@@ -154,7 +149,6 @@ impl Window {
                     );
                     filechooser.set_current_folder(utils::user_dir(user_data_dir()));
                     filechooser.connect_response(clone!(@weak dialog => move |savedialog, response| {
-                        println!("Response: {:?}", response);
                         match response {
                             ResponseType::Ok => {
                                 symlink::symlink_dir(dialog.file().unwrap().path().unwrap(), savedialog.file().unwrap().path().unwrap()).unwrap();

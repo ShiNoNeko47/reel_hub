@@ -35,7 +35,12 @@
                         <property name="hexpand">true</property>
                         <property name="halign">fill</property>
                         <child>
-                          <object class="GtkImage" id="backdrop"></object>
+                          <object class="GtkScrolledWindow" id="backdrop_container">
+                            <property name="vscrollbar-policy">never</property>
+                            <child>
+                              <object class="GtkImage" id="backdrop"></object>
+                            </child>
+                          </object>
                         </child>
                         <child>
                           <object class="GtkLabel" id="title">
