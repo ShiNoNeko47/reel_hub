@@ -41,10 +41,33 @@ impl Window {
         let window: Self = glib::Object::builder().property("application", app).build();
         window.connect_key_press_event(|window, key| match key.keycode() {
             Some(71) => {
+                //<F5>
                 window.update();
                 gtk::Inhibit(true)
             }
-            _ => gtk::Inhibit(false),
+            Some(36) => {
+                // return
+                if window.imp().play_button.is_visible() {
+                    window.imp().play_button.emit_clicked()
+                }
+                gtk::Inhibit(true)
+            }
+            Some(44) => {
+                // println!("j");
+                gtk::Inhibit(true)
+            }
+            Some(45) => {
+                // println!("k");
+                gtk::Inhibit(true)
+            }
+            Some(46) => {
+                // println!("l");
+                gtk::Inhibit(true)
+            }
+            _ => {
+                // println!("Key code: {:?}", key.keycode());
+                gtk::Inhibit(false)
+            }
         });
 
         window.connect_size_allocate(|window, _event| {
