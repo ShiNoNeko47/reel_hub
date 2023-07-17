@@ -162,9 +162,9 @@ impl Window {
         };
         match File::open(&image_file_path) {
             Ok(_) => {
-                image_widget
-                    .deref()
-                    .set_pixbuf(Some(&Pixbuf::from_file(image_file_path).unwrap()));
+                if let Ok(pixbuf) = &Pixbuf::from_file(image_file_path) {
+                    image_widget.deref().set_pixbuf(Some(pixbuf))
+                };
             }
             Err(_) => {
                 image_widget
