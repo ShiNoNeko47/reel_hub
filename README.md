@@ -4,6 +4,7 @@ This is a gtk movie library browser written in rust.
 ## Features
  - Fetching data from <b>tmdb api</b> 
 	- poster
+	- backdrop
 	- original title and language
 	- overview
 	- vote average and count
@@ -47,5 +48,8 @@ Usage: reel_hub [option]
  -c, --clear-cache	clear cache and exit (does not clear time positions)
 ```
 <b>Note:</b> running without arguments runs the app
-## Screenshot
-![image](screenshot.jpg)
+## Screenshots
+<b>None:</b> backdrop gets hidden when there isn't enough space
+
+![image](screenshot_1.png)
+![image](screenshot_2.png)
