@@ -17,6 +17,7 @@ use notify::{
     EventKind, Watcher,
 };
 use reel_hub::detect;
+use reel_hub::movie::ImageType;
 use reel_hub::movie::Movie;
 use reel_hub::movie::MovieData;
 use reel_hub::utils;
@@ -223,10 +224,11 @@ impl Window {
                         window.imp().movie_select(Some(movie));
                     }
                     None => {
-                        window.imp().poster.deref().set_pixbuf(Some(&res::check_connection()));
-                        window.imp().backdrop.hide();
+                        window.imp().poster.deref().set_pixbuf(Some(&res::check_connection(&ImageType::Poster)));
+                        window.imp().backdrop.deref().set_pixbuf(Some(&res::check_connection(&ImageType::Backdrop)));
                     }
                 }
+                window.autohide_backdrop();
                 Continue(true)
             }));
         }

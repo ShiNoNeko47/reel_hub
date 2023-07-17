@@ -83,8 +83,12 @@ impl Window {
         match data {
             None => {
                 if let Some(name) = name {
-                    self.poster.deref().set_pixbuf(Some(&res::loading()));
-                    self.backdrop.deref().set_pixbuf(None);
+                    self.poster
+                        .deref()
+                        .set_pixbuf(Some(&res::loading(&reel_hub::movie::ImageType::Poster)));
+                    self.backdrop
+                        .deref()
+                        .set_pixbuf(Some(&res::loading(&reel_hub::movie::ImageType::Backdrop)));
                     self.title
                         .deref()
                         .set_label(&format!("<b>Title:</b> {name}"));
@@ -163,7 +167,9 @@ impl Window {
                     .set_pixbuf(Some(&Pixbuf::from_file(image_file_path).unwrap()));
             }
             Err(_) => {
-                image_widget.deref().set_pixbuf(Some(&res::loading()));
+                image_widget
+                    .deref()
+                    .set_pixbuf(Some(&res::loading(&image_type)));
                 std::thread::spawn(move || Movie::fetch_image(image_path, image_type, sender));
             }
         }
