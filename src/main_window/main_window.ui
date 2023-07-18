@@ -129,7 +129,7 @@
                     <property name="vexpand">true</property>
                     <child>
                       <object class="GtkListBox" id="list_box">
-                        <property name="selection-mode">none</property>
+                        <property name="selection-mode">single</property>
                       </object>
                     </child>
                   </object>

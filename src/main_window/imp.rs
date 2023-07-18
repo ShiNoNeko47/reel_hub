@@ -50,6 +50,9 @@ pub struct Window {
     #[template_child]
     pub browse_button: TemplateChild<Button>,
 
+    pub buttons: Rc<RefCell<Vec<Button>>>,
+    pub button_selected: Rc<Cell<usize>>,
+
     pub movies: Rc<RefCell<Vec<Movie>>>,
     pub movies_len: Rc<Cell<usize>>,
     pub movie_selected: Rc<Cell<Option<usize>>>,
