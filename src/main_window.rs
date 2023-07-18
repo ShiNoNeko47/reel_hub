@@ -50,6 +50,14 @@ impl Window {
                     // return
                     window.imp().play_button.activate();
                 }
+                Some(38) => {
+                    // a
+                    window.imp().add_button.activate();
+                }
+                Some(56) => {
+                    // b
+                    window.imp().browse_button.activate();
+                }
                 Some(44) => {
                     // j
                     let button_selected = window.imp().button_selected.get();
