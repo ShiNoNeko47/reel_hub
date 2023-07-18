@@ -1,10 +1,10 @@
 mod imp;
+mod keymaps;
 
 use glib::clone;
 use glib::user_data_dir;
 use glib::Priority;
 use gtk::prelude::*;
-use gtk::subclass::window::WindowImpl;
 use gtk::Button;
 use gtk::DialogFlags;
 use gtk::FileChooserAction;
@@ -40,48 +40,7 @@ glib::wrapper! {
 impl Window {
     pub fn new(app: &Application) -> Self {
         let window: Self = glib::Object::builder().property("application", app).build();
-        window.connect_key_press_event(|window, key| {
-            match key.keycode() {
-                Some(71) => {
-                    //<F5>
-                    window.update();
-                }
-                Some(36) => {
-                    // return
-                    window.imp().play_button.activate();
-                }
-                Some(38) => {
-                    // a
-                    window.imp().add_button.activate();
-                }
-                Some(56) => {
-                    // b
-                    window.imp().browse_button.activate();
-                }
-                Some(44) => {
-                    // j
-                    let button_selected = window.imp().button_selected.get();
-                    if button_selected < window.imp().buttons.borrow().len() - 1 {
-                        window.imp().button_selected.replace(button_selected + 1);
-                        window.set_focus(Some(&window.imp().buttons.borrow()[button_selected + 1]));
-                    }
-                }
-                Some(45) => {
-                    // k
-                    let button_selected = window.imp().button_selected.get();
-                    if button_selected > 0 {
-                        window.imp().button_selected.replace(button_selected - 1);
-                        window.set_focus(Some(&window.imp().buttons.borrow()[button_selected - 1]));
-                    }
-                }
-                Some(46) => {
-                    // l
-                    window.imp().activate_focus();
-                }
-                _ => {}
-            }
-            Inhibit(true)
-        });
+        window.connect_key_press_event(keymaps::set_keymaps);
 
         window.connect_size_allocate(|window, _event| {
             window.autohide_backdrop();
