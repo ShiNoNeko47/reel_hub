@@ -1,3 +1,5 @@
+use crate::res;
+
 use super::MovieData;
 
 pub fn fetch_data_tmdb(name: &String, year: String) -> Option<MovieData> {
@@ -29,6 +31,19 @@ pub fn fetch_data_tmdb(name: &String, year: String) -> Option<MovieData> {
                     release_date: movie_data["release_date"].as_str().unwrap().to_string(),
                     poster_path: movie_data["poster_path"].as_str().unwrap().to_string(),
                     backdrop_path: movie_data["backdrop_path"].as_str().unwrap().to_string(),
+                    genres: movie_data["genre_ids"]
+                        .as_array()
+                        .unwrap()
+                        .iter()
+                        .map(|id| {
+                            res::TMDB_GENRES
+                                .iter()
+                                .find(|genre| genre.0 == id.as_u64().unwrap() as usize)
+                                .unwrap()
+                                .1
+                                .to_string()
+                        })
+                        .collect(),
                 })
             } else {
                 Some(MovieData {
@@ -41,6 +56,7 @@ pub fn fetch_data_tmdb(name: &String, year: String) -> Option<MovieData> {
                     release_date: "".to_string(),
                     poster_path: "".to_string(),
                     backdrop_path: "".to_string(),
+                    genres: vec![],
                 })
             }
         }

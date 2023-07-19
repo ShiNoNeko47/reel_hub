@@ -103,6 +103,14 @@
                           </object>
                         </child>
                         <child>
+                          <object class="GtkLabel" id="genres">
+                            <property name="use_markup">true</property>
+                            <property name="justify">center</property>
+                            <property name="wrap">true</property>
+                            <!-- <property name="label">Release Date</property> -->
+                          </object>
+                        </child>
+                        <child>
                           <object class="GtkButton" id="play_button">
                             <property name="no-show-all">true</property>
                             <property name="halign">center</property>

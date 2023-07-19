@@ -32,6 +32,7 @@ pub struct MovieData {
     pub release_date: String,
     pub poster_path: String,
     pub backdrop_path: String,
+    pub genres: Vec<String>,
 }
 
 #[derive(Debug)]
@@ -181,6 +182,7 @@ impl Clone for MovieData {
             release_date: self.release_date.clone(),
             poster_path: self.poster_path.clone(),
             backdrop_path: self.backdrop_path.clone(),
+            genres: self.genres.clone(),
         }
     }
 }

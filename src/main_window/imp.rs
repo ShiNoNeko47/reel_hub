@@ -42,6 +42,8 @@ pub struct Window {
     pub vote_count: TemplateChild<Label>,
     #[template_child]
     pub release_date: TemplateChild<Label>,
+    #[template_child]
+    pub genres: TemplateChild<Label>,
 
     #[template_child]
     pub status_label: TemplateChild<Label>,
@@ -106,6 +108,7 @@ impl Window {
                 self.vote_average.deref().set_label("");
                 self.vote_count.deref().set_label("");
                 self.release_date.deref().set_label("");
+                self.genres.deref().set_label("")
             }
             Some(data) => {
                 self.title
@@ -132,6 +135,9 @@ impl Window {
                 self.release_date
                     .deref()
                     .set_label(&format!("<b>Release Date:</b> {}", data.release_date));
+                self.genres
+                    .deref()
+                    .set_label(&format!("<b>Genres:</b> {}", data.genres.join(", ")));
 
                 if data.poster_path != "".to_string() {
                     self.display_image(
