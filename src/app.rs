@@ -1,5 +1,5 @@
 use crate::main_window;
-use gtk::{prelude::*, Application};
+use gtk::{gdk::Screen, prelude::*, Application, CssProvider, StyleContext};
 
 pub struct App {
     app: Application,
@@ -18,6 +18,15 @@ impl App {
     }
 
     fn on_activate(app: &Application) {
+        let css_provider = CssProvider::new();
+        css_provider
+            .load_from_data(include_bytes!("res/style/style.css").as_ref())
+            .unwrap();
+        StyleContext::add_provider_for_screen(
+            &Screen::default().unwrap(),
+            &css_provider,
+            gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
+        );
         main_window::Window::new(app);
     }
 }
