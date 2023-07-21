@@ -1,9 +1,10 @@
-* {
+messagedialog *, window * {
+	all: unset;
+	color: white;
 	background: #0f0f0f;
 	border: black;
-	color: white;
 }
-button {
+messagedialog button, window button {
 	all: unset;
 	transition: border .2s;
 	border-style: solid;
@@ -15,27 +16,21 @@ button {
 	margin: 2px 0px;
 }
 
-button:focus {
+messagedialog button:focus, window button:focus {
 	border-image: linear-gradient(to right, red, black 10%) 1;
 	outline: none;
 }
-button:active {
+messagedialog button:active, window button:active {
 	border-image: linear-gradient(to right, red, red) 1;
 	background: #0f0f0f;
 	box-shadow: none;
 }
 
-box {
-	all: unset;
-	background: #0f0f0f;
-}
-
-list {
-	all: unset;
+window list {
 	background: black;
 	padding: 2px 8px;
 }
 
-list > row {
+window list > row {
 	background: black;
 }
