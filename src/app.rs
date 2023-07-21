@@ -18,15 +18,25 @@ impl App {
     }
 
     fn on_activate(app: &Application) {
-        let css_provider = CssProvider::new();
-        css_provider
-            .load_from_data(include_bytes!("res/style/style.css").as_ref())
-            .unwrap();
-        StyleContext::add_provider_for_screen(
-            &Screen::default().unwrap(),
-            &css_provider,
-            gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
-        );
+        let (sender, receiver) = glib::MainContext::channel(glib::PRIORITY_DEFAULT);
+        std::thread::spawn(move || {
+            let mut input = String::new();
+            loop {
+                std::io::stdin().read_line(&mut input).unwrap();
+                sender.send(input.clone()).unwrap();
+                input.clear();
+            }
+        });
+        receiver.attach(None, move |css: String| {
+            let css_provider = CssProvider::new();
+            css_provider.load_from_data(css.as_bytes()).unwrap();
+            StyleContext::add_provider_for_screen(
+                &Screen::default().unwrap(),
+                &css_provider,
+                gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
+            );
+            Continue(true)
+        });
         main_window::Window::new(app);
     }
 }
