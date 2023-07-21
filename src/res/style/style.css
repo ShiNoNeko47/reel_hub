@@ -1,0 +1,41 @@
+* {
+	background: #0f0f0f;
+	border: black;
+	color: white;
+}
+button {
+	all: unset;
+	transition: border .2s;
+	border-style: solid;
+	border-width: 1px;
+	border-image: linear-gradient(to right, black, black) 30;
+	background: #0f0f0f;
+	box-shadow: 0px 0px 5px black;
+	padding: 5px;
+	margin: 2px 0px;
+}
+
+button:focus {
+	border-image: linear-gradient(to right, red, black 10%) 1;
+	outline: none;
+}
+button:active {
+	border-image: linear-gradient(to right, red, red) 1;
+	background: #0f0f0f;
+	box-shadow: none;
+}
+
+box {
+	all: unset;
+	background: #0f0f0f;
+}
+
+list {
+	all: unset;
+	background: black;
+	padding: 2px 8px;
+}
+
+list > row {
+	background: black;
+}
