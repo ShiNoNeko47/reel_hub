@@ -5,7 +5,6 @@ messagedialog *, window * {
 	border: black;
 }
 messagedialog button, window button {
-	all: unset;
 	transition: border .2s;
 	border-style: solid;
 	border-width: 1px;
