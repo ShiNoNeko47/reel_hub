@@ -197,6 +197,7 @@ impl Window {
         for movie in 0..self.imp().movies_len.get() {
             let button = Button::builder()
                 .label(self.imp().movies.borrow()[movie].name.clone())
+                .focus_on_click(false)
                 .build();
             list_box.add(&button);
 
