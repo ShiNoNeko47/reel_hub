@@ -219,6 +219,7 @@ impl Window {
             if movie == self.imp().button_selected.get() {
                 self.set_focus(Some(&button));
             }
+            let progress = self.imp().movies.borrow()[movie].get_progress();
             let css_provider = CssProvider::new();
             css_provider
                 .load_from_data(
@@ -228,7 +229,6 @@ impl Window {
                                 linear-gradient(to right, red {progress}%, black {progress}%) 5px calc(100% - 5px) / calc(100% - 10px) 1px no-repeat;
                         }}",
                         movie + 1,
-                        progress = 100 - movie * 4,
                     )
                     .as_bytes(),
                 )

@@ -202,6 +202,7 @@ impl Window {
             .filter(|x| x.data.is_some())
             .map(|x| MovieCache {
                 file_name: x.file.file_name().unwrap().to_str().unwrap().to_string(),
+                duration: x.duration,
                 data: x.data.clone().unwrap(),
             })
             .collect();

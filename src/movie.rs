@@ -47,6 +47,7 @@ pub struct Movie {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MovieCache {
     pub file_name: String,
+    pub duration: u32,
     pub data: MovieData,
 }
 
@@ -119,6 +120,15 @@ impl Movie {
             );
         }
         current_time
+    }
+
+    pub fn get_progress(&self) -> u32 {
+        let current_time = self.current_time.unwrap_or(0);
+        let duration = self.duration;
+        if duration == 0 {
+            return 0;
+        }
+        (current_time as f32 / duration as f32 * 100.0) as u32
     }
 
     pub fn play(&self, continue_watching: bool) -> Child {
