@@ -27,9 +27,26 @@ messagedialog button:active, window button:active {
 
 window list {
 	background: black;
-	padding: 2px 8px;
+	padding: 0px 8px;
 }
 
 window list > row {
 	background: black;
+}
+
+window undershoot.top {
+	background: none;
+	border-width: 1px;
+	border-style: solid;
+	border-image: linear-gradient(to bottom, red, transparent 50%) 1;
+}
+window undershoot.bottom {
+	background: none;
+	border-width: 1px;
+	border-style: solid;
+	border-image: linear-gradient(to top, red, transparent 50%) 1;
+}
+
+window overshoot {
+	background: none;
 }
