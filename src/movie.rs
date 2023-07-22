@@ -41,6 +41,7 @@ pub struct Movie {
     pub file: PathBuf,
     pub data: Option<MovieData>,
     pub current_time: Option<u32>,
+    pub duration: u32,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -83,6 +84,16 @@ impl Movie {
                 None
             } else {
                 current_time
+            },
+            duration: match ffprobe::ffprobe(file.path().to_str().unwrap()) {
+                Ok(info) => info
+                    .format
+                    .duration
+                    .expect("Couldn't get duration")
+                    .parse::<f32>()
+                    .unwrap() as u32,
+
+                Err(_) => 0,
             },
         }
     }
@@ -165,6 +176,7 @@ impl Clone for Movie {
             file: self.file.clone(),
             data: self.data.clone(),
             current_time: self.current_time,
+            duration: self.duration,
         }
     }
 }
