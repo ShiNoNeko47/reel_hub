@@ -41,7 +41,7 @@ pub struct Movie {
     pub file: PathBuf,
     pub data: Option<MovieData>,
     pub current_time: Option<u32>,
-    pub duration: u32,
+    pub duration: Option<u32>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -86,16 +86,7 @@ impl Movie {
             } else {
                 current_time
             },
-            duration: match ffprobe::ffprobe(file.path().to_str().unwrap()) {
-                Ok(info) => info
-                    .format
-                    .duration
-                    .expect("Couldn't get duration")
-                    .parse::<f32>()
-                    .unwrap() as u32,
-
-                Err(_) => 0,
-            },
+            duration: None,
         }
     }
 
@@ -122,13 +113,13 @@ impl Movie {
         current_time
     }
 
-    pub fn get_progress(&self) -> u32 {
+    pub fn get_progress(&self) -> Option<u32> {
         let current_time = self.current_time.unwrap_or(0);
         let duration = self.duration;
-        if duration == 0 {
-            return 0;
+        if duration == Some(0) || duration.is_none() {
+            return duration;
         }
-        (current_time as f32 / duration as f32 * 100.0) as u32
+        Some((current_time as f32 / duration.unwrap() as f32 * 100.0) as u32)
     }
 
     pub fn play(&self, continue_watching: bool) -> Child {

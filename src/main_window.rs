@@ -4,7 +4,6 @@ mod keymaps;
 use glib::clone;
 use glib::user_data_dir;
 use glib::Priority;
-use gtk::gdk::Screen;
 use gtk::prelude::*;
 use gtk::Button;
 use gtk::CssProvider;
@@ -14,7 +13,6 @@ use gtk::FileChooserDialog;
 use gtk::MessageDialog;
 use gtk::MessageType;
 use gtk::ResponseType;
-use gtk::StyleContext;
 use notify::recommended_watcher;
 use notify::{
     event::{CreateKind, ModifyKind, RemoveKind, RenameMode},
@@ -219,25 +217,23 @@ impl Window {
             if movie == self.imp().button_selected.get() {
                 self.set_focus(Some(&button));
             }
-            let progress = self.imp().movies.borrow()[movie].get_progress();
-            let css_provider = CssProvider::new();
-            css_provider
+            if let Some(progress) = self.imp().movies.borrow()[movie].get_progress() {
+                let css_provider = CssProvider::new();
+                css_provider
                 .load_from_data(
                     format!(
-                        "list row:nth-child({}) button {{
+                        "button {{
                             background: #0f0f0f,
                                 linear-gradient(to right, red {progress}%, black {progress}%) 5px calc(100% - 5px) / calc(100% - 10px) 1px no-repeat;
                         }}",
-                        movie + 1,
                     )
                     .as_bytes(),
                 )
                 .unwrap();
-            StyleContext::add_provider_for_screen(
-                &Screen::default().unwrap(),
-                &css_provider,
-                gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
-            );
+                button
+                    .style_context()
+                    .add_provider(&css_provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
+            }
             self.imp().buttons.borrow_mut().push(button);
             receiver.attach(None, clone!(@weak self as window => @default-return Continue(false), move |(movie, data)| {
                 match data {
