@@ -203,11 +203,23 @@ impl Window {
 
         let cache_data: Vec<MovieCache> = self
             .movies
-            .borrow()
-            .iter()
+            .borrow_mut()
+            .iter_mut()
             .filter(|x| x.data.is_some())
             .map(|x| MovieCache {
                 file_name: x.file.file_name().unwrap().to_str().unwrap().to_string(),
+                duration: x
+                    .duration
+                    .unwrap_or_else(|| match ffprobe::ffprobe(x.file.clone()) {
+                        Ok(info) => {
+                            let duration =
+                                info.format.duration.unwrap().parse::<f32>().unwrap() as u32;
+                            x.duration.replace(duration);
+                            duration
+                        }
+                        Err(_) => 0,
+                    }),
+                done: x.done,
                 data: x.data.clone().unwrap(),
             })
             .collect();

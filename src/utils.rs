@@ -25,6 +25,8 @@ pub fn load_cache(movies: &mut Vec<Movie>) {
                 .find(|entry| OsStr::new(&entry.file_name) == movie.file.file_name().unwrap())
             {
                 Some(entry) => {
+                    movie.duration = Some(entry.duration);
+                    movie.done = entry.done;
                     movie.data = Some(entry.data.clone());
                 }
                 None => {}
