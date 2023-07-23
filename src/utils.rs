@@ -26,6 +26,7 @@ pub fn load_cache(movies: &mut Vec<Movie>) {
             {
                 Some(entry) => {
                     movie.duration = Some(entry.duration);
+                    movie.done = entry.done;
                     movie.data = Some(entry.data.clone());
                 }
                 None => {}

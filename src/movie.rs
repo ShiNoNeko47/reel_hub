@@ -42,12 +42,14 @@ pub struct Movie {
     pub data: Option<MovieData>,
     pub current_time: Option<u32>,
     pub duration: Option<u32>,
+    pub done: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MovieCache {
     pub file_name: String,
     pub duration: u32,
+    pub done: bool,
     pub data: MovieData,
 }
 
@@ -87,6 +89,7 @@ impl Movie {
                 current_time
             },
             duration: None,
+            done: false,
         }
     }
 
@@ -178,6 +181,7 @@ impl Clone for Movie {
             data: self.data.clone(),
             current_time: self.current_time,
             duration: self.duration,
+            done: self.done,
         }
     }
 }

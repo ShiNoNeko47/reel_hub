@@ -213,6 +213,7 @@ impl Window {
                         }
                         Err(_) => 0,
                     }),
+                done: x.done,
                 data: x.data.clone().unwrap(),
             })
             .collect();

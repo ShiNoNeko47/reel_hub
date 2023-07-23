@@ -98,7 +98,13 @@ impl Window {
             receiver.attach(None, clone!(@weak button, @weak window => @default-return Continue(false), move |_| {
                 let file_path = window.imp().movies.borrow()[window.imp().movie_selected.get().unwrap()].file.clone().to_str().unwrap().to_string();
                 let movie = window.imp().movie_selected.get().unwrap();
-                window.imp().movies.borrow_mut()[movie].current_time = Movie::get_current_time(file_path);
+                let current_time = Movie::get_current_time(file_path);
+                window.imp().movies.borrow_mut()[movie].current_time = current_time;
+                if let None = current_time {
+                    window.imp().movies.borrow_mut()[movie].done = true;
+                } else {
+                    window.imp().movies.borrow_mut()[movie].done = false;
+                }
                 window.update_progressbar(&window.imp().buttons.borrow()[movie], movie);
                 button.set_sensitive(true);
                 window.imp().status_label.deref().set_label("");
@@ -242,7 +248,23 @@ impl Window {
     }
 
     fn update_progressbar(&self, button: &Button, movie: usize) {
-        if let Some(progress) = self.imp().movies.borrow()[movie].get_progress() {
+        if self.imp().movies.borrow()[movie].done {
+            let css_provider = CssProvider::new();
+            css_provider
+                .load_from_data(
+                    format!(
+                        "button {{
+                            background: #0f0f0f,
+                                linear-gradient(to right, red, red) 5px calc(100% - 5px) / calc(100% - 10px) 1px no-repeat;
+                        }}",
+                    )
+                    .as_bytes(),
+                )
+                .unwrap();
+            button
+                .style_context()
+                .add_provider(&css_provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
+        } else if let Some(progress) = self.imp().movies.borrow()[movie].get_progress() {
             let css_provider = CssProvider::new();
             css_provider
                 .load_from_data(
