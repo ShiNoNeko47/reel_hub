@@ -197,7 +197,7 @@ impl Window {
             }),
         );
     }
-    fn cache(&self) {
+    pub fn cache(&self) {
         let mut path = utils::user_dir(user_cache_dir());
         path.push_str("/movie_data.json");
 

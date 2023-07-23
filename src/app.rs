@@ -1,4 +1,5 @@
 use crate::main_window;
+use glib::subclass::types::ObjectSubclassIsExt;
 use gtk::{gdk::Screen, prelude::*, Application, CssProvider, StyleContext};
 
 pub struct App {
@@ -27,6 +28,7 @@ impl App {
             &css_provider,
             gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
         );
-        main_window::Window::new(app);
+        let window = main_window::Window::new(app);
+        app.connect_shutdown(move |_| window.imp().cache());
     }
 }
