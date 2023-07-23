@@ -10,6 +10,7 @@ This is a gtk movie library browser written in rust.
 	- vote average and count
 	- release date
  - Playing the selected movie in <b>mpv</b>
+ - Tracking progress
 
 ## Installation
 ### Arch linux
