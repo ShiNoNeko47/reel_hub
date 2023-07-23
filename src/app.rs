@@ -1,4 +1,5 @@
 use crate::main_window;
+use glib::subclass::types::ObjectSubclassIsExt;
 use gtk::{prelude::*, Application};
 
 pub struct App {
@@ -18,6 +19,7 @@ impl App {
     }
 
     fn on_activate(app: &Application) {
-        main_window::Window::new(app);
+        let window = main_window::Window::new(app);
+        app.connect_shutdown(move |_| window.imp().cache());
     }
 }

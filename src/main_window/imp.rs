@@ -191,7 +191,7 @@ impl Window {
             }),
         );
     }
-    fn cache(&self) {
+    pub fn cache(&self) {
         let mut path = utils::user_dir(user_cache_dir());
         path.push_str("/movie_data.json");
 
@@ -208,6 +208,7 @@ impl Window {
 
         let file = std::fs::File::create(path).expect("Could not create file");
         serde_json::to_writer(file, &cache_data).expect("Could not write to file");
+        println!("Cache updated");
     }
 }
 
