@@ -97,7 +97,9 @@ impl Window {
 
             receiver.attach(None, clone!(@weak button, @weak window => @default-return Continue(false), move |_| {
                 let file_path = window.imp().movies.borrow()[window.imp().movie_selected.get().unwrap()].file.clone().to_str().unwrap().to_string();
-                window.imp().movies.borrow_mut()[window.imp().movie_selected.get().unwrap()].current_time = Movie::get_current_time(file_path);
+                let movie = window.imp().movie_selected.get().unwrap();
+                window.imp().movies.borrow_mut()[movie].current_time = Movie::get_current_time(file_path);
+                window.update_progressbar(&window.imp().buttons.borrow()[movie], movie);
                 button.set_sensitive(true);
                 window.imp().status_label.deref().set_label("");
                 Continue(true)
@@ -217,29 +219,14 @@ impl Window {
             if movie == self.imp().button_selected.get() {
                 self.set_focus(Some(&button));
             }
-            if let Some(progress) = self.imp().movies.borrow()[movie].get_progress() {
-                let css_provider = CssProvider::new();
-                css_provider
-                .load_from_data(
-                    format!(
-                        "button {{
-                            background: #0f0f0f,
-                                linear-gradient(to right, red {progress}%, black {progress}%) 5px calc(100% - 5px) / calc(100% - 10px) 1px no-repeat;
-                        }}",
-                    )
-                    .as_bytes(),
-                )
-                .unwrap();
-                button
-                    .style_context()
-                    .add_provider(&css_provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
-            }
+            self.update_progressbar(&button, movie);
             self.imp().buttons.borrow_mut().push(button);
             receiver.attach(None, clone!(@weak self as window => @default-return Continue(false), move |(movie, data)| {
                 match data {
                     Some(data) => {
                         window.imp().movies.borrow_mut()[movie].data.replace(data);
                         window.imp().movie_select(Some(movie));
+                window.update_progressbar(&window.imp().buttons.borrow()[movie], movie);
                     }
                     None => {
                         window.imp().poster.deref().set_pixbuf(Some(&res::check_connection(&ImageType::Poster)));
@@ -252,6 +239,26 @@ impl Window {
         }
         self.show_all();
         self.autohide_backdrop();
+    }
+
+    fn update_progressbar(&self, button: &Button, movie: usize) {
+        if let Some(progress) = self.imp().movies.borrow()[movie].get_progress() {
+            let css_provider = CssProvider::new();
+            css_provider
+                .load_from_data(
+                    format!(
+                        "button {{
+                            background: #0f0f0f,
+                                linear-gradient(to right, red {progress}%, black {progress}%) 5px calc(100% - 5px) / calc(100% - 10px) 1px no-repeat;
+                        }}",
+                    )
+                    .as_bytes(),
+                )
+                .unwrap();
+            button
+                .style_context()
+                .add_provider(&css_provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
+        }
     }
 
     fn setup_dir_watcher(&self) {

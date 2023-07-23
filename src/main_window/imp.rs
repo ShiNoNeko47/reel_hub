@@ -206,7 +206,6 @@ impl Window {
                     .duration
                     .unwrap_or_else(|| match ffprobe::ffprobe(x.file.clone()) {
                         Ok(info) => {
-                            println!("{:?}", x.duration);
                             let duration =
                                 info.format.duration.unwrap().parse::<f32>().unwrap() as u32;
                             x.duration.replace(duration);
