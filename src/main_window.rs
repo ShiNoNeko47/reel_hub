@@ -196,6 +196,13 @@ impl Window {
         }
 
         self.setup_buttons();
+
+        if self.imp().button_selected.get() >= self.imp().buttons.borrow().len() {
+            self.imp()
+                .button_selected
+                .replace(self.imp().buttons.borrow().len() - 1);
+            self.imp().buttons.borrow().last().unwrap().grab_focus();
+        }
     }
 
     fn setup_buttons(&self) {
