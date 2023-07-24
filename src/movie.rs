@@ -133,7 +133,7 @@ impl Movie {
             .arg(&self.file.deref())
             .arg("--no-config")
             .arg("--save-position-on-quit")
-            .arg("--watch-later-options-clr")
+            .arg("--watch-later-options=start")
             .arg(format!(
                 "--watch-later-directory={}/.watch-later",
                 super::utils::user_dir(user_data_dir())
