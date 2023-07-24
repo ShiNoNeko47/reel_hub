@@ -231,7 +231,7 @@ impl Window {
                 window.autohide_backdrop();
             }));
             if movie == self.imp().button_selected.get() {
-                self.set_focus(Some(&button));
+                button.grab_focus();
             }
             self.update_progressbar(&button, movie);
             self.imp().buttons.borrow_mut().push(button);
