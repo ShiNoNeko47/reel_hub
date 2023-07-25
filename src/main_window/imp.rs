@@ -59,6 +59,8 @@ pub struct Window {
     pub movies_len: Rc<Cell<usize>>,
     pub movie_selected: Rc<Cell<Option<usize>>>,
 
+    pub cache: Rc<RefCell<Vec<MovieCache>>>,
+
     pub dir_watcher: Rc<RefCell<Option<notify::RecommendedWatcher>>>,
 }
 
@@ -81,7 +83,7 @@ impl Window {
             self.play_button.hide();
         }
 
-        self.cache();
+        self.update_cache();
     }
 
     fn display_data(&self, data: Option<MovieData>, name: Option<&str>) {
@@ -197,35 +199,45 @@ impl Window {
             }),
         );
     }
-    pub fn cache(&self) {
+    pub fn update_cache(&self) {
+        for movie in self.movies.borrow_mut().iter_mut() {
+            let pos = self.cache.borrow_mut().iter_mut().position(|cache| {
+                cache.file_name == movie.file.file_name().unwrap().to_str().unwrap()
+            });
+            if let Some(pos) = pos {
+                self.cache.borrow_mut()[pos] = MovieCache {
+                    file_name: movie
+                        .file
+                        .file_name()
+                        .unwrap()
+                        .to_str()
+                        .unwrap()
+                        .to_string(),
+                    duration: movie.duration.unwrap_or_else(|| {
+                        match ffprobe::ffprobe(movie.file.clone()) {
+                            Ok(info) => {
+                                let duration =
+                                    info.format.duration.unwrap().parse::<f32>().unwrap() as u32;
+                                movie.duration.replace(duration);
+                                duration
+                            }
+                            Err(_) => 0,
+                        }
+                    }),
+                    done: movie.done,
+                    data: movie.data.clone().unwrap(),
+                };
+            }
+        }
+    }
+
+    pub fn store_cache(&self) {
         let mut path = utils::user_dir(user_cache_dir());
         path.push_str("/movie_data.json");
 
-        let cache_data: Vec<MovieCache> = self
-            .movies
-            .borrow_mut()
-            .iter_mut()
-            .filter(|x| x.data.is_some())
-            .map(|x| MovieCache {
-                file_name: x.file.file_name().unwrap().to_str().unwrap().to_string(),
-                duration: x
-                    .duration
-                    .unwrap_or_else(|| match ffprobe::ffprobe(x.file.clone()) {
-                        Ok(info) => {
-                            let duration =
-                                info.format.duration.unwrap().parse::<f32>().unwrap() as u32;
-                            x.duration.replace(duration);
-                            duration
-                        }
-                        Err(_) => 0,
-                    }),
-                done: x.done,
-                data: x.data.clone().unwrap(),
-            })
-            .collect();
-
         let file = std::fs::File::create(path).expect("Could not create file");
-        serde_json::to_writer(file, &cache_data).expect("Could not write to file");
+        serde_json::to_writer(file, &self.cache.borrow().to_vec())
+            .expect("Could not write to file");
     }
 }
 

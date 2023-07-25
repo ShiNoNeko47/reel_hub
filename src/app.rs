@@ -29,6 +29,6 @@ impl App {
             gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
         );
         let window = main_window::Window::new(app);
-        app.connect_shutdown(move |_| window.imp().cache());
+        app.connect_shutdown(move |_| window.imp().store_cache());
     }
 }

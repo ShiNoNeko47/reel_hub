@@ -11,11 +11,11 @@ pub fn user_dir(path: std::path::PathBuf) -> String {
     path.to_str().unwrap().to_string()
 }
 
-pub fn load_cache(movies: &mut Vec<Movie>) {
+pub fn load_cache(movies: &mut Vec<Movie>) -> Vec<MovieCache> {
     let path = user_dir(user_cache_dir());
     let file = match File::open(format!("{}/{}", path, "movie_data.json")) {
         Ok(file) => file,
-        Err(_) => return,
+        Err(_) => return vec![],
     };
     let cache: Result<Vec<MovieCache>, serde_json::Error> = serde_json::from_reader(file);
     if let Ok(cache) = cache {
@@ -35,5 +35,8 @@ pub fn load_cache(movies: &mut Vec<Movie>) {
                 None => {}
             }
         }
+        cache
+    } else {
+        vec![]
     }
 }

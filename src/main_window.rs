@@ -184,7 +184,7 @@ impl Window {
             utils::user_dir(user_data_dir()),
             self.imp().movies.borrow_mut().to_vec(),
         );
-        utils::load_cache(&mut movies);
+        self.imp().cache.replace(utils::load_cache(&mut movies));
         movies.sort_unstable();
         match self.imp().movie_selected.get() {
             Some(movie_selected) => {

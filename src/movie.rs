@@ -247,3 +247,14 @@ impl MovieData {
         data
     }
 }
+
+impl Clone for MovieCache {
+    fn clone(&self) -> Self {
+        MovieCache {
+            file_name: self.file_name.clone(),
+            duration: self.duration,
+            done: self.done,
+            data: self.data.clone(),
+        }
+    }
+}
