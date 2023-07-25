@@ -123,7 +123,10 @@ impl Movie {
         if duration == Some(0) || duration.is_none() {
             return duration;
         }
-        Some((current_time as f32 / duration.unwrap() as f32 * 100.0) as u32)
+        if current_time == 0 {
+            return Some(0);
+        }
+        Some((current_time as f32 / duration.unwrap() as f32 * 100.0) as u32 + 1)
     }
 
     pub fn play(&self, continue_watching: bool) -> Child {
