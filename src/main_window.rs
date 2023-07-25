@@ -178,7 +178,10 @@ impl Window {
     }
 
     fn update(&self) {
-        let mut movies = detect::get_movies(utils::user_dir(user_data_dir()));
+        let mut movies = detect::get_movies(
+            utils::user_dir(user_data_dir()),
+            self.imp().movies.borrow_mut().to_vec(),
+        );
         utils::load_cache(&mut movies);
         movies.sort();
         match self.imp().movie_selected.get() {

@@ -19,7 +19,10 @@ pub fn load_cache(movies: &mut Vec<Movie>) {
     };
     let cache: Result<Vec<MovieCache>, serde_json::Error> = serde_json::from_reader(file);
     if let Ok(cache) = cache {
-        for movie in movies {
+        for movie in movies
+            .iter_mut()
+            .filter(|movie| movie.duration.is_none() || movie.data.is_none())
+        {
             match cache
                 .iter()
                 .find(|entry| OsStr::new(&entry.file_name) == movie.file.file_name().unwrap())

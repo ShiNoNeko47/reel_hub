@@ -35,8 +35,10 @@ directories with movies in \"{}/\"
                 exit(0)
             }
             "--list" | "-l" => {
-                let movies =
-                    reel_hub::detect::get_movies(reel_hub::utils::user_dir(user_data_dir()));
+                let movies = reel_hub::detect::get_movies(
+                    reel_hub::utils::user_dir(user_data_dir()),
+                    vec![],
+                );
                 for movie in movies {
                     if let Some(year) = movie.year {
                         println!("{} ({})", movie.name, year);
