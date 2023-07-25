@@ -184,28 +184,16 @@ impl PartialOrd for Movie {
 impl Ord for Movie {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         if self.current_time.is_some() {
+            if other.current_time.is_some() {
+                return self.name.cmp(&other.name);
+            }
             return std::cmp::Ordering::Less;
-        }
-        if self.name.starts_with("~") {
+        } else if other.current_time.is_some() {
             return std::cmp::Ordering::Greater;
         }
+
         if self.done == other.done {
-            return self
-                .file
-                .file_name()
-                .unwrap()
-                .to_str()
-                .unwrap()
-                .to_string()
-                .cmp(
-                    &other
-                        .file
-                        .file_name()
-                        .unwrap()
-                        .to_str()
-                        .unwrap()
-                        .to_string(),
-                );
+            return self.name.cmp(&other.name);
         }
         if self.done {
             return std::cmp::Ordering::Greater;
