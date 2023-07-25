@@ -180,6 +180,7 @@ impl Window {
     fn update(&self) {
         let mut movies = detect::get_movies(utils::user_dir(user_data_dir()));
         utils::load_cache(&mut movies);
+        movies.sort();
         match self.imp().movie_selected.get() {
             Some(movie_selected) => {
                 let movie = movies
