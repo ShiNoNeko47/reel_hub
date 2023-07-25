@@ -108,6 +108,8 @@ impl Window {
                 window.update_progressbar(&window.imp().buttons.borrow()[movie], movie);
                 button.set_sensitive(true);
                 window.imp().status_label.deref().set_label("");
+                window.imp().movies.borrow_mut().sort_unstable();
+                window.setup_buttons();
                 Continue(true)
             }));
         }));
@@ -183,7 +185,7 @@ impl Window {
             self.imp().movies.borrow_mut().to_vec(),
         );
         utils::load_cache(&mut movies);
-        movies.sort();
+        movies.sort_unstable();
         match self.imp().movie_selected.get() {
             Some(movie_selected) => {
                 let movie = movies
