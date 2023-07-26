@@ -125,40 +125,46 @@
               </object>
             </child>
             <child>
-              <object class="GtkBox">
-                <property name="orientation">vertical</property>
+              <object class="GtkRevealer" id="revealer">
+                <property name="transition-type">slide-left</property>
+                <property name="reveal-child">true</property>
                 <child>
-                  <object class="GtkScrolledWindow">
-                    <!-- <property name="orientation">vertical</property> -->
-                    <property name="margin-top">10</property>
-                    <property name="margin-end">10</property>
-                    <property name="margin-start">10</property>
-                    <property name="margin-bottom">10</property>
-                    <property name="hscrollbar-policy">never</property>
-                    <property name="vexpand">true</property>
+                  <object class="GtkBox">
+                    <property name="orientation">vertical</property>
                     <child>
-                      <object class="GtkListBox" id="list_box">
-                        <property name="selection-mode">single</property>
+                      <object class="GtkScrolledWindow">
+                        <!-- <property name="orientation">vertical</property> -->
+                        <property name="margin-top">10</property>
+                        <property name="margin-end">10</property>
+                        <property name="margin-start">10</property>
+                        <property name="margin-bottom">10</property>
+                        <property name="hscrollbar-policy">never</property>
+                        <property name="vexpand">true</property>
+                        <child>
+                          <object class="GtkListBox" id="list_box">
+                            <property name="selection-mode">single</property>
+                          </object>
+                        </child>
                       </object>
                     </child>
-                  </object>
-                </child>
-                <child>
-                  <object class="GtkButton" id="add_button">
-                    <property name="label">Add to Library</property>
-                    <property name="focus-on-click">false</property>
-                    <property name="margin-top">10</property>
-                    <property name="margin-end">10</property>
-                    <property name="margin-start">10</property>
-                  </object>
-                </child>
-                <child>
-                  <object class="GtkButton" id="browse_button">
-                    <property name="label">Browse Library</property>
-                    <property name="focus-on-click">false</property>
-                    <property name="margin-top">10</property>
-                    <property name="margin-end">10</property>
-                    <property name="margin-start">10</property>
+                    <child>
+                      <object class="GtkButton" id="add_button">
+                        <property name="label">Add to Library</property>
+                        <property name="focus-on-click">false</property>
+                        <property name="margin-top">10</property>
+                        <property name="margin-end">10</property>
+                        <property name="margin-start">10</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkButton" id="browse_button">
+                        <property name="label">Browse Library</property>
+                        <property name="focus-on-click">false</property>
+                        <property name="margin-top">10</property>
+                        <property name="margin-end">10</property>
+                        <property name="margin-start">10</property>
+                      </object>
+                    </child>
                   </object>
                 </child>
               </object>

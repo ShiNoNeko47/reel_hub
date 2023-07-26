@@ -21,6 +21,10 @@ pub fn set_keymaps(window: &super::Window, key: &EventKey) -> gtk::Inhibit {
             // b
             window.imp().browse_button.activate();
         }
+        Some(43) => {
+            //h
+            window.imp().revealer.set_reveal_child(false);
+        }
         Some(44) => {
             // j
             let button_selected = window.imp().button_selected.get();
@@ -39,7 +43,14 @@ pub fn set_keymaps(window: &super::Window, key: &EventKey) -> gtk::Inhibit {
         }
         Some(46) => {
             // l
-            window.imp().activate_focus();
+            if window.imp().revealer.reveals_child() {
+                window.imp().activate_focus();
+            } else {
+                window.imp().revealer.set_reveal_child(true);
+                window.set_focus(Some(
+                    &window.imp().buttons.borrow()[window.imp().button_selected.get()],
+                ));
+            }
         }
         _ => {}
     }
