@@ -109,11 +109,7 @@ impl Window {
                 window.imp().update_cache();
                 button.set_sensitive(true);
                 window.imp().status_label.deref().set_label("");
-                let movie_current = &window.imp().movies.borrow()[movie].clone();
-                window.imp().movies.borrow_mut().sort_unstable();
-                let idx = window.imp().movies.borrow().iter().position(|x| movie_current == x);
-                window.imp().movie_select(idx);
-                window.imp().button_selected.replace(idx.unwrap_or(0));
+                window.sort_buttons(movie);
                 window.setup_buttons();
                 Continue(true)
             }));
@@ -264,6 +260,19 @@ impl Window {
         }
         self.show_all();
         self.autohide_backdrop();
+    }
+
+    fn sort_buttons(&self, movie: usize) {
+        let movie_current = &self.imp().movies.borrow()[movie].clone();
+        self.imp().movies.borrow_mut().sort_unstable();
+        let idx = self
+            .imp()
+            .movies
+            .borrow()
+            .iter()
+            .position(|x| movie_current == x);
+        self.imp().movie_select(idx);
+        self.imp().button_selected.replace(idx.unwrap_or(0));
     }
 
     fn update_progressbar(&self, button: &Button, movie: usize) {
