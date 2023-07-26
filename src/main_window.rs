@@ -96,8 +96,8 @@ impl Window {
             }
 
             receiver.attach(None, clone!(@weak button, @weak window => @default-return Continue(false), move |_| {
-                let file_path = window.imp().movies.borrow()[window.imp().movie_selected.get().unwrap()].file.clone().to_str().unwrap().to_string();
                 let movie = window.imp().movie_selected.get().unwrap();
+                let file_path = window.imp().movies.borrow()[movie].file.clone().to_str().unwrap().to_string();
                 let current_time = Movie::get_current_time(file_path);
                 window.imp().movies.borrow_mut()[movie].current_time = current_time;
                 if let None = current_time {
@@ -109,7 +109,11 @@ impl Window {
                 window.imp().update_cache();
                 button.set_sensitive(true);
                 window.imp().status_label.deref().set_label("");
+                let movie_current = &window.imp().movies.borrow()[movie].clone();
                 window.imp().movies.borrow_mut().sort_unstable();
+                let idx = window.imp().movies.borrow().iter().position(|x| movie_current == x);
+                window.imp().movie_select(idx);
+                window.imp().button_selected.replace(idx.unwrap_or(0));
                 window.setup_buttons();
                 Continue(true)
             }));
