@@ -41,6 +41,7 @@ glib::wrapper! {
 impl Window {
     pub fn new(app: &Application) -> Self {
         let window: Self = glib::Object::builder().property("application", app).build();
+        window.set_default_size(1000, 850);
         window.connect_key_press_event(keymaps::set_keymaps);
 
         window.connect_size_allocate(|window, _event| {
@@ -204,7 +205,9 @@ impl Window {
 
         self.setup_buttons();
 
-        if self.imp().button_selected.get() >= self.imp().buttons.borrow().len() {
+        if self.imp().button_selected.get() >= self.imp().buttons.borrow().len()
+            && self.imp().buttons.borrow().len() > 0
+        {
             self.imp()
                 .button_selected
                 .replace(self.imp().buttons.borrow().len() - 1);
