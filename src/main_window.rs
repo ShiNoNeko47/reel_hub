@@ -106,6 +106,7 @@ impl Window {
                     window.imp().movies.borrow_mut()[movie].done = false;
                 }
                 window.update_progressbar(&window.imp().buttons.borrow()[movie], movie);
+                window.imp().update_cache();
                 button.set_sensitive(true);
                 window.imp().status_label.deref().set_label("");
                 window.imp().movies.borrow_mut().sort_unstable();
