@@ -203,6 +203,17 @@ impl Window {
             let pos = self.cache.borrow_mut().iter_mut().position(|cache| {
                 cache.file_name == movie.file.file_name().unwrap().to_str().unwrap()
             });
+            let mut duration = movie.duration.unwrap_or(0);
+            if duration == 0 && !movie.name.starts_with("~ ") {
+                duration = match ffprobe::ffprobe(movie.file.clone()) {
+                    Ok(info) => {
+                        let duration = info.format.duration.unwrap().parse::<f32>().unwrap() as u32;
+                        movie.duration.replace(duration);
+                        duration
+                    }
+                    Err(_) => 0,
+                };
+            }
             let cache = MovieCache {
                 file_name: movie
                     .file
@@ -211,17 +222,7 @@ impl Window {
                     .to_str()
                     .unwrap()
                     .to_string(),
-                duration: movie.duration.unwrap_or_else(|| {
-                    match ffprobe::ffprobe(movie.file.clone()) {
-                        Ok(info) => {
-                            let duration =
-                                info.format.duration.unwrap().parse::<f32>().unwrap() as u32;
-                            movie.duration.replace(duration);
-                            duration
-                        }
-                        Err(_) => 0,
-                    }
-                }),
+                duration,
                 done: movie.done,
                 data: movie.data.clone().unwrap(),
             };
