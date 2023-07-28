@@ -46,6 +46,8 @@ pub struct Window {
     pub release_date: TemplateChild<Label>,
     #[template_child]
     pub genres: TemplateChild<Label>,
+    #[template_child]
+    pub duration: TemplateChild<Label>,
 
     #[template_child]
     pub status_label: TemplateChild<Label>,
@@ -71,21 +73,25 @@ impl Window {
         match movie {
             Some(movie) => {
                 let data = self.movies.borrow()[movie].data.clone();
-                self.display_data(data, Some(&self.movies.borrow()[movie].name));
-                self.play_button.deref().show();
                 if self.movies.borrow()[movie].data.is_some() {
                     self.update_cache();
                 }
+                self.display_data(
+                    data,
+                    Some(&self.movies.borrow()[movie].name),
+                    self.movies.borrow()[movie].duration.unwrap_or(0),
+                );
+                self.play_button.deref().show();
             }
             None => {
-                self.display_data(None, None);
+                self.display_data(None, None, 0);
                 self.play_button.hide();
             }
         }
         self.movie_selected.replace(movie);
     }
 
-    fn display_data(&self, data: Option<MovieData>, name: Option<&str>) {
+    fn display_data(&self, data: Option<MovieData>, name: Option<&str>, duration: u32) {
         match data {
             None => {
                 if let Some(name) = name {
@@ -109,7 +115,8 @@ impl Window {
                 self.vote_average.deref().set_label("");
                 self.vote_count.deref().set_label("");
                 self.release_date.deref().set_label("");
-                self.genres.deref().set_label("")
+                self.genres.deref().set_label("");
+                self.duration.deref().set_label("");
             }
             Some(data) => {
                 self.title
@@ -139,6 +146,16 @@ impl Window {
                 self.genres
                     .deref()
                     .set_label(&format!("<b>Genres:</b> {}", data.genres.join(", ")));
+                if duration > 0 {
+                    self.duration.deref().set_label(&format!(
+                        "<b>Duration:</b> {}:{:02}:{:02}",
+                        duration / 3600,
+                        duration / 60 % 60,
+                        duration % 60
+                    ));
+                } else {
+                    self.duration.deref().set_label("");
+                }
 
                 if data.poster_path != "".to_string() {
                     self.display_image(
@@ -200,6 +217,9 @@ impl Window {
     }
     pub fn update_cache(&self) {
         for movie in self.movies.borrow_mut().iter_mut() {
+            if movie.data.is_none() {
+                continue;
+            }
             let pos = self.cache.borrow_mut().iter_mut().position(|cache| {
                 cache.file_name == movie.file.file_name().unwrap().to_str().unwrap()
             });
