@@ -250,7 +250,8 @@ impl Window {
                     Some(data) => {
                         window.imp().movies.borrow_mut()[movie].data.replace(data);
                         window.imp().movie_select(Some(movie));
-                window.update_progressbar(&window.imp().buttons.borrow()[movie], movie);
+                        window.update_progressbar(&window.imp().buttons.borrow()[movie], movie);
+                        window.imp().update_cache();
                     }
                     None => {
                         window.imp().poster.deref().set_pixbuf(Some(&res::check_connection(&ImageType::Poster)));

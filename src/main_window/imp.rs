@@ -72,20 +72,17 @@ impl Window {
             Some(movie) => {
                 let data = self.movies.borrow()[movie].data.clone();
                 self.display_data(data, Some(&self.movies.borrow()[movie].name));
+                self.play_button.deref().show();
+                if self.movies.borrow()[movie].data.is_some() {
+                    self.update_cache();
+                }
             }
             None => {
                 self.display_data(None, None);
+                self.play_button.hide();
             }
         }
         self.movie_selected.replace(movie);
-
-        if let Some(_) = movie {
-            self.play_button.deref().show();
-        } else {
-            self.play_button.hide();
-        }
-
-        self.update_cache();
     }
 
     fn display_data(&self, data: Option<MovieData>, name: Option<&str>) {
@@ -206,29 +203,32 @@ impl Window {
             let pos = self.cache.borrow_mut().iter_mut().position(|cache| {
                 cache.file_name == movie.file.file_name().unwrap().to_str().unwrap()
             });
-            if let Some(pos) = pos {
-                self.cache.borrow_mut()[pos] = MovieCache {
-                    file_name: movie
-                        .file
-                        .file_name()
-                        .unwrap()
-                        .to_str()
-                        .unwrap()
-                        .to_string(),
-                    duration: movie.duration.unwrap_or_else(|| {
-                        match ffprobe::ffprobe(movie.file.clone()) {
-                            Ok(info) => {
-                                let duration =
-                                    info.format.duration.unwrap().parse::<f32>().unwrap() as u32;
-                                movie.duration.replace(duration);
-                                duration
-                            }
-                            Err(_) => 0,
+            let cache = MovieCache {
+                file_name: movie
+                    .file
+                    .file_name()
+                    .unwrap()
+                    .to_str()
+                    .unwrap()
+                    .to_string(),
+                duration: movie.duration.unwrap_or_else(|| {
+                    match ffprobe::ffprobe(movie.file.clone()) {
+                        Ok(info) => {
+                            let duration =
+                                info.format.duration.unwrap().parse::<f32>().unwrap() as u32;
+                            movie.duration.replace(duration);
+                            duration
                         }
-                    }),
-                    done: movie.done,
-                    data: movie.data.clone().unwrap(),
-                };
+                        Err(_) => 0,
+                    }
+                }),
+                done: movie.done,
+                data: movie.data.clone().unwrap(),
+            };
+            if let Some(pos) = pos {
+                self.cache.borrow_mut()[pos] = cache;
+            } else {
+                self.cache.borrow_mut().push(cache);
             }
         }
     }
