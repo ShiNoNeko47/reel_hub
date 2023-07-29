@@ -2,7 +2,7 @@ use walkdir::WalkDir;
 
 use crate::{movie::Movie, res};
 
-pub fn get_movies(dir: String, mut movies: Vec<Movie>) -> Vec<Movie> {
+pub fn get_movies(dir: String, movies: Vec<Movie>) -> Vec<Movie> {
     let walkdir = WalkDir::new(dir).follow_links(true);
     let files: Vec<walkdir::DirEntry> = walkdir
         .into_iter()
@@ -15,8 +15,17 @@ pub fn get_movies(dir: String, mut movies: Vec<Movie>) -> Vec<Movie> {
             }
         })
         .collect();
-    for file in files {
-        let movie = Movie::get_from_file_name(file);
+
+    let movies_new: Vec<Movie> = files
+        .iter()
+        .map(|file| Movie::get_from_file_name(file.clone()))
+        .collect();
+    let mut movies = movies
+        .into_iter()
+        .filter(|movie| movies_new.contains(&movie))
+        .collect::<Vec<Movie>>();
+
+    for movie in movies_new {
         if !movies.contains(&movie) {
             movies.push(movie);
         }
