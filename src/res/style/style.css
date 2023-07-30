@@ -5,7 +5,6 @@ messagedialog *, window * {
 	border: black;
 }
 messagedialog button, window button {
-	transition: border .2s;
 	border-style: solid;
 	border-width: 1px;
 	border-image: linear-gradient(to right, black, black) 30;
@@ -25,6 +24,7 @@ messagedialog button:focus, window button:focus {
 	outline: none;
 }
 messagedialog button:active, window button:active {
+	transition: border .2s;
 	border-image: linear-gradient(to right, red, red) 1;
 	box-shadow: none;
 }
