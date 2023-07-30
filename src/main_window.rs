@@ -42,6 +42,7 @@ impl Window {
     pub fn new(app: &Application) -> Self {
         let window: Self = glib::Object::builder().property("application", app).build();
         window.set_default_size(1000, 850);
+        window.imp().poster.set_width_request(res::POSTER_W as i32);
         window.connect_key_press_event(keymaps::set_keymaps);
 
         window.connect_size_allocate(|window, _event| {

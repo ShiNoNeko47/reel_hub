@@ -10,7 +10,10 @@ use std::{
 use glib::{user_cache_dir, user_data_dir};
 use serde::{Deserialize, Serialize};
 
-use crate::utils::{self, user_dir};
+use crate::{
+    res,
+    utils::{self, user_dir},
+};
 
 use self::tmdb::fetch_image_tmdb;
 
@@ -157,8 +160,8 @@ impl Movie {
         let path = PathBuf::from(format!("{}{}", user_dir(user_cache_dir()), image_path));
         let mut file = File::create(&path).unwrap();
         let resolution = match image_type {
-            ImageType::Poster => 500,
-            ImageType::Backdrop => 780,
+            ImageType::Poster => res::POSTER_W,
+            ImageType::Backdrop => res::BACKDROP_W,
         };
         file.write(
             &fetch_image_tmdb(image_path, Some(resolution))

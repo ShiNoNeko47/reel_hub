@@ -9,6 +9,9 @@ const IMG_CONNECTION_780: &[u8] = include_bytes!("res/img/Check_connection_780.p
 const FILE_TYPES: [&'static str; 11] = [
     "mp4", "mkv", "avi", "mov", "flv", "wmv", "mpg", "mpeg", "3gp", "webm", "vob",
 ];
+pub const BACKDROP_W: u32 = 780;
+pub const POSTER_W: u32 = 500;
+
 pub const TMDB_GENRES: [(usize, &'static str); 19] = [
     (28, "Action"),
     (12, "Adventure"),
