@@ -1,7 +1,9 @@
 use std::cell::{Cell, RefCell};
 use std::fs::File;
+use std::io::{prelude::*, BufReader};
 use std::ops::Deref;
 use std::path::PathBuf;
+use std::process::{Child, Command, Stdio};
 use std::rc::Rc;
 
 use gdk_pixbuf::Pixbuf;
@@ -66,9 +68,40 @@ pub struct Window {
     pub cache: Rc<RefCell<Vec<MovieCache>>>,
 
     pub dir_watcher: Rc<RefCell<Option<notify::RecommendedWatcher>>>,
+    pub plugins: Vec<Child>,
 }
 
 impl Window {
+    pub fn load_plugins(&self) {
+        let plugin = match Command::new("test_plugin")
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .spawn()
+        {
+            Ok(plugin) => plugin,
+            Err(e) => {
+                println!("Failed to spawn plugin: {}", e);
+                return;
+            }
+        };
+        self.plugin_handler(plugin);
+    }
+
+    fn plugin_handler(&self, plugin: Child) {
+        let mut stdin = plugin.stdin.unwrap();
+        stdin.write_all(b"test").unwrap();
+        std::thread::spawn(move || {
+            let mut reader = BufReader::new(plugin.stdout.unwrap());
+            loop {
+                let mut s = String::new();
+                match reader.read_line(&mut s) {
+                    Err(why) => panic!("couldn't read stdout: {}", why),
+                    Ok(_) => print!("{s}"),
+                };
+            }
+        });
+    }
+
     pub fn movie_select(&self, movie: Option<usize>) {
         match movie {
             Some(movie) => {

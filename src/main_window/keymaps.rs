@@ -67,6 +67,9 @@ pub fn set_keymaps(window: &super::Window, key: &EventKey) -> gtk::Inhibit {
             }
             window.imp().buttons.borrow()[window.imp().button_selected.get()].grab_focus();
         }
+        Some(41) => {
+            window.imp().load_plugins();
+        }
         _ => {}
     }
     Inhibit(true)
