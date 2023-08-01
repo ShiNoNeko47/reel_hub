@@ -53,16 +53,21 @@ fn plugin_listen(mut reader: BufReader<std::process::ChildStdout>, sender: glib:
 }
 
 pub fn handle_response(response: String, window: main_window::Window) {
-    window.imp().movies.borrow_mut().push(
-        Movie {
-            name: "a".to_string(),
-            year: None,
-            file: "/home/nikola/Media/0dcb85ee-4675-440a-ab94-14423585530f/movies/1408 (2007) [1080p]/1408.2007.1080p.BluRay.x264.YIFY.mp4".to_string(),
+    let response = response.split(";").collect::<Vec<&str>>();
+    if response.len() == 4 && response[0].to_lowercase() == "movie" {
+        window.imp().movies.borrow_mut().push(Movie {
+            name: response[1].to_string(),
+            year: response[2].parse::<usize>().ok(),
+            file: response[3].to_string(),
             data: None,
             current_time: None,
             duration: None,
             done: false,
         });
-    window.update();
-    println!("{:?}", response);
+        window
+            .imp()
+            .movies_len
+            .replace(window.imp().movies.borrow().len());
+        window.setup_buttons();
+    }
 }

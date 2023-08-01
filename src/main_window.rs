@@ -228,7 +228,7 @@ impl Window {
         }
     }
 
-    fn setup_buttons(&self) {
+    pub fn setup_buttons(&self) {
         let list_box = self.imp().list_box.deref();
         list_box.forall(|widget| list_box.remove(widget));
         self.imp().buttons.borrow_mut().clear();
