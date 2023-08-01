@@ -59,7 +59,7 @@ pub fn handle_response(response: String, window: &main_window::Window) {
             if response.len() != 4 {
                 return;
             }
-            window.imp().movies.borrow_mut().push(Movie {
+            let movie = Movie {
                 name: response[1].to_string(),
                 year: response[2].parse::<usize>().ok(),
                 file: response[3].to_string(),
@@ -67,9 +67,12 @@ pub fn handle_response(response: String, window: &main_window::Window) {
                 current_time: None,
                 duration: None,
                 done: false,
-            });
+            };
+            if window.imp().movies.borrow().contains(&movie) {
+                return;
+            }
+            window.imp().movies.borrow_mut().push(movie);
             window.imp().movies.borrow_mut().sort_unstable();
-            window.imp().movies.borrow_mut().dedup();
             window
                 .imp()
                 .movies_len
