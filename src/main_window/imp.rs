@@ -223,7 +223,12 @@ impl Window {
                 continue;
             }
             let pos = self.cache.borrow_mut().iter_mut().position(|cache| {
-                cache.file_name == movie.file.file_name().unwrap().to_str().unwrap()
+                cache.file_name
+                    == PathBuf::from(&movie.file)
+                        .file_name()
+                        .unwrap()
+                        .to_str()
+                        .unwrap()
             });
             let mut duration = movie.duration.unwrap_or(0);
             if duration == 0 && !movie.name.starts_with("~ ") {
@@ -237,8 +242,7 @@ impl Window {
                 };
             }
             let cache = MovieCache {
-                file_name: movie
-                    .file
+                file_name: PathBuf::from(&movie.file)
                     .file_name()
                     .unwrap()
                     .to_str()

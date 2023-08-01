@@ -101,7 +101,7 @@ impl Window {
 
             receiver.attach(None, clone!(@weak button, @weak window => @default-return Continue(false), move |_| {
                 let movie = window.imp().movie_selected.get().unwrap();
-                let file_path = window.imp().movies.borrow()[movie].file.clone().to_str().unwrap().to_string();
+                let file_path = window.imp().movies.borrow()[movie].file.clone();
                 let current_time = Movie::get_current_time(file_path);
                 window.imp().movies.borrow_mut()[movie].current_time = current_time;
                 if let None = current_time {

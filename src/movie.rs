@@ -42,7 +42,7 @@ pub struct MovieData {
 pub struct Movie {
     pub name: String,
     pub year: Option<usize>,
-    pub file: PathBuf,
+    pub file: String,
     pub data: Option<MovieData>,
     pub current_time: Option<u32>,
     pub duration: Option<u32>,
@@ -85,7 +85,7 @@ impl Movie {
             } else {
                 None
             },
-            file: file.path().to_owned(),
+            file: file.path().to_owned().to_string_lossy().to_string(),
             data: None,
             current_time: if current_time == Some(0) {
                 None
@@ -175,7 +175,7 @@ impl Movie {
 
 impl PartialEq for Movie {
     fn eq(&self, other: &Self) -> bool {
-        self.file.file_name() == other.file.file_name()
+        PathBuf::from(&self.file).file_name() == PathBuf::from(&other.file).file_name()
     }
 }
 

@@ -1,5 +1,4 @@
 use std::io::{prelude::*, BufReader};
-use std::path::PathBuf;
 use std::process::{ChildStdin, Command, Stdio};
 
 use glib::subclass::types::ObjectSubclassIsExt;
@@ -58,12 +57,12 @@ pub fn handle_response(response: String, window: main_window::Window) {
         Movie {
             name: "a".to_string(),
             year: None,
-            file: PathBuf::from("/home/nikola/Media/0dcb85ee-4675-440a-ab94-14423585530f/movies/1408 (2007) [1080p]/1408.2007.1080p.BluRay.x264.YIFY.mp4"),
+            file: "/home/nikola/Media/0dcb85ee-4675-440a-ab94-14423585530f/movies/1408 (2007) [1080p]/1408.2007.1080p.BluRay.x264.YIFY.mp4".to_string(),
             data: None,
             current_time: None,
             duration: None,
             done: false,
         });
     window.update();
-    println!("{}", response);
+    println!("{:?}", response);
 }
