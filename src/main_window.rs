@@ -23,6 +23,7 @@ use reel_hub::movie::ImageType;
 use reel_hub::movie::Movie;
 use reel_hub::movie::MovieData;
 use reel_hub::utils;
+use std::io::Write;
 use std::ops::Deref;
 use std::path::Path;
 
@@ -50,6 +51,16 @@ impl Window {
         window.connect_size_allocate(|window, _event| {
             window.autohide_backdrop();
         });
+
+        let (sender, receiver) = glib::MainContext::channel(Priority::default());
+        window.imp().plugins.replace(plugin::load_plugins(sender));
+        receiver.attach(
+            None,
+            clone!(@weak window => @default-return Continue(false), move |response| {
+                plugin::handle_response(response, &window);
+                Continue(true)
+            }),
+        );
 
         window.update();
         window.setup_dir_watcher();
@@ -134,16 +145,6 @@ impl Window {
             filechooser.show();
         }));
 
-        let (sender, receiver) = glib::MainContext::channel(Priority::default());
-        window.imp().plugins.replace(plugin::load_plugins(sender));
-        receiver.attach(
-            None,
-            clone!(@weak window => @default-return Continue(false), move |response| {
-                plugin::handle_response(response, window);
-                Continue(true)
-            }),
-        );
-
         window
     }
 
@@ -199,6 +200,11 @@ impl Window {
             utils::user_dir(user_data_dir()),
             self.imp().movies.borrow_mut().to_vec(),
         );
+        for plugin in self.imp().plugins.borrow_mut().iter_mut() {
+            if let Err(error) = plugin.write_all(b"add\n") {
+                eprintln!("Error writing to plugin: {:?}", error);
+            }
+        }
         self.imp().cache.replace(utils::load_cache(&mut movies));
         movies.sort_unstable();
         match self.imp().movie_selected.get() {

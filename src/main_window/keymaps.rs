@@ -75,13 +75,6 @@ pub fn set_keymaps(window: &super::Window, key: &EventKey) -> gtk::Inhibit {
                 }
             }
         }
-        Some(40) => {
-            for plugin in window.imp().plugins.borrow_mut().iter_mut() {
-                if let Err(error) = plugin.write_all(b"1\n") {
-                    eprintln!("Error writing to plugin: {:?}", error);
-                }
-            }
-        }
         _ => {}
     }
     Inhibit(true)

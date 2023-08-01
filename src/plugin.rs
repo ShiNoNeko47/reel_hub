@@ -52,22 +52,32 @@ fn plugin_listen(mut reader: BufReader<std::process::ChildStdout>, sender: glib:
     });
 }
 
-pub fn handle_response(response: String, window: main_window::Window) {
-    let response = response.split(";").collect::<Vec<&str>>();
-    if response.len() == 4 && response[0].to_lowercase() == "movie" {
-        window.imp().movies.borrow_mut().push(Movie {
-            name: response[1].to_string(),
-            year: response[2].parse::<usize>().ok(),
-            file: response[3].to_string(),
-            data: None,
-            current_time: None,
-            duration: None,
-            done: false,
-        });
-        window
-            .imp()
-            .movies_len
-            .replace(window.imp().movies.borrow().len());
-        window.setup_buttons();
+pub fn handle_response(response: String, window: &main_window::Window) {
+    let response = response.trim().split(";").collect::<Vec<&str>>();
+    match response[0].to_lowercase().as_str() {
+        "movie" => {
+            if response.len() != 4 {
+                return;
+            }
+            window.imp().movies.borrow_mut().push(Movie {
+                name: response[1].to_string(),
+                year: response[2].parse::<usize>().ok(),
+                file: response[3].to_string(),
+                data: None,
+                current_time: None,
+                duration: None,
+                done: false,
+            });
+            window.imp().movies.borrow_mut().sort_unstable();
+            window.imp().movies.borrow_mut().dedup();
+            window
+                .imp()
+                .movies_len
+                .replace(window.imp().movies.borrow().len());
+            window.setup_buttons();
+        }
+        _ => {
+            println!("{response:?}");
+        }
     }
 }
