@@ -1,6 +1,7 @@
 use crate::main_window;
 use glib::subclass::types::ObjectSubclassIsExt;
 use gtk::{gdk::Screen, prelude::*, Application, CssProvider, StyleContext};
+use std::io::Write;
 
 pub struct App {
     app: Application,
@@ -29,6 +30,11 @@ impl App {
             gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
         );
         let window = main_window::Window::new(app);
-        app.connect_shutdown(move |_| window.imp().store_cache());
+        app.connect_shutdown(move |_| {
+            window.imp().store_cache();
+            for plugin in window.imp().plugins.borrow_mut().iter_mut() {
+                plugin.write_all(b"0").ok();
+            }
+        });
     }
 }

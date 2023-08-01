@@ -32,6 +32,8 @@ use gtk::Application;
 
 use reel_hub::res;
 
+use crate::plugin;
+
 glib::wrapper! {
     pub struct Window(ObjectSubclass<imp::Window>)
         @extends gtk::ApplicationWindow, gtk::Window, gtk::Widget,
@@ -132,6 +134,16 @@ impl Window {
             filechooser.show();
         }));
 
+        let (sender, receiver) = glib::MainContext::channel(Priority::default());
+        window.imp().plugins.replace(plugin::load_plugins(sender));
+        receiver.attach(
+            None,
+            clone!(@weak window => @default-return Continue(false), move |response| {
+                plugin::handle_response(response, window);
+                Continue(true)
+            }),
+        );
+
         window
     }
 
@@ -182,7 +194,7 @@ impl Window {
         filechooser.show();
     }
 
-    fn update(&self) {
+    pub fn update(&self) {
         let mut movies = detect::get_movies(
             utils::user_dir(user_data_dir()),
             self.imp().movies.borrow_mut().to_vec(),
