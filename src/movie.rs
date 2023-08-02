@@ -114,7 +114,7 @@ impl Movie {
                     .last()
                     .unwrap()
                     .parse::<f32>()
-                    .unwrap() as u32,
+                    .unwrap_or(0.0) as u32,
             );
         }
         current_time
@@ -175,7 +175,10 @@ impl Movie {
 
 impl PartialEq for Movie {
     fn eq(&self, other: &Self) -> bool {
-        PathBuf::from(&self.file).file_name() == PathBuf::from(&other.file).file_name()
+        if PathBuf::from(&self.file).is_file() && PathBuf::from(&other.file).is_file() {
+            return PathBuf::from(&self.file).file_name() == PathBuf::from(&other.file).file_name();
+        }
+        self.file == other.file
     }
 }
 
