@@ -104,6 +104,7 @@ impl Window {
                 }));
             } else {
                 let mut handle = movie.play(false);
+                window.imp().status_label.deref().set_label(&format!("Playing: <b>{}</b>", movie.name));
                 std::thread::spawn(move || {
                     handle.wait().unwrap();
                     sender.send(()).unwrap();
