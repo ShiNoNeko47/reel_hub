@@ -64,19 +64,23 @@ pub fn handle_response(response: String, window: &main_window::Window) {
                 year: response[2].parse::<usize>().ok(),
                 file: response[3].to_string(),
                 data: {
-                    let mut data = response[4..].iter();
-                    Some(MovieData {
-                        title: data.next().unwrap_or(&response[1]).to_string(),
-                        original_title: data.next().unwrap_or(&"").to_string(),
-                        overview: data.next().unwrap_or(&"").to_string(),
-                        original_language: data.next().unwrap_or(&"").to_string(),
-                        poster_path: data.next().unwrap_or(&"").to_string(),
-                        backdrop_path: data.next().unwrap_or(&"").to_string(),
-                        vote_average: data.next().unwrap_or(&"").parse::<f64>().unwrap_or(0.0),
-                        vote_count: data.next().unwrap_or(&"").parse::<u64>().unwrap_or(0),
-                        release_date: data.next().unwrap_or(&"").to_string(),
-                        genres: data.map(|s| s.to_string()).collect::<Vec<String>>(),
-                    })
+                    if response.len() == 4 {
+                        None
+                    } else {
+                        let mut data = response[4..].iter();
+                        Some(MovieData {
+                            title: data.next().unwrap_or(&response[1]).to_string(),
+                            original_title: data.next().unwrap_or(&"").to_string(),
+                            overview: data.next().unwrap_or(&"").to_string(),
+                            original_language: data.next().unwrap_or(&"").to_string(),
+                            poster_path: data.next().unwrap_or(&"").to_string(),
+                            backdrop_path: data.next().unwrap_or(&"").to_string(),
+                            vote_average: data.next().unwrap_or(&"").parse::<f64>().unwrap_or(0.0),
+                            vote_count: data.next().unwrap_or(&"").parse::<u64>().unwrap_or(0),
+                            release_date: data.next().unwrap_or(&"").to_string(),
+                            genres: data.map(|s| s.to_string()).collect::<Vec<String>>(),
+                        })
+                    }
                 },
                 current_time: None,
                 duration: None,
