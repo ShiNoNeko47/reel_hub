@@ -30,7 +30,10 @@ pub fn fetch_data_tmdb(name: &String, year: String) -> Option<MovieData> {
                     vote_count: movie_data["vote_count"].as_u64().unwrap(),
                     release_date: movie_data["release_date"].as_str().unwrap().to_string(),
                     poster_path: movie_data["poster_path"].as_str().unwrap().to_string(),
-                    backdrop_path: movie_data["backdrop_path"].as_str().unwrap().to_string(),
+                    backdrop_path: movie_data["backdrop_path"]
+                        .as_str()
+                        .unwrap_or("")
+                        .to_string(),
                     genres: movie_data["genre_ids"]
                         .as_array()
                         .unwrap()
