@@ -103,16 +103,16 @@ pub fn handle_response(response: String, window: &main_window::Window) {
                 return;
             }
             window.imp().movies.borrow_mut().push(movie);
+            window
+                .imp()
+                .cache
+                .replace(utils::load_cache(&mut window.imp().movies.borrow_mut()));
             window.imp().movies.borrow_mut().sort_unstable();
             window
                 .imp()
                 .movies_len
                 .replace(window.imp().movies.borrow().len());
             window.setup_buttons();
-            window
-                .imp()
-                .cache
-                .replace(utils::load_cache(&mut window.imp().movies.borrow_mut()));
         }
         _ => {
             println!("{response:?}");
