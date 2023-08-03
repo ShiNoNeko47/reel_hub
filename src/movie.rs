@@ -145,7 +145,12 @@ impl Movie {
                 super::utils::user_dir(user_data_dir())
             ))
             .arg("--fs")
-            .arg(if !continue_watching { "--start=0%" } else { "" })
+            .arg(if !continue_watching {
+                "--no-resume-playback"
+            } else {
+                ""
+            })
+            .arg("--ytdl-format=mp4")
             .stdout(Stdio::null())
             .stderr(Stdio::null())
             .spawn()
