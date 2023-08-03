@@ -69,46 +69,49 @@ impl Window {
         window.imp().play_button.deref().connect_clicked(clone!(@weak window => move |button| {
             let movie = &window.imp().movies.borrow()[window.imp().movie_selected.get().unwrap()];
             let (sender, receiver) = glib::MainContext::channel(Priority::default());
-            if let Some(current_time) = movie.current_time {
-                let dialog = MessageDialog::new(
-                    Some(&window),
-                    DialogFlags::MODAL,
-                    MessageType::Question,
-                    gtk::ButtonsType::YesNo,
-                    &format!("Continue watching from {}:{:02}:{:02}?", current_time / 3600, current_time / 60 % 60, current_time % 60));
-                dialog.set_decorated(false);
-                dialog.show();
-                dialog.connect_response(clone!(@weak window => move |dialog, response| {
-                    let movie = &window.imp().movies.borrow()[window.imp().movie_selected.get().unwrap()];
-                    let mut handle;
-                    match response {
-                        ResponseType::Yes => {
-                            handle = movie.play(true);
-                            window.imp().status_label.deref().set_label(&format!("Playing: <b>{}</b>", movie.name));
-                            window.imp().play_button.set_sensitive(false);
-                            dialog.close();
-                        }
-                        ResponseType::No => {
-                            handle = movie.play(false);
-                            window.imp().status_label.deref().set_label(&format!("Playing: <b>{}</b>", movie.name));
-                            window.imp().play_button.set_sensitive(false);
-                            dialog.close();
-                        }
-                        _ => { return }
-                    };
-                    let sender = sender.clone();
+            match movie.current_time {
+                Some(0) | None => {
+                    let mut handle = movie.play(false);
+                    window.imp().status_label.deref().set_label(&format!("Playing: <b>{}</b>", movie.name));
                     std::thread::spawn(move || {
                         handle.wait().unwrap();
                         sender.send(()).unwrap();
                     });
-                }));
-            } else {
-                let mut handle = movie.play(false);
-                window.imp().status_label.deref().set_label(&format!("Playing: <b>{}</b>", movie.name));
-                std::thread::spawn(move || {
-                    handle.wait().unwrap();
-                    sender.send(()).unwrap();
-                });
+                }
+                Some(current_time) => {
+                    let dialog = MessageDialog::new(
+                        Some(&window),
+                        DialogFlags::MODAL,
+                        MessageType::Question,
+                        gtk::ButtonsType::YesNo,
+                        &format!("Continue watching from {}:{:02}:{:02}?", current_time / 3600, current_time / 60 % 60, current_time % 60));
+                    dialog.set_decorated(false);
+                    dialog.show();
+                    dialog.connect_response(clone!(@weak window => move |dialog, response| {
+                        let movie = &window.imp().movies.borrow()[window.imp().movie_selected.get().unwrap()];
+                        let mut handle;
+                        match response {
+                            ResponseType::Yes => {
+                                handle = movie.play(true);
+                                window.imp().status_label.deref().set_label(&format!("Playing: <b>{}</b>", movie.name));
+                                window.imp().play_button.set_sensitive(false);
+                                dialog.close();
+                            }
+                            ResponseType::No => {
+                                handle = movie.play(false);
+                                window.imp().status_label.deref().set_label(&format!("Playing: <b>{}</b>", movie.name));
+                                window.imp().play_button.set_sensitive(false);
+                                dialog.close();
+                            }
+                            _ => { return }
+                        };
+                        let sender = sender.clone();
+                        std::thread::spawn(move || {
+                            handle.wait().unwrap();
+                            sender.send(()).unwrap();
+                        });
+                    }));
+                }
             }
 
             receiver.attach(None, clone!(@weak button, @weak window => @default-return Continue(false), move |_| {
