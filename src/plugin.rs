@@ -59,15 +59,31 @@ pub fn handle_response(response: String, window: &main_window::Window) {
             if response.len() < 4 {
                 return;
             }
+            let mut data = response[1..].iter();
             let movie = Movie {
-                name: response[1].to_string(),
-                year: response[2].parse::<usize>().ok(),
-                file: response[3].to_string(),
+                name: data.next().unwrap().to_string(),
+                year: data.next().unwrap().parse::<usize>().ok(),
+                file: data.next().unwrap().to_string(),
+                current_time: if let Some(time) = data.next() {
+                    if time.is_empty() {
+                        Movie::get_current_time(response[3].to_string())
+                    } else {
+                        Some(time.parse::<u32>().unwrap_or(0))
+                    }
+                } else {
+                    Movie::get_current_time(response[2].to_string())
+                },
+                duration: data
+                    .next()
+                    .map(|duration| duration.parse::<u32>().unwrap_or(0)),
+                done: data
+                    .next()
+                    .map(|done| done.parse::<bool>().unwrap_or(false))
+                    .unwrap_or(false),
                 data: {
-                    if response.len() == 4 {
+                    if response.len() <= 8 {
                         None
                     } else {
-                        let mut data = response[4..].iter();
                         Some(MovieData {
                             title: data.next().unwrap_or(&response[1]).to_string(),
                             original_title: data.next().unwrap_or(&"").to_string(),
@@ -82,9 +98,6 @@ pub fn handle_response(response: String, window: &main_window::Window) {
                         })
                     }
                 },
-                current_time: None,
-                duration: None,
-                done: false,
             };
             if window.imp().movies.borrow().contains(&movie) {
                 return;
@@ -96,6 +109,10 @@ pub fn handle_response(response: String, window: &main_window::Window) {
                 .movies_len
                 .replace(window.imp().movies.borrow().len());
             window.setup_buttons();
+            window
+                .imp()
+                .cache
+                .replace(utils::load_cache(&mut window.imp().movies.borrow_mut()));
         }
         _ => {
             println!("{response:?}");
