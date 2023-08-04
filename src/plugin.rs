@@ -16,6 +16,7 @@ pub fn load_plugins(sender: glib::Sender<String>) -> Vec<ChildStdin> {
     std::fs::create_dir_all(&path).unwrap();
 
     let files: Vec<walkdir::DirEntry> = walkdir::WalkDir::new(path)
+        .follow_links(true)
         .into_iter()
         .filter_map(|file| file.ok())
         .filter(|file| file.file_type().is_file())
@@ -25,6 +26,7 @@ pub fn load_plugins(sender: glib::Sender<String>) -> Vec<ChildStdin> {
         let plugin = match Command::new(file.path())
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
+            .stderr(Stdio::null())
             .spawn()
         {
             Ok(plugin) => plugin,
