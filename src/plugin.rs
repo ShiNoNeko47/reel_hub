@@ -3,6 +3,8 @@ use std::process::{ChildStdin, Command, Stdio};
 
 use glib::subclass::types::ObjectSubclassIsExt;
 use glib::user_data_dir;
+use gtk::prelude::*;
+use gtk::CssProvider;
 use reel_hub::movie::{Movie, MovieData};
 use reel_hub::utils;
 
@@ -113,6 +115,17 @@ pub fn handle_response(response: String, window: &main_window::Window) {
                 .movies_len
                 .replace(window.imp().movies.borrow().len());
             window.setup_buttons();
+        }
+        "css" => {
+            let provider = CssProvider::new();
+            provider
+                .load_from_data((response[1].to_owned() + ";").as_bytes())
+                .unwrap();
+            gtk::StyleContext::add_provider_for_screen(
+                &gtk::gdk::Screen::default().unwrap(),
+                &provider,
+                gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
+            );
         }
         _ => {
             println!("{response:?}");

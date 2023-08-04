@@ -2,7 +2,6 @@ use glib::subclass::prelude::*;
 use gtk::gdk::EventKey;
 use gtk::prelude::*;
 use gtk::subclass::window::WindowImpl;
-use std::io::Write;
 
 pub fn set_keymaps(window: &super::Window, key: &EventKey) -> gtk::Inhibit {
     match key.keycode() {
@@ -69,13 +68,6 @@ pub fn set_keymaps(window: &super::Window, key: &EventKey) -> gtk::Inhibit {
                 window.imp().button_selected.replace(0);
             }
             window.imp().buttons.borrow()[window.imp().button_selected.get()].grab_focus();
-        }
-        Some(41) => {
-            for plugin in window.imp().plugins.borrow_mut().iter_mut() {
-                if let Err(error) = plugin.write_all(b"asdf\n") {
-                    eprintln!("Error writing to plugin: {:?}", error);
-                }
-            }
         }
         _ => {}
     }

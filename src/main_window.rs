@@ -309,7 +309,7 @@ impl Window {
                     format!(
                         "button {{
                             background: #0f0f0f,
-                                linear-gradient(to right, red, red) 5px calc(100% - 5px) / calc(100% - 10px) 1px no-repeat;
+                                linear-gradient(to right, @accent, @accent) 5px calc(100% - 5px) / calc(100% - 10px) 1px no-repeat;
                         }}",
                     )
                     .as_bytes(),
@@ -325,7 +325,7 @@ impl Window {
                     format!(
                         "button {{
                             background: #0f0f0f,
-                                linear-gradient(to right, red {progress}%, black {progress}%) 5px calc(100% - 5px) / calc(100% - 10px) 1px no-repeat;
+                                linear-gradient(to right, @accent {progress}%, black {progress}%) 5px calc(100% - 5px) / calc(100% - 10px) 1px no-repeat;
                         }}",
                     )
                     .as_bytes(),

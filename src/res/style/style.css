@@ -1,3 +1,5 @@
+@define-color accent red;
+
 messagedialog *, window * {
 	all: unset;
 	color: white;
@@ -16,16 +18,16 @@ messagedialog button, window button {
 
 list button {
 	background: #0f0f0f,
-	linear-gradient(to right, red, black 0%) 5px calc(100% - 5px) / calc(100% - 10px) 1px no-repeat;
+	linear-gradient(to right, @accent, black 0%) 5px calc(100% - 5px) / calc(100% - 10px) 1px no-repeat;
 }
 
 messagedialog button:focus, window button:focus {
-	border-image: linear-gradient(to right, red, black 10%) 1;
+	border-image: linear-gradient(to right, @accent, black 10%) 1;
 	outline: none;
 }
 messagedialog button:active, window button:active {
 	transition: border .2s;
-	border-image: linear-gradient(to right, red, red) 1;
+	border-image: linear-gradient(to right, @accent, @accent) 1;
 	box-shadow: none;
 }
 
@@ -42,13 +44,13 @@ window undershoot.top {
 	background: none;
 	border-width: 1px;
 	border-style: solid;
-	border-image: linear-gradient(to bottom, red, transparent 50%) 1;
+	border-image: linear-gradient(to bottom, @accent, transparent 50%) 1;
 }
 window undershoot.bottom {
 	background: none;
 	border-width: 1px;
 	border-style: solid;
-	border-image: linear-gradient(to top, red, transparent 50%) 1;
+	border-image: linear-gradient(to top, @accent, transparent 50%) 1;
 }
 
 window overshoot {
