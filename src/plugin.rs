@@ -119,7 +119,7 @@ pub fn handle_response(response: String, window: &main_window::Window) {
         "css" => {
             let provider = CssProvider::new();
             provider
-                .load_from_data((response[1].to_owned() + ";").as_bytes())
+                .load_from_data(response[1..].join("; ").as_bytes())
                 .unwrap();
             gtk::StyleContext::add_provider_for_screen(
                 &gtk::gdk::Screen::default().unwrap(),
