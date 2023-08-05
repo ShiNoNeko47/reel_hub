@@ -44,7 +44,7 @@ def handle_request(request: str):
         """
 
         print(
-            "movie;HRT1;;https://webtvstream.bhtelecom.ba/hls9/hrt1_1200.m3u8;;;;HRT1;HRT1;Hrvatska radio televizija;hr;/hrt1.png;/hrt1.png;;;;tv"
+            "movie;HRT1;;https://webtvstream.bhtelecom.ba/hls9/hrt1_1200.m3u8;;;;HRT1;HRT1;Hrvatska radio televizija;hr;/hrt1.png;;;;;tv"
         )
         print(
             "movie;RTL;;https://d1cs5tlhj75jxe.cloudfront.net/rtl/playlist.m3u8;;;;RTL;RTL"

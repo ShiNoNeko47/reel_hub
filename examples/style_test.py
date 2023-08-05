@@ -5,6 +5,10 @@ import time
 
 def setup():
     print(
+        f"css;window undershoot {{transition: border-image .5s;}}",
+        flush=True,
+    )
+    print(
         f"css;messagedialog button, window button {{transition: border-image .5s, background .5s;}}",
         flush=True,
     )
