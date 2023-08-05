@@ -40,6 +40,7 @@ pub struct MovieData {
 
 #[derive(Debug)]
 pub struct Movie {
+    pub id: usize,
     pub name: String,
     pub year: Option<usize>,
     pub file: String,
@@ -58,7 +59,7 @@ pub struct MovieCache {
 }
 
 impl Movie {
-    pub fn get_from_file_name(file: walkdir::DirEntry) -> Movie {
+    pub fn get_from_file_name(file: walkdir::DirEntry, id: usize) -> Movie {
         let re: regex::Regex = regex::Regex::new(
             r"(?mU)^(([A-Za-z0-9\. \(\)]+)[\. -]+\(?((\d{4})[^p]).*)|((.*)\.[A-Za-z0-9]+)$",
         )
@@ -73,6 +74,7 @@ impl Movie {
         let captures: regex::Captures = re.captures(&file.file_name().to_str().unwrap()).unwrap();
         let current_time = Self::get_current_time(file.path().to_str().unwrap().to_string());
         Movie {
+            id,
             name: prefix.to_string()
                 + &if let Some(name) = captures.get(2) {
                     name.as_str()
@@ -219,6 +221,7 @@ impl Ord for Movie {
 impl Clone for Movie {
     fn clone(&self) -> Self {
         Movie {
+            id: self.id,
             name: self.name.clone(),
             year: self.year,
             file: self.file.clone(),

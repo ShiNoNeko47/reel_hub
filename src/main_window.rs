@@ -225,7 +225,7 @@ impl Window {
             Some(movie_selected) => {
                 let movie = movies
                     .iter()
-                    .position(|x| &self.imp().movies.borrow()[movie_selected] == x);
+                    .position(|x| &self.imp().movies.borrow()[movie_selected].id == &x.id);
                 self.imp().movies_len.replace(movies.len());
                 self.imp().movies.replace(movies);
                 self.imp().movie_select(movie);

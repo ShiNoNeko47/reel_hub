@@ -65,6 +65,7 @@ pub fn handle_response(response: String, window: &main_window::Window) {
             }
             let mut data = response[1..].iter();
             let movie = Movie {
+                id: window.imp().movies_len.get(),
                 name: data.next().unwrap().to_string(),
                 year: data.next().unwrap().parse::<usize>().ok(),
                 file: data.next().unwrap().to_string(),
@@ -106,6 +107,10 @@ pub fn handle_response(response: String, window: &main_window::Window) {
             if window.imp().movies.borrow().contains(&movie) {
                 return;
             }
+            let movie_selected_id = match window.imp().movie_selected.get() {
+                Some(idx) => Some(window.imp().movies.borrow()[idx].id),
+                None => None,
+            };
             window.imp().movies.borrow_mut().push(movie);
             window
                 .imp()
@@ -116,6 +121,10 @@ pub fn handle_response(response: String, window: &main_window::Window) {
                 .imp()
                 .movies_len
                 .replace(window.imp().movies.borrow().len());
+            if let Some(id) = movie_selected_id {
+                let movie = window.imp().movies.borrow().iter().position(|x| x.id == id);
+                window.imp().movie_select(movie);
+            }
             window.setup_buttons();
         }
         "css" => {
