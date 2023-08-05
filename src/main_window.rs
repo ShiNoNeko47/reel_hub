@@ -26,6 +26,7 @@ use reel_hub::utils;
 use std::io::Write;
 use std::ops::Deref;
 use std::path::Path;
+use std::process::ChildStdin;
 
 use glib::subclass::prelude::*;
 use gtk::gio;
@@ -204,11 +205,20 @@ impl Window {
             utils::user_dir(user_data_dir()),
             self.imp().movies.borrow_mut().to_vec(),
         );
-        for plugin in self.imp().plugins.borrow_mut().iter_mut() {
-            if let Err(error) = plugin.write_all(b"add\n") {
-                eprintln!("Error writing to plugin: {:?}", error);
-            }
-        }
+        self.imp().plugins.replace(
+            self.imp()
+                .plugins
+                .take()
+                .into_iter()
+                .filter_map(|mut plugin| {
+                    if let Ok(_) = plugin.write_all(b"add\n") {
+                        Some(plugin)
+                    } else {
+                        None
+                    }
+                })
+                .collect::<Vec<ChildStdin>>(),
+        );
         self.imp().cache.replace(utils::load_cache(&mut movies));
         movies.sort_unstable();
         match self.imp().movie_selected.get() {
