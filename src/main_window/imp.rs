@@ -63,6 +63,7 @@ pub struct Window {
     pub movies: Rc<RefCell<Vec<Movie>>>,
     pub movies_len: Rc<Cell<usize>>,
     pub movie_selected: Rc<Cell<Option<usize>>>,
+    pub movie_selected_tmp: Rc<Cell<Option<usize>>>,
 
     pub cache: Rc<RefCell<Vec<MovieCache>>>,
 

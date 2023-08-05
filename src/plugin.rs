@@ -109,7 +109,7 @@ pub fn handle_response(response: String, window: &main_window::Window) {
             }
             let movie_selected_id = match window.imp().movie_selected.get() {
                 Some(idx) => Some(window.imp().movies.borrow()[idx].id),
-                None => None,
+                None => window.imp().movie_selected_tmp.get(),
             };
             window.imp().movies.borrow_mut().push(movie);
             window

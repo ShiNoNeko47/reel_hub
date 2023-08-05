@@ -226,6 +226,11 @@ impl Window {
                 let movie = movies
                     .iter()
                     .position(|x| &self.imp().movies.borrow()[movie_selected].id == &x.id);
+                if movie.is_none() {
+                    self.imp()
+                        .movie_selected_tmp
+                        .replace(Some(self.imp().movies.borrow()[movie_selected].id));
+                }
                 self.imp().movies_len.replace(movies.len());
                 self.imp().movies.replace(movies);
                 self.imp().movie_select(movie);
