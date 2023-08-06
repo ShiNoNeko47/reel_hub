@@ -40,9 +40,10 @@ pub struct MovieData {
 
 #[derive(Debug)]
 pub struct Movie {
+    pub id: usize,
     pub name: String,
     pub year: Option<usize>,
-    pub file: PathBuf,
+    pub file: String,
     pub data: Option<MovieData>,
     pub current_time: Option<u32>,
     pub duration: Option<u32>,
@@ -58,7 +59,7 @@ pub struct MovieCache {
 }
 
 impl Movie {
-    pub fn get_from_file_name(file: walkdir::DirEntry) -> Movie {
+    pub fn get_from_file_name(file: walkdir::DirEntry, id: usize) -> Movie {
         let re: regex::Regex = regex::Regex::new(
             r"(?mU)^(([A-Za-z0-9\. \(\)]+)[\. -]+\(?((\d{4})[^p]).*)|((.*)\.[A-Za-z0-9]+)$",
         )
@@ -73,6 +74,7 @@ impl Movie {
         let captures: regex::Captures = re.captures(&file.file_name().to_str().unwrap()).unwrap();
         let current_time = Self::get_current_time(file.path().to_str().unwrap().to_string());
         Movie {
+            id,
             name: prefix.to_string()
                 + &if let Some(name) = captures.get(2) {
                     name.as_str()
@@ -85,7 +87,7 @@ impl Movie {
             } else {
                 None
             },
-            file: file.path().to_owned(),
+            file: file.path().to_owned().to_string_lossy().to_string(),
             data: None,
             current_time: if current_time == Some(0) {
                 None
@@ -114,7 +116,7 @@ impl Movie {
                     .last()
                     .unwrap()
                     .parse::<f32>()
-                    .unwrap() as u32,
+                    .unwrap_or(0.0) as u32,
             );
         }
         current_time
@@ -145,7 +147,12 @@ impl Movie {
                 super::utils::user_dir(user_data_dir())
             ))
             .arg("--fs")
-            .arg(if !continue_watching { "--start=0%" } else { "" })
+            .arg(if !continue_watching {
+                "--no-resume-playback"
+            } else {
+                ""
+            })
+            .arg("--ytdl-format=mp4")
             .stdout(Stdio::null())
             .stderr(Stdio::null())
             .spawn()
@@ -175,7 +182,10 @@ impl Movie {
 
 impl PartialEq for Movie {
     fn eq(&self, other: &Self) -> bool {
-        self.file.file_name() == other.file.file_name()
+        if PathBuf::from(&self.file).is_file() && PathBuf::from(&other.file).is_file() {
+            return PathBuf::from(&self.file).file_name() == PathBuf::from(&other.file).file_name();
+        }
+        self.file == other.file
     }
 }
 
@@ -211,6 +221,7 @@ impl Ord for Movie {
 impl Clone for Movie {
     fn clone(&self) -> Self {
         Movie {
+            id: self.id,
             name: self.name.clone(),
             year: self.year,
             file: self.file.clone(),

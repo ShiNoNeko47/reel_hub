@@ -2,6 +2,7 @@ use std::cell::{Cell, RefCell};
 use std::fs::File;
 use std::ops::Deref;
 use std::path::PathBuf;
+use std::process::ChildStdin;
 use std::rc::Rc;
 
 use gdk_pixbuf::Pixbuf;
@@ -62,10 +63,12 @@ pub struct Window {
     pub movies: Rc<RefCell<Vec<Movie>>>,
     pub movies_len: Rc<Cell<usize>>,
     pub movie_selected: Rc<Cell<Option<usize>>>,
+    pub movie_selected_tmp: Rc<Cell<Option<usize>>>,
 
     pub cache: Rc<RefCell<Vec<MovieCache>>>,
 
     pub dir_watcher: Rc<RefCell<Option<notify::RecommendedWatcher>>>,
+    pub plugins: RefCell<Vec<ChildStdin>>,
 }
 
 impl Window {
@@ -221,10 +224,19 @@ impl Window {
                 continue;
             }
             let pos = self.cache.borrow_mut().iter_mut().position(|cache| {
-                cache.file_name == movie.file.file_name().unwrap().to_str().unwrap()
+                cache.file_name
+                    == PathBuf::from(&movie.file)
+                        .file_name()
+                        .unwrap()
+                        .to_str()
+                        .unwrap()
             });
             let mut duration = movie.duration.unwrap_or(0);
-            if duration == 0 && !movie.name.starts_with("~ ") {
+            if duration == 0
+                && !movie.name.starts_with("~ ")
+                && PathBuf::from(movie.file.clone()).is_file()
+            {
+                println!("Duration is 0 for {}", movie.file);
                 duration = match ffprobe::ffprobe(movie.file.clone()) {
                     Ok(info) => {
                         let duration = info.format.duration.unwrap().parse::<f32>().unwrap() as u32;
@@ -235,8 +247,7 @@ impl Window {
                 };
             }
             let cache = MovieCache {
-                file_name: movie
-                    .file
+                file_name: PathBuf::from(&movie.file)
                     .file_name()
                     .unwrap()
                     .to_str()

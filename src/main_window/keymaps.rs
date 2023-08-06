@@ -11,7 +11,9 @@ pub fn set_keymaps(window: &super::Window, key: &EventKey) -> gtk::Inhibit {
         }
         Some(36) => {
             // return
-            window.imp().play_button.activate();
+            if window.imp().play_button.is_visible() {
+                window.imp().play_button.activate();
+            }
         }
         Some(38) => {
             // a

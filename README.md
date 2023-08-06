@@ -11,6 +11,8 @@ This is a gtk movie library browser written in rust.
 	- release date
  - Playing the selected movie in <b>mpv</b>
  - Tracking progress
+ - Vim motions
+ - Plugins
 
 ## Installation
 ### Arch linux
@@ -37,7 +39,15 @@ and <b>either</b>
 replace ```Exec = reel_hub```
 with ```Exec = FULL_PATH_TO_BINARY``` eg. ```Exec = /home/user/reel_hub/target/reel_hub```
 <b>or</b>
-place the binary on path 
+place the binary on path
+
+## Plugins
+Plugins can be written in programming language that can read from and write to stdio.
+reel_hub communicates with plugins trough pipes, see examples in "examples" directory.
+
+Demo: https://www.youtube.com/watch?v=Rnfb6jYbHtE
+
+At startup every executable in ```XDG_DATA_HOME/reel_hub/.plugins/``` is loaded as plugin
 
 ## Usage
 ```

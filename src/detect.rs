@@ -18,7 +18,8 @@ pub fn get_movies(dir: String, movies: Vec<Movie>) -> Vec<Movie> {
 
     let movies_new: Vec<Movie> = files
         .iter()
-        .map(|file| Movie::get_from_file_name(file.clone()))
+        .enumerate()
+        .map(|(i, file)| Movie::get_from_file_name(file.clone(), i))
         .collect();
     let mut movies = movies
         .into_iter()

@@ -23,14 +23,18 @@ use reel_hub::movie::ImageType;
 use reel_hub::movie::Movie;
 use reel_hub::movie::MovieData;
 use reel_hub::utils;
+use std::io::Write;
 use std::ops::Deref;
 use std::path::Path;
+use std::process::ChildStdin;
 
 use glib::subclass::prelude::*;
 use gtk::gio;
 use gtk::Application;
 
 use reel_hub::res;
+
+use crate::plugin;
 
 glib::wrapper! {
     pub struct Window(ObjectSubclass<imp::Window>)
@@ -49,6 +53,16 @@ impl Window {
             window.autohide_backdrop();
         });
 
+        let (sender, receiver) = glib::MainContext::channel(Priority::default());
+        window.imp().plugins.replace(plugin::load_plugins(sender));
+        receiver.attach(
+            None,
+            clone!(@weak window => @default-return Continue(false), move |response| {
+                plugin::handle_response(response, &window);
+                Continue(true)
+            }),
+        );
+
         window.update();
         window.setup_dir_watcher();
 
@@ -56,51 +70,54 @@ impl Window {
         window.imp().play_button.deref().connect_clicked(clone!(@weak window => move |button| {
             let movie = &window.imp().movies.borrow()[window.imp().movie_selected.get().unwrap()];
             let (sender, receiver) = glib::MainContext::channel(Priority::default());
-            if let Some(current_time) = movie.current_time {
-                let dialog = MessageDialog::new(
-                    Some(&window),
-                    DialogFlags::MODAL,
-                    MessageType::Question,
-                    gtk::ButtonsType::YesNo,
-                    &format!("Continue watching from {}:{:02}:{:02}?", current_time / 3600, current_time / 60 % 60, current_time % 60));
-                dialog.set_decorated(false);
-                dialog.show();
-                dialog.connect_response(clone!(@weak window => move |dialog, response| {
-                    let movie = &window.imp().movies.borrow()[window.imp().movie_selected.get().unwrap()];
-                    let mut handle;
-                    match response {
-                        ResponseType::Yes => {
-                            handle = movie.play(true);
-                            window.imp().status_label.deref().set_label(&format!("Playing: <b>{}</b>", movie.name));
-                            window.imp().play_button.set_sensitive(false);
-                            dialog.close();
-                        }
-                        ResponseType::No => {
-                            handle = movie.play(false);
-                            window.imp().status_label.deref().set_label(&format!("Playing: <b>{}</b>", movie.name));
-                            window.imp().play_button.set_sensitive(false);
-                            dialog.close();
-                        }
-                        _ => { return }
-                    };
-                    let sender = sender.clone();
+            match movie.current_time {
+                Some(0) | None => {
+                    let mut handle = movie.play(false);
+                    window.imp().status_label.deref().set_label(&format!("Playing: <b>{}</b>", movie.name));
                     std::thread::spawn(move || {
                         handle.wait().unwrap();
                         sender.send(()).unwrap();
                     });
-                }));
-            } else {
-                let mut handle = movie.play(false);
-                window.imp().status_label.deref().set_label(&format!("Playing: <b>{}</b>", movie.name));
-                std::thread::spawn(move || {
-                    handle.wait().unwrap();
-                    sender.send(()).unwrap();
-                });
+                }
+                Some(current_time) => {
+                    let dialog = MessageDialog::new(
+                        Some(&window),
+                        DialogFlags::MODAL,
+                        MessageType::Question,
+                        gtk::ButtonsType::YesNo,
+                        &format!("Continue watching from {}:{:02}:{:02}?", current_time / 3600, current_time / 60 % 60, current_time % 60));
+                    dialog.set_decorated(false);
+                    dialog.show();
+                    dialog.connect_response(clone!(@weak window => move |dialog, response| {
+                        let movie = &window.imp().movies.borrow()[window.imp().movie_selected.get().unwrap()];
+                        let mut handle;
+                        match response {
+                            ResponseType::Yes => {
+                                handle = movie.play(true);
+                                window.imp().status_label.deref().set_label(&format!("Playing: <b>{}</b>", movie.name));
+                                window.imp().play_button.set_sensitive(false);
+                                dialog.close();
+                            }
+                            ResponseType::No => {
+                                handle = movie.play(false);
+                                window.imp().status_label.deref().set_label(&format!("Playing: <b>{}</b>", movie.name));
+                                window.imp().play_button.set_sensitive(false);
+                                dialog.close();
+                            }
+                            _ => { return }
+                        };
+                        let sender = sender.clone();
+                        std::thread::spawn(move || {
+                            handle.wait().unwrap();
+                            sender.send(()).unwrap();
+                        });
+                    }));
+                }
             }
 
             receiver.attach(None, clone!(@weak button, @weak window => @default-return Continue(false), move |_| {
                 let movie = window.imp().movie_selected.get().unwrap();
-                let file_path = window.imp().movies.borrow()[movie].file.clone().to_str().unwrap().to_string();
+                let file_path = window.imp().movies.borrow()[movie].file.clone();
                 let current_time = Movie::get_current_time(file_path);
                 window.imp().movies.borrow_mut()[movie].current_time = current_time;
                 if let None = current_time {
@@ -183,10 +200,24 @@ impl Window {
         filechooser.show();
     }
 
-    fn update(&self) {
+    pub fn update(&self) {
         let mut movies = detect::get_movies(
             utils::user_dir(user_data_dir()),
             self.imp().movies.borrow_mut().to_vec(),
+        );
+        self.imp().plugins.replace(
+            self.imp()
+                .plugins
+                .take()
+                .into_iter()
+                .filter_map(|mut plugin| {
+                    if let Ok(_) = plugin.write_all(b"add\n") {
+                        Some(plugin)
+                    } else {
+                        None
+                    }
+                })
+                .collect::<Vec<ChildStdin>>(),
         );
         self.imp().cache.replace(utils::load_cache(&mut movies));
         movies.sort_unstable();
@@ -194,7 +225,12 @@ impl Window {
             Some(movie_selected) => {
                 let movie = movies
                     .iter()
-                    .position(|x| &self.imp().movies.borrow()[movie_selected] == x);
+                    .position(|x| &self.imp().movies.borrow()[movie_selected].id == &x.id);
+                if movie.is_none() {
+                    self.imp()
+                        .movie_selected_tmp
+                        .replace(Some(self.imp().movies.borrow()[movie_selected].id));
+                }
                 self.imp().movies_len.replace(movies.len());
                 self.imp().movies.replace(movies);
                 self.imp().movie_select(movie);
@@ -217,7 +253,7 @@ impl Window {
         }
     }
 
-    fn setup_buttons(&self) {
+    pub fn setup_buttons(&self) {
         let list_box = self.imp().list_box.deref();
         list_box.forall(|widget| list_box.remove(widget));
         self.imp().buttons.borrow_mut().clear();
@@ -288,7 +324,7 @@ impl Window {
                     format!(
                         "button {{
                             background: #0f0f0f,
-                                linear-gradient(to right, red, red) 5px calc(100% - 5px) / calc(100% - 10px) 1px no-repeat;
+                                linear-gradient(to right, @accent, @accent) 5px calc(100% - 5px) / calc(100% - 10px) 1px no-repeat;
                         }}",
                     )
                     .as_bytes(),
@@ -304,7 +340,7 @@ impl Window {
                     format!(
                         "button {{
                             background: #0f0f0f,
-                                linear-gradient(to right, red {progress}%, black {progress}%) 5px calc(100% - 5px) / calc(100% - 10px) 1px no-repeat;
+                                linear-gradient(to right, @accent {progress}%, black {progress}%) 5px calc(100% - 5px) / calc(100% - 10px) 1px no-repeat;
                         }}",
                     )
                     .as_bytes(),

@@ -1,4 +1,4 @@
-use std::{ffi::OsStr, fs::File};
+use std::{ffi::OsStr, fs::File, path::PathBuf};
 
 use glib::user_cache_dir;
 
@@ -23,10 +23,9 @@ pub fn load_cache(movies: &mut Vec<Movie>) -> Vec<MovieCache> {
             .iter_mut()
             .filter(|movie| movie.duration.is_none() || movie.data.is_none())
         {
-            match cache
-                .iter()
-                .find(|entry| OsStr::new(&entry.file_name) == movie.file.file_name().unwrap())
-            {
+            match cache.iter().find(|entry| {
+                OsStr::new(&entry.file_name) == PathBuf::from(&movie.file).file_name().unwrap()
+            }) {
                 Some(entry) => {
                     movie.duration = Some(entry.duration);
                     movie.done = entry.done;
