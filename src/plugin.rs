@@ -4,6 +4,7 @@ use std::process::{ChildStdin, Command, Stdio};
 use glib::subclass::types::ObjectSubclassIsExt;
 use glib::user_data_dir;
 use gtk::prelude::*;
+use gtk::subclass::window::WindowImpl;
 use gtk::CssProvider;
 use reel_hub::movie::{Movie, MovieData};
 use reel_hub::utils;
@@ -137,6 +138,23 @@ pub fn handle_response(response: String, window: &main_window::Window) {
                 &provider,
                 gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
             );
+        }
+        "move" => {
+            let amount = response[1].parse::<i32>().unwrap_or(0);
+            let button_selected = window.imp().button_selected.get() as i32 + amount;
+            window
+                .imp()
+                .button_selected
+                .replace(button_selected as usize);
+            window.imp().buttons.borrow()[button_selected as usize].grab_focus();
+        }
+        "select" => {
+            window.imp().activate_focus();
+        }
+        "play" => {
+            if window.imp().play_button.is_visible() {
+                window.imp().play_button.activate();
+            }
         }
         _ => {
             println!("{response:?}");
