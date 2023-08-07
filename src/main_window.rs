@@ -87,6 +87,7 @@ impl Window {
                         gtk::ButtonsType::YesNo,
                         &format!("Continue watching from {}:{:02}:{:02}?", current_time / 3600, current_time / 60 % 60, current_time % 60));
                     dialog.set_decorated(false);
+                    dialog.set_default_response(ResponseType::Yes);
                     dialog.show();
                     dialog.connect_response(clone!(@weak window => move |dialog, response| {
                         let movie = &window.imp().movies.borrow()[window.imp().movie_selected.get().unwrap()];
