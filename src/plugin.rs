@@ -40,6 +40,9 @@ pub fn load_plugins(sender: glib::Sender<String>) -> Vec<ChildStdin> {
         plugins.push(plugin.stdin.unwrap());
         plugin_listen(reader, sender.clone());
     }
+    for (i, mut plugin) in plugins.iter().enumerate() {
+        let _ = plugin.write_all(format!("plugin_id;{i}\n").as_bytes());
+    }
     plugins
 }
 
