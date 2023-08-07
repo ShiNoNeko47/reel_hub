@@ -71,5 +71,8 @@ pub fn set_keymaps(window: &super::Window, key: &EventKey) -> gtk::Inhibit {
         }
         _ => {}
     }
+    if let Some(key) = key.keyval().to_unicode() {
+        window.plugin_broadcast(format!("key;{key}"));
+    }
     Inhibit(true)
 }

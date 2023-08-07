@@ -201,18 +201,14 @@ impl Window {
         filechooser.show();
     }
 
-    pub fn update(&self) {
-        let mut movies = detect::get_movies(
-            utils::user_dir(user_data_dir()),
-            self.imp().movies.borrow_mut().to_vec(),
-        );
+    pub fn plugin_broadcast(&self, request: String) {
         self.imp().plugins.replace(
             self.imp()
                 .plugins
                 .take()
                 .into_iter()
                 .filter_map(|mut plugin| {
-                    if let Ok(_) = plugin.write_all(b"add\n") {
+                    if let Ok(_) = plugin.write_all(format!("{request}\n").as_bytes()) {
                         Some(plugin)
                     } else {
                         None
@@ -220,6 +216,14 @@ impl Window {
                 })
                 .collect::<Vec<ChildStdin>>(),
         );
+    }
+
+    pub fn update(&self) {
+        let mut movies = detect::get_movies(
+            utils::user_dir(user_data_dir()),
+            self.imp().movies.borrow_mut().to_vec(),
+        );
+        self.plugin_broadcast("add".to_string());
         self.imp().cache.replace(utils::load_cache(&mut movies));
         movies.sort_unstable();
         match self.imp().movie_selected.get() {
