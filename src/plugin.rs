@@ -61,9 +61,21 @@ fn plugin_listen(mut reader: BufReader<std::process::ChildStdout>, sender: glib:
 }
 
 pub fn handle_response(response: String, window: &main_window::Window) {
-    let response = response.trim().split(";").collect::<Vec<&str>>();
+    let mut response = response.trim().split(";").collect::<Vec<&str>>();
+    let plugin_id = response[0].parse::<usize>().ok();
+    if plugin_id.is_some() {
+        response.remove(0);
+    }
+
     match response[0].to_lowercase().as_str() {
+        "update" => {
+            window.update();
+        }
         "movie" => {
+            if let Some(plugin_id) = plugin_id {
+                let _ = window.imp().plugins.borrow_mut()[plugin_id]
+                    .write_all(format!("movie_id;{}\n", window.imp().movies_len.get()).as_bytes());
+            }
             if response.len() < 4 {
                 return;
             }

@@ -68,15 +68,17 @@ impl Window {
 
         window.imp().play_button.deref().set_label("  Play  ");
         window.imp().play_button.deref().connect_clicked(clone!(@weak window => move |button| {
-            let movie = &window.imp().movies.borrow()[window.imp().movie_selected.get().unwrap()];
+            let idx = window.imp().movie_selected.get().unwrap();
+            let movie = &window.imp().movies.borrow()[idx];
             let (sender, receiver) = glib::MainContext::channel(Priority::default());
             match movie.current_time {
                 Some(0) | None => {
                     let mut handle = movie.play(false);
                     window.imp().status_label.deref().set_label(&format!("Playing: <b>{}</b>", movie.name));
+                    window.plugin_broadcast(format!("playing;{}", movie.id));
                     std::thread::spawn(move || {
                         handle.wait().unwrap();
-                        sender.send(()).unwrap();
+                        sender.send(idx).unwrap();
                     });
                 }
                 Some(current_time) => {
@@ -90,7 +92,7 @@ impl Window {
                     dialog.set_default_response(ResponseType::Yes);
                     dialog.show();
                     dialog.connect_response(clone!(@weak window => move |dialog, response| {
-                        let movie = &window.imp().movies.borrow()[window.imp().movie_selected.get().unwrap()];
+                        let movie = &window.imp().movies.borrow()[idx];
                         let mut handle;
                         match response {
                             ResponseType::Yes => {
@@ -108,29 +110,30 @@ impl Window {
                             _ => { return }
                         };
                         let sender = sender.clone();
+                        window.plugin_broadcast(format!("playing;{}", movie.id));
                         std::thread::spawn(move || {
                             handle.wait().unwrap();
-                            sender.send(()).unwrap();
+                            sender.send(idx).unwrap();
                         });
                     }));
                 }
             }
 
-            receiver.attach(None, clone!(@weak button, @weak window => @default-return Continue(false), move |_| {
-                let movie = window.imp().movie_selected.get().unwrap();
-                let file_path = window.imp().movies.borrow()[movie].file.clone();
+            receiver.attach(None, clone!(@weak button, @weak window => @default-return Continue(false), move |idx| {
+                let file_path = window.imp().movies.borrow()[idx].file.clone();
                 let current_time = Movie::get_current_time(file_path);
-                window.imp().movies.borrow_mut()[movie].current_time = current_time;
+                window.imp().movies.borrow_mut()[idx].current_time = current_time;
                 if let None = current_time {
-                    window.imp().movies.borrow_mut()[movie].done = true;
+                    window.imp().movies.borrow_mut()[idx].done = true;
                 } else {
-                    window.imp().movies.borrow_mut()[movie].done = false;
+                    window.imp().movies.borrow_mut()[idx].done = false;
                 }
-                window.update_progressbar(&window.imp().buttons.borrow()[movie], movie);
+                window.plugin_broadcast(format!("quit;{};{}", window.imp().movies.borrow()[idx].done, window.imp().movies.borrow()[idx].id));
+                window.update_progressbar(&window.imp().buttons.borrow()[idx], idx);
                 window.imp().update_cache();
                 button.set_sensitive(true);
                 window.imp().status_label.deref().set_label("");
-                window.sort_buttons(movie);
+                window.sort_buttons(idx);
                 window.setup_buttons();
                 Continue(true)
             }));
