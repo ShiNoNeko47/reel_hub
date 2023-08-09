@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
   <template class="MoviesWindow" parent="GtkApplicationWindow">
-    <property name="title">Movies</property>
+    <property name="title">reel_hub</property>
     <child>
       <object class="GtkBox">
         <property name="orientation">vertical</property>
