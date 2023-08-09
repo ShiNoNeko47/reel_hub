@@ -68,6 +68,31 @@ pub fn handle_response(response: String, window: &main_window::Window) {
     }
 
     match response[0].to_lowercase().as_str() {
+        "get_images" => {
+            if let Some(plugin_id) = plugin_id {
+                let _ = window.imp().plugins.borrow_mut()[plugin_id].write_all(
+                    format!(
+                        "poster;{}\n",
+                        window.imp().poster.file().unwrap_or("".into()).to_string()
+                    )
+                    .as_bytes(),
+                );
+                if window.imp().backdrop.is_visible() {
+                    let _ = window.imp().plugins.borrow_mut()[plugin_id].write_all(
+                        format!(
+                            "backdrop;{}\n",
+                            window
+                                .imp()
+                                .backdrop
+                                .file()
+                                .unwrap_or("".into())
+                                .to_string()
+                        )
+                        .as_bytes(),
+                    );
+                }
+            }
+        }
         "update" => {
             window.update();
         }

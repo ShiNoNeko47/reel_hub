@@ -5,7 +5,6 @@ use std::path::PathBuf;
 use std::process::ChildStdin;
 use std::rc::Rc;
 
-use gdk_pixbuf::Pixbuf;
 use glib::{clone, user_cache_dir, Priority};
 use gtk::subclass::prelude::*;
 use gtk::{glib, Label, ListBox, Revealer, ScrolledWindow};
@@ -192,9 +191,7 @@ impl Window {
         };
         match File::open(&image_file_path) {
             Ok(_) => {
-                if let Ok(pixbuf) = &Pixbuf::from_file(image_file_path) {
-                    image_widget.deref().set_pixbuf(Some(pixbuf))
-                };
+                image_widget.deref().set_file(Some(&image_file_path));
             }
             Err(_) => {
                 image_widget
@@ -208,10 +205,10 @@ impl Window {
             clone!(@weak self as window => @default-return Continue(false), move |(path, image_type)| {
                 match image_type {
                     reel_hub::movie::ImageType::Poster => {
-                        window.poster.deref().set_pixbuf(Some(&Pixbuf::from_file(path).unwrap()));
+                        window.poster.deref().set_file(path.to_str());
                     }
                     reel_hub::movie::ImageType::Backdrop => {
-                        window.backdrop.deref().set_pixbuf(Some(&Pixbuf::from_file(path).unwrap()));
+                        window.backdrop.deref().set_file(path.to_str());
                     }
                 }
                 Continue(true)
