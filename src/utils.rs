@@ -1,6 +1,6 @@
 use std::{ffi::OsStr, fs::File, path::PathBuf};
 
-use glib::user_cache_dir;
+use gtk::glib::user_cache_dir;
 
 use crate::movie::{Movie, MovieCache};
 
