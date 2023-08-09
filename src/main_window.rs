@@ -40,7 +40,7 @@ use crate::plugin;
 gtk::glib::wrapper! {
     pub struct Window(ObjectSubclass<imp::Window>)
         @extends gtk::ApplicationWindow, gtk::Window, gtk::Widget,
-        @implements gio::ActionGroup, gio::ActionMap,gtk::Buildable;
+        @implements gio::ActionGroup, gio::ActionMap, gtk::Buildable;
 }
 
 impl Window {

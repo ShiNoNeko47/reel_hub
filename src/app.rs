@@ -9,7 +9,7 @@ pub struct App {
 
 impl App {
     pub fn new() -> Self {
-        let app = Application::builder().build();
+        let app = Application::new(Some("com.github.ShiNoNeko47.reel_hub"), Default::default());
         let new_app = Self { app };
         new_app.app.connect_activate(Self::on_activate);
         new_app
