@@ -1,8 +1,8 @@
 use std::io::{prelude::*, BufReader};
 use std::process::{ChildStdin, Command, Stdio};
 
-use glib::subclass::types::ObjectSubclassIsExt;
-use glib::user_data_dir;
+use gtk::glib::subclass::types::ObjectSubclassIsExt;
+use gtk::glib::user_data_dir;
 use gtk::prelude::*;
 use gtk::subclass::window::WindowImpl;
 use gtk::CssProvider;
@@ -11,7 +11,7 @@ use reel_hub::utils;
 
 use crate::main_window;
 
-pub fn load_plugins(sender: glib::Sender<String>) -> Vec<ChildStdin> {
+pub fn load_plugins(sender: gtk::glib::Sender<String>) -> Vec<ChildStdin> {
     let mut path = utils::user_dir(user_data_dir());
     path.push_str("/.plugins/");
     std::fs::create_dir_all(&path).unwrap();
@@ -46,7 +46,10 @@ pub fn load_plugins(sender: glib::Sender<String>) -> Vec<ChildStdin> {
     plugins
 }
 
-fn plugin_listen(mut reader: BufReader<std::process::ChildStdout>, sender: glib::Sender<String>) {
+fn plugin_listen(
+    mut reader: BufReader<std::process::ChildStdout>,
+    sender: gtk::glib::Sender<String>,
+) {
     std::thread::spawn(move || loop {
         let mut buf = String::new();
         match reader.read_line(&mut buf) {

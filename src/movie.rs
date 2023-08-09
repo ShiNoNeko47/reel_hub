@@ -7,7 +7,7 @@ use std::{
     process::{Child, Command, Stdio},
 };
 
-use glib::{user_cache_dir, user_data_dir};
+use gtk::glib::{user_cache_dir, user_data_dir};
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -162,7 +162,7 @@ impl Movie {
     pub fn fetch_image(
         image_path: String,
         image_type: ImageType,
-        sender: glib::Sender<(PathBuf, ImageType)>,
+        sender: gtk::glib::Sender<(PathBuf, ImageType)>,
     ) {
         let path = PathBuf::from(format!("{}{}", user_dir(user_cache_dir()), image_path));
         let mut file = File::create(&path).unwrap();

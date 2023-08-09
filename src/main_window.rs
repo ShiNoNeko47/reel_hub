@@ -1,9 +1,10 @@
 mod imp;
 mod keymaps;
 
-use glib::clone;
-use glib::user_data_dir;
-use glib::Priority;
+use gtk::glib;
+use gtk::glib::clone;
+use gtk::glib::user_data_dir;
+use gtk::glib::Priority;
 use gtk::prelude::*;
 use gtk::Button;
 use gtk::CssProvider;
@@ -28,15 +29,15 @@ use std::ops::Deref;
 use std::path::Path;
 use std::process::ChildStdin;
 
-use glib::subclass::prelude::*;
 use gtk::gio;
+use gtk::glib::subclass::prelude::*;
 use gtk::Application;
 
 use reel_hub::res;
 
 use crate::plugin;
 
-glib::wrapper! {
+gtk::glib::wrapper! {
     pub struct Window(ObjectSubclass<imp::Window>)
         @extends gtk::ApplicationWindow, gtk::Window, gtk::Widget,
         @implements gio::ActionGroup, gio::ActionMap,gtk::Buildable;
@@ -44,7 +45,9 @@ glib::wrapper! {
 
 impl Window {
     pub fn new(app: &Application) -> Self {
-        let window: Self = glib::Object::builder().property("application", app).build();
+        let window: Self = gtk::glib::Object::builder()
+            .property("application", app)
+            .build();
         window.set_default_size(1000, 850);
         window.imp().poster.set_width_request(res::POSTER_W as i32);
         window.connect_key_press_event(keymaps::set_keymaps);
@@ -53,7 +56,7 @@ impl Window {
             window.autohide_backdrop();
         });
 
-        let (sender, receiver) = glib::MainContext::channel(Priority::default());
+        let (sender, receiver) = gtk::glib::MainContext::channel(Priority::default());
         window.imp().plugins.replace(plugin::load_plugins(sender));
         receiver.attach(
             None,

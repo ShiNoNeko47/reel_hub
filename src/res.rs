@@ -1,6 +1,6 @@
 use std::ffi::OsStr;
 
-use gdk_pixbuf::{self, traits::PixbufLoaderExt};
+use gtk::gdk_pixbuf::{self, traits::PixbufLoaderExt};
 
 const IMG_LOADING_500: &[u8] = include_bytes!("res/img/Loading_500.png");
 const IMG_CONNECTION_500: &[u8] = include_bytes!("res/img/Check_connection_500.png");

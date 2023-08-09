@@ -1,5 +1,5 @@
-use glib::subclass::prelude::*;
 use gtk::gdk::EventKey;
+use gtk::glib::subclass::prelude::*;
 use gtk::prelude::*;
 use gtk::subclass::window::WindowImpl;
 

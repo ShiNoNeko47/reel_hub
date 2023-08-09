@@ -1,5 +1,5 @@
 use crate::main_window;
-use glib::subclass::types::ObjectSubclassIsExt;
+use gtk::glib::subclass::types::ObjectSubclassIsExt;
 use gtk::{gdk::Screen, prelude::*, Application, CssProvider, StyleContext};
 use std::io::Write;
 
@@ -15,7 +15,7 @@ impl App {
         new_app
     }
 
-    pub fn run(&self) -> glib::ExitCode {
+    pub fn run(&self) -> gtk::glib::ExitCode {
         self.app.run()
     }
 

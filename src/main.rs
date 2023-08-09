@@ -2,8 +2,8 @@ mod app;
 mod main_window;
 mod plugin;
 
-use glib::{user_cache_dir, user_data_dir};
 use gtk::glib::ExitCode;
+use gtk::glib::{user_cache_dir, user_data_dir};
 use std::{env, process::exit};
 
 fn main() -> ExitCode {

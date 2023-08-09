@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use std::process::ChildStdin;
 use std::rc::Rc;
 
-use glib::{clone, user_cache_dir, Priority};
+use gtk::glib::{clone, user_cache_dir, Priority};
 use gtk::subclass::prelude::*;
 use gtk::{glib, Label, ListBox, Revealer, ScrolledWindow};
 use gtk::{prelude::*, Button, CompositeTemplate, Image};
@@ -182,9 +182,10 @@ impl Window {
     fn display_image(&self, image_path: String, image_type: reel_hub::movie::ImageType) {
         let image_file_path = format!("{}{}", utils::user_dir(user_cache_dir()), image_path);
 
-        let (sender, receiver) = glib::MainContext::channel::<(PathBuf, reel_hub::movie::ImageType)>(
-            Priority::default(),
-        );
+        let (sender, receiver) = gtk::glib::MainContext::channel::<(
+            PathBuf,
+            reel_hub::movie::ImageType,
+        )>(Priority::default());
         let image_widget = match image_type {
             reel_hub::movie::ImageType::Poster => &self.poster,
             reel_hub::movie::ImageType::Backdrop => &self.backdrop,
@@ -272,7 +273,7 @@ impl Window {
     }
 }
 
-#[glib::object_subclass]
+#[gtk::glib::object_subclass]
 impl ObjectSubclass for Window {
     const NAME: &'static str = "MoviesWindow";
     type Type = super::Window;
@@ -282,7 +283,7 @@ impl ObjectSubclass for Window {
         Self::bind_template(klass);
     }
 
-    fn instance_init(obj: &glib::subclass::InitializingObject<Self>) {
+    fn instance_init(obj: &gtk::glib::subclass::InitializingObject<Self>) {
         obj.init_template();
     }
 }
