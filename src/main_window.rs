@@ -126,12 +126,13 @@ impl Window {
                 let file_path = window.imp().movies.borrow()[idx].file.clone();
                 let current_time = Movie::get_current_time(file_path);
                 window.imp().movies.borrow_mut()[idx].current_time = current_time;
-                if let None = current_time {
-                    window.imp().movies.borrow_mut()[idx].done = true;
-                } else {
+                if let Some(current_time) = current_time {
                     window.imp().movies.borrow_mut()[idx].done = false;
+                    window.plugin_broadcast(format!("quit;{};{}", current_time, window.imp().movies.borrow()[idx].id));
+                } else {
+                    window.imp().movies.borrow_mut()[idx].done = true;
+                    window.plugin_broadcast(format!("quit;;{}", window.imp().movies.borrow()[idx].id));
                 }
-                window.plugin_broadcast(format!("quit;{};{}", window.imp().movies.borrow()[idx].done, window.imp().movies.borrow()[idx].id));
                 window.update_progressbar(&window.imp().buttons.borrow()[idx], idx);
                 window.imp().update_cache();
                 button.set_sensitive(true);
