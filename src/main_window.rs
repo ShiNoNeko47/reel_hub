@@ -242,6 +242,14 @@ impl Window {
                 self.imp().movies_len.replace(movies.len());
                 self.imp().movies.replace(movies);
                 self.imp().movie_select(movie);
+                if let Some(movie) = movie {
+                    self.plugin_broadcast(format!(
+                        "selected;{}",
+                        self.imp().movies.borrow()[movie].id
+                    ));
+                } else {
+                    self.plugin_broadcast("selected;".to_string());
+                }
             }
             None => {
                 self.imp().movies_len.replace(movies.len());
@@ -278,6 +286,10 @@ impl Window {
                 let (name, year) = (window.imp().movies.borrow()[movie].name.clone(), window.imp().movies.borrow()[movie].year);
                 let sender = sender.clone();
                 window.imp().movie_select(Some(movie));
+                window.plugin_broadcast(format!(
+                    "selected;{}",
+                    window.imp().movies.borrow()[movie].id
+                ));
                 if window.imp().movies.borrow()[movie].data.is_none() {
                     std::thread::spawn(move || {
                         let data = MovieData::fetch_data(year, name);
@@ -296,6 +308,10 @@ impl Window {
                     Some(data) => {
                         window.imp().movies.borrow_mut()[movie].data.replace(data);
                         window.imp().movie_select(Some(movie));
+                window.plugin_broadcast(format!(
+                    "selected;{}",
+                    window.imp().movies.borrow()[movie].id
+                ));
                         window.update_progressbar(&window.imp().buttons.borrow()[movie], movie);
                     }
                     None => {
@@ -321,6 +337,11 @@ impl Window {
             .iter()
             .position(|x| movie_current == x);
         self.imp().movie_select(idx);
+        if let Some(idx) = idx {
+            self.plugin_broadcast(format!("selected;{}", self.imp().movies.borrow()[idx].id));
+        } else {
+            self.plugin_broadcast("selected;".to_string());
+        }
         self.imp().button_selected.replace(idx.unwrap_or(0));
     }
 
