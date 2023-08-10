@@ -194,6 +194,19 @@ pub fn handle_response(response: String, window: &main_window::Window) {
         "select" => {
             window.imp().activate_focus();
         }
+        "select_id" => {
+            if let Some(position) = window
+                .imp()
+                .movies
+                .borrow()
+                .iter()
+                .position(|movie| movie.id == response[1].parse::<usize>().unwrap_or(0))
+            {
+                window.imp().button_selected.set(position);
+                window.imp().buttons.borrow()[position].grab_focus();
+                window.imp().activate_focus();
+            }
+        }
         "play" => {
             if window.imp().play_button.is_visible() {
                 window.imp().play_button.activate();
