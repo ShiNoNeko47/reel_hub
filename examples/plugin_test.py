@@ -1,4 +1,6 @@
 #! /usr/bin/env python3
+
+
 def setup():
     """
     setup the environment
@@ -7,7 +9,7 @@ def setup():
     pass
 
 
-def handle_request(request: str):
+def handle_request(plugin_id: int, request: str):
     if request == "add":
         """
          - only "movie", name and source are required
@@ -49,16 +51,26 @@ def handle_request(request: str):
         print(
             "movie;RTL;;https://d1cs5tlhj75jxe.cloudfront.net/rtl/playlist.m3u8;;;;RTL;RTL"
         )
-        print("movie;Ringu;1998;https://www.youtube.com/watch?v=CQ1jkNj4cZc;;5716;")
+        print(
+            plugin_id
+            + ";movie;Ringu;1998;https://www.youtube.com/watch?v=CQ1jkNj4cZc;;5716;"
+        )
+        while True:
+            response = input().split(";")
+            if response[0] == "movie_id":
+                break
+            handle_request(plugin_id, ";".join(response))
+        print(f"Ringu_id;{response[1]}")
 
 
 def main():
     setup()
+    plugin_id = input().split(";")[1]
     while True:
         request = input()
         if request == "0":
             break
-        handle_request(request)
+        handle_request(plugin_id, request)
 
 
 if __name__ == "__main__":

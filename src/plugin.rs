@@ -43,6 +43,7 @@ pub fn load_plugins(sender: gtk::glib::Sender<String>) -> Vec<ChildStdin> {
     for (i, mut plugin) in plugins.iter().enumerate() {
         let _ = plugin.write_all(format!("plugin_id;{i}\n").as_bytes());
     }
+    println!("Loaded {} plugins", plugins.len());
     plugins
 }
 
@@ -213,7 +214,7 @@ pub fn handle_response(response: String, window: &main_window::Window) {
             }
         }
         _ => {
-            println!("{response:?}");
+            println!("{plugin_id:?} - {response:?}");
         }
     }
 }
