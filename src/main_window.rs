@@ -60,8 +60,8 @@ impl Window {
         window.imp().plugins.replace(plugin::load_plugins(sender));
         receiver.attach(
             None,
-            clone!(@weak window => @default-return Continue(false), move |response| {
-                plugin::handle_response(response, &window);
+            clone!(@weak window => @default-return Continue(false), move |(response, plugin_id)| {
+                plugin::handle_response(response, &window, plugin_id);
                 Continue(true)
             }),
         );

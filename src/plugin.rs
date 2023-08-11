@@ -11,7 +11,7 @@ use reel_hub::utils;
 
 use crate::main_window;
 
-pub fn load_plugins(sender: gtk::glib::Sender<String>) -> Vec<ChildStdin> {
+pub fn load_plugins(sender: gtk::glib::Sender<(String, usize)>) -> Vec<ChildStdin> {
     let mut path = utils::user_dir(user_data_dir());
     path.push_str("/.plugins/");
     std::fs::create_dir_all(&path).unwrap();
@@ -27,7 +27,6 @@ pub fn load_plugins(sender: gtk::glib::Sender<String>) -> Vec<ChildStdin> {
         let plugin = match Command::new(file.path())
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
-            .stderr(Stdio::null())
             .spawn()
         {
             Ok(plugin) => plugin,
@@ -38,10 +37,7 @@ pub fn load_plugins(sender: gtk::glib::Sender<String>) -> Vec<ChildStdin> {
         };
         let reader = BufReader::new(plugin.stdout.unwrap());
         plugins.push(plugin.stdin.unwrap());
-        plugin_listen(reader, sender.clone());
-    }
-    for (i, mut plugin) in plugins.iter().enumerate() {
-        let _ = plugin.write_all(format!("plugin_id;{i}\n").as_bytes());
+        plugin_listen(reader, sender.clone(), plugins.len() - 1);
     }
     println!("Loaded {} plugins", plugins.len());
     plugins
@@ -49,14 +45,15 @@ pub fn load_plugins(sender: gtk::glib::Sender<String>) -> Vec<ChildStdin> {
 
 fn plugin_listen(
     mut reader: BufReader<std::process::ChildStdout>,
-    sender: gtk::glib::Sender<String>,
+    sender: gtk::glib::Sender<(String, usize)>,
+    plugin_id: usize,
 ) {
     std::thread::spawn(move || loop {
         let mut buf = String::new();
         match reader.read_line(&mut buf) {
             Ok(_) => {
                 if !buf.is_empty() {
-                    sender.send(buf).unwrap()
+                    sender.send((buf, plugin_id)).unwrap()
                 }
             }
             Err(e) => panic!("couldn't read stdout: {}", e),
@@ -64,53 +61,60 @@ fn plugin_listen(
     });
 }
 
-pub fn handle_response(response: String, window: &main_window::Window) {
-    let mut response = response.trim().split(";").collect::<Vec<&str>>();
-    let plugin_id = response[0].parse::<usize>().ok();
-    if plugin_id.is_some() {
-        response.remove(0);
-    }
-
+pub fn handle_response(response: String, window: &main_window::Window, plugin_id: usize) {
+    let response = response.trim().split(";").collect::<Vec<&str>>();
     match response[0].to_lowercase().as_str() {
         "get_images" => {
-            if let Some(plugin_id) = plugin_id {
+            let _ = window.imp().plugins.borrow_mut()[plugin_id].write_all(
+                format!(
+                    "poster;{}\n",
+                    window.imp().poster.file().unwrap_or("".into()).to_string()
+                )
+                .as_bytes(),
+            );
+            if window.imp().backdrop.is_visible() {
                 let _ = window.imp().plugins.borrow_mut()[plugin_id].write_all(
                     format!(
-                        "poster;{}\n",
-                        window.imp().poster.file().unwrap_or("".into()).to_string()
+                        "backdrop;{}\n",
+                        window
+                            .imp()
+                            .backdrop
+                            .file()
+                            .unwrap_or("".into())
+                            .to_string()
                     )
                     .as_bytes(),
                 );
-                if window.imp().backdrop.is_visible() {
-                    let _ = window.imp().plugins.borrow_mut()[plugin_id].write_all(
-                        format!(
-                            "backdrop;{}\n",
-                            window
-                                .imp()
-                                .backdrop
-                                .file()
-                                .unwrap_or("".into())
-                                .to_string()
-                        )
-                        .as_bytes(),
-                    );
-                }
             }
         }
         "update" => {
             window.update();
         }
         "movie" => {
-            if let Some(plugin_id) = plugin_id {
-                let _ = window.imp().plugins.borrow_mut()[plugin_id]
-                    .write_all(format!("movie_id;{}\n", window.imp().movies_len.get()).as_bytes());
-            }
+            let id_prefix = plugin_id * 10000;
+            let movie_id = window
+                .imp()
+                .movies
+                .borrow()
+                .iter()
+                .map(|movie| {
+                    if movie.id >= id_prefix && movie.id <= id_prefix + 10000 {
+                        movie.id
+                    } else {
+                        id_prefix
+                    }
+                })
+                .max()
+                .map(|id| id + 1)
+                .unwrap_or(id_prefix);
+            let _ = window.imp().plugins.borrow_mut()[plugin_id]
+                .write_all(format!("movie_id;{movie_id}\n").as_bytes());
             if response.len() < 4 {
                 return;
             }
             let mut data = response[1..].iter();
             let movie = Movie {
-                id: window.imp().movies_len.get(),
+                id: movie_id,
                 name: data.next().unwrap().to_string(),
                 year: data.next().unwrap().parse::<usize>().ok(),
                 file: data.next().unwrap().to_string(),
@@ -131,7 +135,7 @@ pub fn handle_response(response: String, window: &main_window::Window) {
                     .map(|done| done.parse::<bool>().unwrap_or(false))
                     .unwrap_or(false),
                 data: {
-                    if response.len() <= 8 {
+                    if response.len() <= 7 {
                         None
                     } else {
                         Some(MovieData {
