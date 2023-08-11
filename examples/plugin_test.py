@@ -9,7 +9,7 @@ def setup():
     pass
 
 
-def handle_request(plugin_id: int, request: str):
+def handle_request(request: str):
     if request == "add":
         """
          - only "movie", name and source are required
@@ -46,31 +46,27 @@ def handle_request(plugin_id: int, request: str):
         """
 
         print(
-            "movie;HRT1;;https://webtvstream.bhtelecom.ba/hls9/hrt1_1200.m3u8;;;;HRT1;HRT1;Hrvatska radio televizija;hr;/hrt1.png;;;;;tv"
+            "movie;HRT1;;https://webtvstream.bhtelecom.ba/hls9/hrt1_1200.m3u8;;;;HRT1;HRT1;Hrvatska radio televizija;hr;/hrt1.ng;;;;;tv"
         )
         print(
             "movie;RTL;;https://d1cs5tlhj75jxe.cloudfront.net/rtl/playlist.m3u8;;;;RTL;RTL"
         )
-        print(
-            plugin_id
-            + ";movie;Ringu;1998;https://www.youtube.com/watch?v=CQ1jkNj4cZc;;5716;"
-        )
+        print("movie;Ringu;1998;https://www.youtube.com/watch?v=CQ1jkNj4cZc;;5716;")
         while True:
             response = input().split(";")
             if response[0] == "movie_id":
                 break
-            handle_request(plugin_id, ";".join(response))
-        print(f"Ringu_id;{response[1]}")
+            handle_request(";".join(response))
+        print(f"ringu;id;{response[1]}")
 
 
 def main():
     setup()
-    plugin_id = input().split(";")[1]
     while True:
         request = input()
         if request == "0":
             break
-        handle_request(plugin_id, request)
+        handle_request(request)
 
 
 if __name__ == "__main__":
