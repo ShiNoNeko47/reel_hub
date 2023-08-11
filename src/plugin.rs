@@ -173,6 +173,10 @@ pub fn handle_response(response: String, window: &main_window::Window, plugin_id
             if let Some(id) = movie_selected_id {
                 let movie = window.imp().movies.borrow().iter().position(|x| x.id == id);
                 window.imp().movie_select(movie);
+                if let Some(movie) = movie {
+                    window.imp().button_selected.set(movie);
+                    window.imp().buttons.borrow()[movie].grab_focus();
+                }
             }
             window.setup_buttons();
         }
