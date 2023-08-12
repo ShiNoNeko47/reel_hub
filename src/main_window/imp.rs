@@ -180,7 +180,12 @@ impl Window {
         }
     }
     fn display_image(&self, image_path: String, image_type: reel_hub::movie::ImageType) {
-        let image_file_path = format!("{}{}", utils::user_dir(user_cache_dir()), image_path);
+        let image_file_path;
+        if PathBuf::from(&image_path).is_file() {
+            image_file_path = image_path.clone();
+        } else {
+            image_file_path = format!("{}{}", utils::user_dir(user_cache_dir()), image_path);
+        }
 
         let (sender, receiver) = gtk::glib::MainContext::channel::<(
             PathBuf,
