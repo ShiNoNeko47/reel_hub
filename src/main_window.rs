@@ -446,6 +446,17 @@ impl Window {
         dialog.content_area().add(&entry);
         dialog.show_all();
 
+        dialog.connect_key_press_event(|dialog, key| {
+            match key.keyval() {
+                gtk::gdk::keys::constants::Escape => {
+                    dialog.close();
+                }
+                gtk::gdk::keys::constants::Return => dialog.response(ResponseType::Ok),
+                _ => {}
+            };
+            Inhibit(false)
+        });
+
         dialog.connect_response(move |dialog, response_type| {
             match response_type {
                 ResponseType::Ok => {
