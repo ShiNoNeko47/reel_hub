@@ -1,12 +1,12 @@
 @define-color accent red;
 
-messagedialog *, window * {
+dialog *, window * {
 	all: unset;
 	color: white;
 	background: #0f0f0f;
 	border: black;
 }
-messagedialog button, window button {
+dialog button, window button {
 	border-style: solid;
 	border-width: 1px;
 	border-image: linear-gradient(to right, black, black) 30;
@@ -21,11 +21,11 @@ list button {
 	linear-gradient(to right, @accent, black 0%) 5px calc(100% - 5px) / calc(100% - 10px) 1px no-repeat;
 }
 
-messagedialog button:focus, window button:focus {
+dialog button:focus, window button:focus {
 	border-image: linear-gradient(to right, @accent, black 10%) 1;
 	outline: none;
 }
-messagedialog button:active, window button:active {
+dialog button:active, window button:active {
 	transition: border .2s;
 	border-image: linear-gradient(to right, @accent, @accent) 1;
 	box-shadow: none;
