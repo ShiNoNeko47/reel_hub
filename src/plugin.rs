@@ -30,9 +30,11 @@ pub fn load_plugins(sender: gtk::glib::Sender<(String, usize)>) -> Vec<ChildStdi
             .stdout(Stdio::piped())
             .spawn()
         {
-            Ok(plugin) => plugin,
-            Err(e) => {
-                println!("{}: Failed to spawn plugin: {}", file.path().display(), e);
+            Ok(plugin) => {
+                println!("Loading {}...", file.file_name().to_string_lossy());
+                plugin
+            }
+            Err(_) => {
                 continue;
             }
         };
