@@ -5,10 +5,13 @@ use gtk::glib;
 use gtk::glib::clone;
 use gtk::glib::user_data_dir;
 use gtk::glib::Priority;
+use gtk::glib::Sender;
 use gtk::prelude::*;
 use gtk::Button;
 use gtk::CssProvider;
+use gtk::Dialog;
 use gtk::DialogFlags;
+use gtk::Entry;
 use gtk::FileChooserAction;
 use gtk::FileChooserDialog;
 use gtk::MessageDialog;
@@ -428,5 +431,30 @@ impl Window {
             )
             .unwrap();
         self.imp().dir_watcher.replace(Some(watcher));
+    }
+
+    pub fn get_user_input(&self, title: Option<&str>, sender: Sender<String>) {
+        let dialog = Dialog::with_buttons(
+            title,
+            Some(self),
+            DialogFlags::MODAL,
+            &[("Cancel", ResponseType::Cancel), ("OK", ResponseType::Ok)],
+        );
+        let entry = Entry::new();
+        dialog.content_area().add(&entry);
+        dialog.show_all();
+
+        dialog.connect_response(move |dialog, response_type| {
+            match response_type {
+                ResponseType::Ok => {
+                    sender.send(entry.text().to_string()).unwrap();
+                }
+                ResponseType::Cancel => {
+                    sender.send("".to_string()).unwrap();
+                }
+                _ => {}
+            }
+            dialog.close();
+        });
     }
 }
