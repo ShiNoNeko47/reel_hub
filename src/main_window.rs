@@ -14,6 +14,7 @@ use gtk::DialogFlags;
 use gtk::Entry;
 use gtk::FileChooserAction;
 use gtk::FileChooserDialog;
+use gtk::Label;
 use gtk::MessageDialog;
 use gtk::MessageType;
 use gtk::ResponseType;
@@ -440,6 +441,7 @@ impl Window {
             DialogFlags::MODAL,
             &[("Cancel", ResponseType::Cancel), ("OK", ResponseType::Ok)],
         );
+        dialog.content_area().add(&Label::new(title));
         let entry = Entry::new();
         dialog.content_area().add(&entry);
         dialog.show_all();
@@ -447,12 +449,11 @@ impl Window {
         dialog.connect_response(move |dialog, response_type| {
             match response_type {
                 ResponseType::Ok => {
-                    sender.send(entry.text().to_string()).unwrap();
+                    let _ = sender.send(entry.text().to_string());
                 }
-                ResponseType::Cancel => {
-                    sender.send("".to_string()).unwrap();
+                _ => {
+                    let _ = sender.send(String::new());
                 }
-                _ => {}
             }
             dialog.close();
         });
