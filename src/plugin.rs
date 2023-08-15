@@ -92,7 +92,7 @@ pub fn handle_response(response: String, window: &main_window::Window, plugin_id
         }
         "get_user_input" => {
             let (sender, receiver) = gtk::glib::MainContext::channel(gtk::glib::PRIORITY_DEFAULT);
-            window.get_user_input(response.get(1).copied(), sender);
+            window.get_user_input(response.get(1).copied(), sender, None, None);
             receiver.attach(None,
                 clone!(@weak window => @default-return Continue(false), move |user_input| {
                     let _ = window.imp().plugins.borrow_mut()[plugin_id].write_all(format!("user_input;{}\n", user_input).as_bytes());

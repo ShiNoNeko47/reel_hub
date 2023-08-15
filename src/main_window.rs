@@ -20,6 +20,7 @@ use gtk::Entry;
 use gtk::FileChooserAction;
 use gtk::FileChooserDialog;
 use gtk::Label;
+use gtk::ListBox;
 use gtk::MessageDialog;
 use gtk::MessageType;
 use gtk::ResponseType;
@@ -40,6 +41,12 @@ use gtk::Application;
 use crate::res;
 
 use crate::plugin;
+
+pub enum UserInputType {
+    Text,
+    Password,
+    Choice,
+}
 
 gtk::glib::wrapper! {
     pub struct Window(ObjectSubclass<imp::Window>)
@@ -434,7 +441,14 @@ impl Window {
         self.imp().dir_watcher.replace(Some(watcher));
     }
 
-    pub fn get_user_input(&self, title: Option<&str>, sender: Sender<String>) {
+    pub fn get_user_input(
+        &self,
+        title: Option<&str>,
+        sender: Sender<String>,
+        input_type: Option<UserInputType>,
+        choices: Option<Vec<String>>,
+    ) {
+        let input_type = input_type.unwrap_or(UserInputType::Text);
         let dialog = Dialog::with_buttons(
             title,
             Some(self),
@@ -443,8 +457,36 @@ impl Window {
         );
         dialog.style_context().add_class("user-input");
         dialog.content_area().add(&Label::new(title));
-        let entry = Entry::new();
-        dialog.content_area().add(&entry);
+        let mut entry = None;
+        let mut list_box = None;
+        match input_type {
+            UserInputType::Text => {
+                entry = Some(Entry::new());
+                dialog.content_area().add(entry.as_ref().unwrap());
+            }
+            UserInputType::Password => {
+                entry = Some(Entry::new());
+                entry
+                    .as_ref()
+                    .unwrap()
+                    .set_input_purpose(gtk::InputPurpose::Password);
+                dialog.content_area().add(entry.as_ref().unwrap());
+            }
+            UserInputType::Choice => {
+                list_box = Some(ListBox::new());
+                list_box
+                    .as_ref()
+                    .unwrap()
+                    .set_selection_mode(gtk::SelectionMode::Single);
+                if let Some(choices) = choices {
+                    for choice in choices {
+                        println!("{}", choice);
+                        list_box.as_ref().unwrap().add(&Label::new(Some(&choice)));
+                    }
+                }
+                dialog.content_area().add(list_box.as_ref().unwrap());
+            }
+        }
         dialog.show_all();
 
         dialog.connect_key_press_event(|dialog, key| {
@@ -461,7 +503,17 @@ impl Window {
         dialog.connect_response(move |dialog, response_type| {
             match response_type {
                 ResponseType::Ok => {
-                    let _ = sender.send(entry.text().to_string());
+                    let user_input = match &entry {
+                        Some(entry) => entry.text().to_string(),
+                        None => list_box
+                            .as_ref()
+                            .unwrap()
+                            .selected_row()
+                            .as_ref()
+                            .map(|row| row.child().unwrap().property::<String>("label"))
+                            .unwrap_or(String::new()),
+                    };
+                    sender.send(user_input).unwrap();
                 }
                 _ => {
                     let _ = sender.send(String::new());
