@@ -1,6 +1,11 @@
 mod imp;
 mod keymaps;
 
+use crate::detect;
+use crate::movie::ImageType;
+use crate::movie::Movie;
+use crate::movie::MovieData;
+use crate::utils;
 use gtk::glib;
 use gtk::glib::clone;
 use gtk::glib::user_data_dir;
@@ -23,11 +28,6 @@ use notify::{
     event::{CreateKind, ModifyKind, RemoveKind, RenameMode},
     EventKind, Watcher,
 };
-use reel_hub::detect;
-use reel_hub::movie::ImageType;
-use reel_hub::movie::Movie;
-use reel_hub::movie::MovieData;
-use reel_hub::utils;
 use std::io::Write;
 use std::ops::Deref;
 use std::path::Path;
@@ -37,7 +37,7 @@ use gtk::gio;
 use gtk::glib::subclass::prelude::*;
 use gtk::Application;
 
-use reel_hub::res;
+use crate::res;
 
 use crate::plugin;
 
@@ -441,6 +441,7 @@ impl Window {
             DialogFlags::MODAL,
             &[("Cancel", ResponseType::Cancel), ("OK", ResponseType::Ok)],
         );
+        dialog.style_context().add_class("user-input");
         dialog.content_area().add(&Label::new(title));
         let entry = Entry::new();
         dialog.content_area().add(&entry);

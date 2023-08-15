@@ -5,14 +5,14 @@ use std::path::PathBuf;
 use std::process::ChildStdin;
 use std::rc::Rc;
 
+use crate::movie::{self, Movie, MovieCache, MovieData};
+use crate::utils;
 use gtk::glib::{clone, user_cache_dir, Priority};
 use gtk::subclass::prelude::*;
 use gtk::{glib, Label, ListBox, Revealer, ScrolledWindow};
 use gtk::{prelude::*, Button, CompositeTemplate, Image};
-use reel_hub::movie::{Movie, MovieCache, MovieData};
-use reel_hub::utils;
 
-use reel_hub::res;
+use crate::res;
 
 #[derive(Debug, Default, CompositeTemplate)]
 #[template(file = "main_window.ui")]
@@ -99,10 +99,10 @@ impl Window {
                 if let Some(name) = name {
                     self.poster
                         .deref()
-                        .set_pixbuf(Some(&res::loading(&reel_hub::movie::ImageType::Poster)));
+                        .set_pixbuf(Some(&res::loading(&movie::ImageType::Poster)));
                     self.backdrop
                         .deref()
-                        .set_pixbuf(Some(&res::loading(&reel_hub::movie::ImageType::Backdrop)));
+                        .set_pixbuf(Some(&res::loading(&movie::ImageType::Backdrop)));
                     self.title
                         .deref()
                         .set_label(&format!("<b>Title:</b> {name}"));
@@ -160,26 +160,20 @@ impl Window {
                 }
 
                 if data.poster_path != "".to_string() {
-                    self.display_image(
-                        data.poster_path.clone(),
-                        reel_hub::movie::ImageType::Poster,
-                    );
+                    self.display_image(data.poster_path.clone(), movie::ImageType::Poster);
                 } else {
                     self.poster.deref().set_pixbuf(None);
                 }
 
                 if data.backdrop_path != "".to_string() {
-                    self.display_image(
-                        data.backdrop_path.clone(),
-                        reel_hub::movie::ImageType::Backdrop,
-                    );
+                    self.display_image(data.backdrop_path.clone(), movie::ImageType::Backdrop);
                 } else {
                     self.backdrop.deref().set_pixbuf(None);
                 }
             }
         }
     }
-    fn display_image(&self, image_path: String, image_type: reel_hub::movie::ImageType) {
+    fn display_image(&self, image_path: String, image_type: movie::ImageType) {
         let image_file_path;
         if PathBuf::from(&image_path).is_file() {
             image_file_path = image_path.clone();
@@ -187,13 +181,11 @@ impl Window {
             image_file_path = format!("{}{}", utils::user_dir(user_cache_dir()), image_path);
         }
 
-        let (sender, receiver) = gtk::glib::MainContext::channel::<(
-            PathBuf,
-            reel_hub::movie::ImageType,
-        )>(Priority::default());
+        let (sender, receiver) =
+            gtk::glib::MainContext::channel::<(PathBuf, movie::ImageType)>(Priority::default());
         let image_widget = match image_type {
-            reel_hub::movie::ImageType::Poster => &self.poster,
-            reel_hub::movie::ImageType::Backdrop => &self.backdrop,
+            movie::ImageType::Poster => &self.poster,
+            movie::ImageType::Backdrop => &self.backdrop,
         };
         match File::open(&image_file_path) {
             Ok(_) => {
@@ -210,10 +202,10 @@ impl Window {
             None,
             clone!(@weak self as window => @default-return Continue(false), move |(path, image_type)| {
                 match image_type {
-                    reel_hub::movie::ImageType::Poster => {
+                    movie::ImageType::Poster => {
                         window.poster.deref().set_file(path.to_str());
                     }
-                    reel_hub::movie::ImageType::Backdrop => {
+                    movie::ImageType::Backdrop => {
                         window.backdrop.deref().set_file(path.to_str());
                     }
                 }

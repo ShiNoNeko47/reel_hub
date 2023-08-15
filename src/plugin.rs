@@ -1,14 +1,14 @@
 use std::io::{prelude::*, BufReader};
 use std::process::{ChildStdin, Command, Stdio};
 
+use crate::movie::{Movie, MovieData};
+use crate::utils;
 use gtk::glib::subclass::types::ObjectSubclassIsExt;
 use gtk::glib::user_data_dir;
 use gtk::glib::{self, clone};
 use gtk::prelude::*;
 use gtk::subclass::window::WindowImpl;
 use gtk::CssProvider;
-use reel_hub::movie::{Movie, MovieData};
-use reel_hub::utils;
 
 use crate::main_window;
 

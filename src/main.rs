@@ -1,6 +1,10 @@
 mod app;
+mod detect;
 mod main_window;
+mod movie;
 mod plugin;
+mod res;
+mod utils;
 
 use gtk::glib::ExitCode;
 use gtk::glib::{user_cache_dir, user_data_dir};
@@ -30,16 +34,13 @@ You can add to library from within the app, or you can create symlinks to
 directories with movies in \"{}/\"
 (e.g. ln -s FULL_PATH_TO_DIRECTORY {}/NAME",
                     args[0],
-                    reel_hub::utils::user_dir(user_data_dir()),
-                    reel_hub::utils::user_dir(user_data_dir())
+                    utils::user_dir(user_data_dir()),
+                    utils::user_dir(user_data_dir())
                 );
                 exit(0)
             }
             "--list" | "-l" => {
-                let movies = reel_hub::detect::get_movies(
-                    reel_hub::utils::user_dir(user_data_dir()),
-                    vec![],
-                );
+                let movies = detect::get_movies(utils::user_dir(user_data_dir()), vec![]);
                 for movie in movies {
                     if let Some(year) = movie.year {
                         println!("{} ({})", movie.name, year);
@@ -50,9 +51,7 @@ directories with movies in \"{}/\"
                 exit(0)
             }
             "--clear-cache" | "-c" => {
-                if let Result::Ok(_) =
-                    std::fs::remove_dir_all(reel_hub::utils::user_dir(user_cache_dir()))
-                {
+                if let Result::Ok(_) = std::fs::remove_dir_all(utils::user_dir(user_cache_dir())) {
                     println!("Cache cleared");
                 }
                 exit(0)
