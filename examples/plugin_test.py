@@ -1,12 +1,15 @@
 #! /usr/bin/env python3
 
+import os
+import sys
+
 
 def setup():
     """
     setup the environment
     e.g. download images, fetch any data needed by the plugin...
     """
-    pass
+    os.chdir(sys.path[0])
 
 
 def handle_request(request: str):
@@ -46,7 +49,7 @@ def handle_request(request: str):
         """
 
         print(
-            "movie;HRT1;;https://webtvstream.bhtelecom.ba/hls9/hrt1_1200.m3u8;;;;HRT1;HRT1;Hrvatska radio televizija;hr;/hrt1.ng;;;;;tv"
+            f"movie;HRT1;;https://webtvstream.bhtelecom.ba/hls9/hrt1_1200.m3u8;;;;HRT1;HRT1;Hrvatska radio televizija;hr;{os.path.abspath('hrt1_logo.png')};;;;;tv"
         )
         print(
             "movie;RTL;;https://d1cs5tlhj75jxe.cloudfront.net/rtl/playlist.m3u8;;;;RTL;RTL"
