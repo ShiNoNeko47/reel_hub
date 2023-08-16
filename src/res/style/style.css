@@ -6,6 +6,9 @@
 	background: #0f0f0f;
 	border: black;
 }
+.user-input label, messagedialog label, window label {
+	background: transparent;
+}
 .user-input button, messagedialog button, window button {
 	border-style: solid;
 	border-width: 1px;
@@ -55,4 +58,18 @@ window undershoot.bottom {
 
 window overshoot {
 	background: none;
+}
+
+.user-input list {
+	margin: 10px;
+}
+.user-input list > row {
+	border: 1px solid black;
+	padding: 5px;
+}
+.user-input list > row:selected {
+	border-image: linear-gradient(to right, black, @accent 10%, @accent 90%, black) 1;
+}
+.user-input list > row:hover {
+	background: #0d0d0d;
 }

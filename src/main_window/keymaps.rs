@@ -3,6 +3,8 @@ use gtk::glib::subclass::prelude::*;
 use gtk::prelude::*;
 use gtk::subclass::window::WindowImpl;
 
+use super::UserInputType;
+
 pub fn set_keymaps(window: &super::Window, key: &EventKey) -> gtk::Inhibit {
     match key.keycode() {
         Some(71) | Some(27) => {
