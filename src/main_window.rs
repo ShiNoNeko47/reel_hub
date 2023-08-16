@@ -445,10 +445,9 @@ impl Window {
         &self,
         title: Option<&str>,
         sender: Sender<String>,
-        input_type: Option<UserInputType>,
-        choices: Option<Vec<String>>,
+        input_type: UserInputType,
+        choices: Vec<String>,
     ) {
-        let input_type = input_type.unwrap_or(UserInputType::Text);
         let dialog = Dialog::with_buttons(
             title,
             Some(self),
@@ -478,11 +477,9 @@ impl Window {
                     .as_ref()
                     .unwrap()
                     .set_selection_mode(gtk::SelectionMode::Single);
-                if let Some(choices) = choices {
-                    for choice in choices {
-                        println!("{}", choice);
-                        list_box.as_ref().unwrap().add(&Label::new(Some(&choice)));
-                    }
+                for choice in choices {
+                    println!("{}", choice);
+                    list_box.as_ref().unwrap().add(&Label::new(Some(&choice)));
                 }
                 dialog.content_area().add(list_box.as_ref().unwrap());
             }

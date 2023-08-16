@@ -10,7 +10,7 @@ use gtk::prelude::*;
 use gtk::subclass::window::WindowImpl;
 use gtk::CssProvider;
 
-use crate::main_window;
+use crate::main_window::{self, UserInputType};
 
 pub fn load_plugins(sender: gtk::glib::Sender<(String, usize)>) -> Vec<ChildStdin> {
     let mut path = utils::user_dir(user_data_dir());
@@ -91,8 +91,18 @@ pub fn handle_response(response: String, window: &main_window::Window, plugin_id
             }
         }
         "get_user_input" => {
+            let mut response = response[1..].iter();
             let (sender, receiver) = gtk::glib::MainContext::channel(gtk::glib::PRIORITY_DEFAULT);
-            window.get_user_input(response.get(1).copied(), sender, None, None);
+            window.get_user_input(
+                response.next().copied(),
+                sender,
+                match response.next().unwrap_or(&&"").to_lowercase().as_str() {
+                    "password" => UserInputType::Password,
+                    "choice" => UserInputType::Choice,
+                    _ => UserInputType::Text,
+                },
+                response.map(|s| s.to_string()).collect(),
+            );
             receiver.attach(None,
                 clone!(@weak window => @default-return Continue(false), move |user_input| {
                     let _ = window.imp().plugins.borrow_mut()[plugin_id].write_all(format!("user_input;{}\n", user_input).as_bytes());
