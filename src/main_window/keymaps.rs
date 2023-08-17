@@ -1,52 +1,47 @@
+use gtk::gdk::keys::constants;
 use gtk::gdk::EventKey;
 use gtk::glib::subclass::prelude::*;
 use gtk::prelude::*;
 use gtk::subclass::window::WindowImpl;
 
+use crate::settings::SettingsWindow;
+
 use super::UserInputType;
 
 pub fn set_keymaps(window: &super::Window, key: &EventKey) -> gtk::Inhibit {
-    match key.keycode() {
-        Some(71) | Some(27) => {
-            // <F5> or r
+    match key.keyval() {
+        constants::F5 | constants::r => {
             window.update();
         }
-        Some(36) => {
-            // return
+        constants::Return => {
             if window.imp().play_button.is_visible() {
                 window.imp().play_button.activate();
             }
         }
-        Some(38) => {
-            // a
+        constants::a => {
             window.imp().add_button.activate();
         }
-        Some(56) => {
-            // b
+        constants::b => {
             window.imp().browse_button.activate();
         }
-        Some(43) | Some(113) => {
-            // h or left
+        constants::h | constants::Left => {
             window.imp().revealer.set_reveal_child(false);
         }
-        Some(44) | Some(116) => {
-            // j or down
+        constants::j | constants::Down => {
             let button_selected = window.imp().button_selected.get();
             if button_selected < window.imp().buttons.borrow().len() - 1 {
                 window.imp().button_selected.replace(button_selected + 1);
                 window.imp().buttons.borrow()[button_selected + 1].grab_focus();
             }
         }
-        Some(45) | Some(111) => {
-            // k or up
+        constants::k | constants::Up => {
             let button_selected = window.imp().button_selected.get();
             if button_selected > 0 {
                 window.imp().button_selected.replace(button_selected - 1);
                 window.imp().buttons.borrow()[button_selected - 1].grab_focus();
             }
         }
-        Some(46) | Some(114) => {
-            // l or right
+        constants::l | constants::Right => {
             if window.imp().revealer.reveals_child() {
                 window.imp().activate_focus();
             } else {
@@ -54,21 +49,19 @@ pub fn set_keymaps(window: &super::Window, key: &EventKey) -> gtk::Inhibit {
                 window.imp().buttons.borrow()[window.imp().button_selected.get()].grab_focus();
             }
         }
-        Some(47) => {
-            // ; (semicolon)
+        constants::semicolon => {
             window.imp().movies.borrow_mut()[window.imp().button_selected.get()].done = false;
             window.setup_buttons();
         }
-        Some(42) => {
-            // g
-            if key.keyval().is_upper() {
-                window
-                    .imp()
-                    .button_selected
-                    .replace(window.imp().buttons.borrow().len() - 1);
-            } else {
-                window.imp().button_selected.replace(0);
-            }
+        constants::g => {
+            window.imp().button_selected.replace(0);
+            window.imp().buttons.borrow()[window.imp().button_selected.get()].grab_focus();
+        }
+        constants::G => {
+            window
+                .imp()
+                .button_selected
+                .replace(window.imp().buttons.borrow().len() - 1);
             window.imp().buttons.borrow()[window.imp().button_selected.get()].grab_focus();
         }
         _ => {}
