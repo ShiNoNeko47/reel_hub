@@ -12,7 +12,7 @@ use gtk::CssProvider;
 
 use crate::main_window::{self, UserInputType};
 
-pub fn load_plugins(sender: gtk::glib::Sender<(String, usize)>) -> Vec<(ChildStdin, String)> {
+pub fn load_plugins(sender: gtk::glib::Sender<(String, usize)>) -> Vec<(ChildStdin, String, bool)> {
     let mut path = utils::user_dir(user_data_dir());
     path.push_str("/.plugins/");
     std::fs::create_dir_all(&path).unwrap();
@@ -42,6 +42,7 @@ pub fn load_plugins(sender: gtk::glib::Sender<(String, usize)>) -> Vec<(ChildStd
         plugins.push((
             plugin.stdin.unwrap(),
             file.file_name().to_string_lossy().to_string(),
+            true,
         ));
         plugin_listen(reader, sender.clone(), plugins.len() - 1);
     }

@@ -67,7 +67,7 @@ pub struct Window {
     pub cache: Rc<RefCell<Vec<MovieCache>>>,
 
     pub dir_watcher: Rc<RefCell<Option<notify::RecommendedWatcher>>>,
-    pub plugins: RefCell<Vec<(ChildStdin, String)>>,
+    pub plugins: RefCell<Vec<(ChildStdin, String, bool)>>,
 }
 
 impl Window {
