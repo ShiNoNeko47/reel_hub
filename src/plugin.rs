@@ -198,6 +198,7 @@ pub fn handle_response(response: String, window: &main_window::Window, plugin_id
                 .imp()
                 .movies_len
                 .replace(window.imp().movies.borrow().len());
+            window.setup_buttons();
             if let Some(id) = movie_selected_id {
                 let movie = window.imp().movies.borrow().iter().position(|x| x.id == id);
                 window.imp().movie_select(movie);
@@ -206,7 +207,6 @@ pub fn handle_response(response: String, window: &main_window::Window, plugin_id
                     window.imp().buttons.borrow()[movie].grab_focus();
                 }
             }
-            window.setup_buttons();
         }
         "css" => {
             let provider = CssProvider::new();
