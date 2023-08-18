@@ -226,13 +226,13 @@ impl Window {
                 .take()
                 .into_iter()
                 .filter_map(|mut plugin| {
-                    if let Ok(_) = plugin.write_all(format!("{request}\n").as_bytes()) {
+                    if let Ok(_) = plugin.0.write_all(format!("{request}\n").as_bytes()) {
                         Some(plugin)
                     } else {
                         None
                     }
                 })
-                .collect::<Vec<ChildStdin>>(),
+                .collect::<Vec<(ChildStdin, String)>>(),
         );
     }
 

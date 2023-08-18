@@ -4,6 +4,7 @@ mod main_window;
 mod movie;
 mod plugin;
 mod res;
+mod settings;
 mod utils;
 
 use gtk::glib::ExitCode;

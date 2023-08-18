@@ -33,7 +33,7 @@ impl App {
         app.connect_shutdown(move |_| {
             window.imp().store_cache();
             for plugin in window.imp().plugins.borrow_mut().iter_mut() {
-                plugin.write_all(b"0").ok();
+                plugin.0.write_all(b"0").ok();
             }
         });
     }

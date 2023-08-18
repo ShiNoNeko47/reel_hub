@@ -12,7 +12,7 @@ use gtk::CssProvider;
 
 use crate::main_window::{self, UserInputType};
 
-pub fn load_plugins(sender: gtk::glib::Sender<(String, usize)>) -> Vec<ChildStdin> {
+pub fn load_plugins(sender: gtk::glib::Sender<(String, usize)>) -> Vec<(ChildStdin, String)> {
     let mut path = utils::user_dir(user_data_dir());
     path.push_str("/.plugins/");
     std::fs::create_dir_all(&path).unwrap();
@@ -39,7 +39,10 @@ pub fn load_plugins(sender: gtk::glib::Sender<(String, usize)>) -> Vec<ChildStdi
             }
         };
         let reader = BufReader::new(plugin.stdout.unwrap());
-        plugins.push(plugin.stdin.unwrap());
+        plugins.push((
+            plugin.stdin.unwrap(),
+            file.file_name().to_string_lossy().to_string(),
+        ));
         plugin_listen(reader, sender.clone(), plugins.len() - 1);
     }
     println!("Loaded {} plugins", plugins.len());
@@ -68,7 +71,7 @@ pub fn handle_response(response: String, window: &main_window::Window, plugin_id
     let response = response.trim().split(";").collect::<Vec<&str>>();
     match response[0].to_lowercase().as_str() {
         "get_images" => {
-            let _ = window.imp().plugins.borrow_mut()[plugin_id].write_all(
+            let _ = window.imp().plugins.borrow_mut()[plugin_id].0.write_all(
                 format!(
                     "poster;{}\n",
                     window.imp().poster.file().unwrap_or("".into()).to_string()
@@ -76,7 +79,7 @@ pub fn handle_response(response: String, window: &main_window::Window, plugin_id
                 .as_bytes(),
             );
             if window.imp().backdrop.is_visible() {
-                let _ = window.imp().plugins.borrow_mut()[plugin_id].write_all(
+                let _ = window.imp().plugins.borrow_mut()[plugin_id].0.write_all(
                     format!(
                         "backdrop;{}\n",
                         window
@@ -105,7 +108,7 @@ pub fn handle_response(response: String, window: &main_window::Window, plugin_id
             );
             receiver.attach(None,
                 clone!(@weak window => @default-return Continue(false), move |user_input| {
-                    let _ = window.imp().plugins.borrow_mut()[plugin_id].write_all(format!("user_input;{}\n", user_input).as_bytes());
+                    let _ = window.imp().plugins.borrow_mut()[plugin_id].0.write_all(format!("user_input;{}\n", user_input).as_bytes());
                     Continue(false)
                 }),
             );
@@ -131,6 +134,7 @@ pub fn handle_response(response: String, window: &main_window::Window, plugin_id
                 .map(|id| id + 1)
                 .unwrap_or(id_prefix);
             let _ = window.imp().plugins.borrow_mut()[plugin_id]
+                .0
                 .write_all(format!("movie_id;{movie_id}\n").as_bytes());
             if response.len() < 4 {
                 return;
