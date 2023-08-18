@@ -64,6 +64,10 @@ pub fn set_keymaps(window: &super::Window, key: &EventKey) -> gtk::Inhibit {
                 .replace(window.imp().buttons.borrow().len() - 1);
             window.imp().buttons.borrow()[window.imp().button_selected.get()].grab_focus();
         }
+        constants::Escape => {
+            let settings_window = SettingsWindow::new(window);
+            settings_window.show_all();
+        }
         _ => {}
     }
     if let Some(key) = key.keyval().to_unicode() {
