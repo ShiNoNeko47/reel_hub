@@ -1,3 +1,4 @@
+mod cache_entry_row;
 use std::fs::File;
 use std::process::ChildStdin;
 
@@ -37,6 +38,19 @@ impl SettingsWindow {
             .connect_clicked(clone!(@weak dialog => move |_| {
                 Self::plugin_install(&dialog);
             }));
+
+        for entry in window.imp().cache.borrow().iter() {
+            let mut entry = entry.clone();
+            entry.data.overview = "...".to_string();
+            content
+                .imp()
+                .listbox_cache
+                .add(&cache_entry_row::CacheEntryRow::new(
+                    entry.data.title.clone(),
+                    format!("{:#?}", entry),
+                ));
+        }
+
         dialog.connect_delete_event(move |_, _| {
             content.close();
             gtk::Inhibit(false)

@@ -9,6 +9,8 @@ pub struct SettingsWindow {
     pub button_install: TemplateChild<Button>,
     #[template_child]
     pub listbox_installed: TemplateChild<ListBox>,
+    #[template_child]
+    pub listbox_cache: TemplateChild<ListBox>,
 }
 
 #[gtk::glib::object_subclass]
