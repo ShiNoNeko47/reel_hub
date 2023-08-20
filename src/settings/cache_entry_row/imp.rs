@@ -11,6 +11,8 @@ pub struct CacheEntryRow {
     #[template_child]
     pub show_entry_button: TemplateChild<gtk::Button>,
     #[template_child]
+    pub remove_entry_button: TemplateChild<gtk::Button>,
+    #[template_child]
     pub cache_content: TemplateChild<gtk::Label>,
     #[template_child]
     pub revealer: TemplateChild<gtk::Revealer>,

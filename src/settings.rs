@@ -42,13 +42,21 @@ impl SettingsWindow {
         for entry in window.imp().cache.borrow().iter() {
             let mut entry = entry.clone();
             entry.data.overview = "...".to_string();
-            content
-                .imp()
-                .listbox_cache
-                .add(&cache_entry_row::CacheEntryRow::new(
-                    entry.data.title.clone(),
-                    format!("{:#?}", entry),
-                ));
+
+            let row = cache_entry_row::CacheEntryRow::new(
+                entry.data.title.clone(),
+                format!("{:#?}", entry),
+            );
+            content.imp().listbox_cache.add(&row);
+            let listbox_children = content.imp().listbox_cache.children();
+            let listbox_row = listbox_children.last().unwrap();
+            row.imp().remove_entry_button.connect_clicked(
+                clone!(@weak content, @weak listbox_row, @weak window => move |_| {
+                    content.imp().listbox_cache.remove(&listbox_row);
+                    let position = window.imp().cache.borrow().iter().position(|item| item.file_name == entry.file_name).unwrap();
+                    window.imp().cache.borrow_mut().remove(position);
+                }),
+            );
         }
 
         dialog.connect_delete_event(move |_, _| {
