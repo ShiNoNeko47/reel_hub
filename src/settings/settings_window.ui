@@ -13,7 +13,7 @@
               <object class="GtkScrolledWindow">
                 <child>
                   <object class="GtkButton" id="button_install">
-                    <property name="label">Install a plugin</property>
+                    <property name="label">Install a Plugin</property>
                   </object>
                 </child>
               </object>
@@ -27,7 +27,9 @@
             <child>
               <object class="GtkScrolledWindow">
                 <child>
-                  <object class="GtkListBox" id="listbox_installed"></object>
+                  <object class="GtkListBox" id="listbox_installed">
+                    <property name="vexpand">true</property>
+                  </object>
                 </child>
               </object>
             </child>
