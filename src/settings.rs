@@ -1,4 +1,5 @@
 use std::fs::File;
+use std::process::ChildStdin;
 
 use flate2::read::GzDecoder;
 use gtk::glib::{clone, user_data_dir};
@@ -27,12 +28,7 @@ impl SettingsWindow {
             .title("Settings")
             .build();
         let content: Self = gtk::glib::Object::builder().build();
-        for plugin in window.imp().plugins.borrow().iter() {
-            content
-                .imp()
-                .listbox_installed
-                .add(&Label::new(Some(&plugin.1)));
-        }
+        content.plugin_list_fill(std::ops::Deref::deref(&window.imp().plugins.borrow()));
         dialog.content_area().add(&content);
 
         content
@@ -47,6 +43,15 @@ impl SettingsWindow {
         });
 
         dialog
+    }
+
+    fn plugin_list_fill(&self, plugins: &Vec<(ChildStdin, String, bool)>) {
+        self.imp().listbox_installed.children().clear();
+        for plugin in plugins.iter() {
+            self.imp()
+                .listbox_installed
+                .add(&Label::new(Some(&plugin.1)));
+        }
     }
 
     pub fn plugin_install(dialog: &gtk::Dialog) {
