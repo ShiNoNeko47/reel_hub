@@ -58,6 +58,12 @@ impl SettingsWindow {
                 }),
             );
         }
+        content.imp().button_clear.connect_clicked(
+            clone!(@weak content, @weak window => move |_| {
+                content.imp().listbox_cache.forall(|widget| content.imp().listbox_cache.remove(widget));
+                window.imp().cache.borrow_mut().clear();
+            }),
+        );
 
         dialog.connect_delete_event(move |_, _| {
             content.close();

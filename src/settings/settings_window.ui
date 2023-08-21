@@ -7,6 +7,17 @@
         <property name="hexpand">true</property>
         <!---->
         <child>
+          <object class="GtkLabel">
+            <property name="label">Settings</property>
+          </object>
+        </child>
+        <child type="tab">
+          <object class="GtkLabel">
+            <property name="label">Settings</property>
+          </object>
+        </child>
+        <!---->
+        <child>
           <object class="GtkBox">
             <property name="orientation">vertical</property>
             <child>
@@ -24,6 +35,7 @@
               <object class="GtkScrolledWindow">
                 <child>
                   <object class="GtkListBox" id="listbox_installed">
+                    <property name="selection-mode">none</property>
                     <property name="vexpand">true</property>
                   </object>
                 </child>
@@ -41,9 +53,9 @@
           <object class="GtkBox">
             <property name="orientation">vertical</property>
             <child>
-              <object class="GtkLabel">
-                <property name="label">Cache</property>
-                <property name="margin">5</property>
+              <object class="GtkButton" id="button_clear">
+                <property name="label">Clear Cache</property>
+                <property name="halign">end</property>
               </object>
             </child>
             <child>
@@ -62,28 +74,6 @@
         <child type="tab">
           <object class="GtkLabel">
             <property name="label">Cache</property>
-          </object>
-        </child>
-        <!---->
-        <child>
-          <object class="GtkLabel">
-            <property name="label">Tmdb Settings</property>
-          </object>
-        </child>
-        <child type="tab">
-          <object class="GtkLabel">
-            <property name="label">Tmdb</property>
-          </object>
-        </child>
-        <!---->
-        <child>
-          <object class="GtkLabel">
-            <property name="label">Player Settings</property>
-          </object>
-        </child>
-        <child type="tab">
-          <object class="GtkLabel">
-            <property name="label">Player</property>
           </object>
         </child>
         <!---->
