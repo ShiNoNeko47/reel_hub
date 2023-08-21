@@ -1,14 +1,14 @@
 mod cache_entry_row;
 use std::fs::File;
-use std::process::ChildStdin;
+use std::io::Write;
 
 use flate2::read::GzDecoder;
 use gtk::glib::{clone, user_data_dir};
-use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use gtk::traits::{ButtonExt, ContainerExt, DialogExt, FileChooserExt, GtkWindowExt, WidgetExt};
 use gtk::{gio, FileChooserAction, FileChooserDialog, Label, ResponseType};
 use gtk::{glib, FileFilter};
+use gtk::{prelude::*, Button};
 
 use crate::main_window::Window;
 use crate::utils;
@@ -29,7 +29,7 @@ impl SettingsWindow {
             .title("Settings")
             .build();
         let content: Self = gtk::glib::Object::builder().build();
-        content.plugin_list_fill(std::ops::Deref::deref(&window.imp().plugins.borrow()));
+        content.plugin_list_fill(&window);
         dialog.content_area().add(&content);
 
         content
@@ -73,12 +73,25 @@ impl SettingsWindow {
         dialog
     }
 
-    fn plugin_list_fill(&self, plugins: &Vec<(ChildStdin, String, bool)>) {
-        self.imp().listbox_installed.children().clear();
-        for plugin in plugins.iter() {
-            self.imp()
-                .listbox_installed
-                .add(&Label::new(Some(&plugin.1)));
+    fn plugin_list_fill(&self, window: &Window) {
+        for (i, plugin) in window.imp().plugins.borrow().iter().enumerate() {
+            let label = Label::new(Some(
+                &(plugin.1.clone() + if plugin.2 { " - Running..." } else { "" }),
+            ));
+
+            let stop_button = Button::with_label("Stop");
+            stop_button.set_sensitive(plugin.2);
+            stop_button.connect_clicked(clone!(@weak window, @weak label => move |button| {
+                let _ = window.imp().plugins.borrow_mut()[i].0.write_all("0\n".as_bytes());
+                label.set_label(&window.imp().plugins.borrow()[i].1);
+                button.set_sensitive(false);
+                let _ = window.imp().plugins.borrow_mut()[i].2 = false;
+            }));
+
+            let hbox = gtk::Box::new(gtk::Orientation::Horizontal, 10);
+            hbox.add(&label);
+            hbox.add(&stop_button);
+            self.imp().listbox_installed.add(&hbox);
         }
     }
 
