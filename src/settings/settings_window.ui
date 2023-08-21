@@ -27,7 +27,7 @@
             </child>
             <child>
               <object class="GtkLabel">
-                <property name="label">Installed</property>
+                <property name="label">Plugins</property>
                 <property name="margin">5</property>
               </object>
             </child>
@@ -35,7 +35,7 @@
               <object class="GtkScrolledWindow">
                 <property name="hscrollbar-policy">never</property>
                 <child>
-                  <object class="GtkListBox" id="listbox_installed">
+                  <object class="GtkListBox" id="listbox_plugins">
                     <property name="selection-mode">none</property>
                     <property name="vexpand">true</property>
                   </object>

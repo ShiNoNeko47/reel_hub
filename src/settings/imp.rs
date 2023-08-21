@@ -8,7 +8,7 @@ pub struct SettingsWindow {
     #[template_child]
     pub button_install: TemplateChild<Button>,
     #[template_child]
-    pub listbox_installed: TemplateChild<ListBox>,
+    pub listbox_plugins: TemplateChild<ListBox>,
     #[template_child]
     pub listbox_cache: TemplateChild<ListBox>,
     #[template_child]

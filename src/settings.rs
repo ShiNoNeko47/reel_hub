@@ -91,7 +91,7 @@ impl SettingsWindow {
             let hbox = gtk::Box::new(gtk::Orientation::Horizontal, 10);
             hbox.add(&label);
             hbox.add(&stop_button);
-            self.imp().listbox_installed.add(&hbox);
+            self.imp().listbox_plugins.add(&hbox);
         }
     }
 
