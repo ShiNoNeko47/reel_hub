@@ -63,8 +63,18 @@
                               </object>
                             </child>
                             <child>
-                              <object class="GtkComboBox" id="combobox_poster_size">
+                              <object class="GtkComboBoxText" id="combobox_poster_size">
                                 <property name="hexpand">true</property>
+                                <items>
+                                  <item id="w45">w45</item>
+                                  <item id="w92">w92</item>
+                                  <item id="w154">w154</item>
+                                  <item id="w185">w185</item>
+                                  <item id="w300">w300</item>
+                                  <item id="w342">w342</item>
+                                  <item id="w500">w500</item>
+                                  <item id="w780">w780</item>
+                                </items>
                               </object>
                             </child>
                           </object>
@@ -99,8 +109,19 @@
                               </object>
                             </child>
                             <child>
-                              <object class="GtkComboBox" id="combobox_backdrop_size">
+                              <object class="GtkComboBoxText" id="combobox_backdrop_size">
                                 <property name="hexpand">true</property>
+                                <items>
+                                  <item id="w45">w45</item>
+                                  <item id="w92">w92</item>
+                                  <item id="w154">w154</item>
+                                  <item id="w185">w185</item>
+                                  <item id="w300">w300</item>
+                                  <item id="w500">w500</item>
+                                  <item id="w780">w780</item>
+                                  <item id="w1280">w1280</item>
+                                  <item id="w1920">w1920</item>
+                                </items>
                               </object>
                             </child>
                           </object>

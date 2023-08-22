@@ -21,11 +21,11 @@ pub struct SettingsWindow {
     #[template_child]
     pub checkbutton_posters: TemplateChild<gtk::CheckButton>,
     #[template_child]
-    pub combobox_poster_size: TemplateChild<gtk::CheckButton>,
+    pub combobox_poster_size: TemplateChild<gtk::ComboBoxText>,
     #[template_child]
     pub checkbutton_backdrops: TemplateChild<gtk::CheckButton>,
     #[template_child]
-    pub combobox_backdrop_size: TemplateChild<gtk::CheckButton>,
+    pub combobox_backdrop_size: TemplateChild<gtk::ComboBoxText>,
 
     #[template_child]
     pub listbox_args: TemplateChild<ListBox>,

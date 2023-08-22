@@ -39,17 +39,7 @@ impl SettingsWindow {
                 Self::plugin_install(&dialog);
             }));
 
-        content
-            .imp()
-            .switch_images
-            .connect_changed_active(clone!(@weak content => move |switch| {
-                content
-                    .imp()
-                    .revealer_images
-                    .set_reveal_child(switch.is_active());
-            }));
-
-        content.imp().switch_images.set_active(true);
+        content.setup_settings(&window);
 
         for entry in window.imp().cache.borrow().iter() {
             let mut entry = entry.clone();
@@ -77,42 +67,63 @@ impl SettingsWindow {
             }),
         );
 
-        let settings = window.imp().settings.borrow_mut();
-        content
-            .imp()
-            .switch_images
-            .set_active(settings.images_enabled);
-        content
-            .imp()
-            .checkbutton_posters
-            .set_active(settings.poster_enabled);
-        content
-            .imp()
-            .checkbutton_backdrops
-            .set_active(settings.backdrop_enabled);
-        // content
-        //     .imp()
-        //     .combobox_poster_size
-        //     .set_label(&settings.poster_w.to_string());
-        // content
-        //     .imp()
-        //     .combobox_backdrop_size
-        //     .set_label(&settings.backdrop_w.to_string());
-        for arg in settings.player_args.iter() {
-            content.imp().listbox_args.add(
-                &Label::builder()
-                    .label(arg)
-                    .halign(gtk::Align::Start)
-                    .build(),
-            );
-        }
-
         dialog.connect_delete_event(move |_, _| {
             content.close();
             gtk::Inhibit(false)
         });
 
         dialog
+    }
+    fn setup_settings(&self, window: &Window) {
+        let settings = window.imp().settings.borrow();
+        self.imp().switch_images.set_active(settings.images_enabled);
+        self.imp()
+            .revealer_images
+            .set_reveal_child(settings.images_enabled);
+        self.imp()
+            .checkbutton_posters
+            .set_active(settings.poster_enabled);
+        self.imp()
+            .checkbutton_backdrops
+            .set_active(settings.backdrop_enabled);
+        self.imp()
+            .combobox_poster_size
+            .set_active_id(Some(&format!("w{}", settings.poster_w)));
+        self.imp()
+            .combobox_poster_size
+            .connect_changed(|a| println!("{:?}", a));
+        self.imp()
+            .combobox_backdrop_size
+            .set_active_id(Some(&format!("w{}", settings.backdrop_w)));
+        for arg in settings.player_args.iter() {
+            self.imp().listbox_args.add(
+                &Label::builder()
+                    .label(arg)
+                    .halign(gtk::Align::Start)
+                    .build(),
+            );
+        }
+        self.imp().switch_images.connect_changed_active(
+            clone!(@weak self as content, @weak window => move |switch| {
+                content
+                    .imp()
+                    .revealer_images
+                    .set_reveal_child(switch.is_active());
+                window.imp().settings.borrow_mut().images_enabled = switch.is_active();
+            }),
+        );
+
+        self.imp()
+            .checkbutton_posters
+            .connect_clicked(clone!(@weak window => move |checkbutton| {
+                window.imp().settings.borrow_mut().poster_enabled = checkbutton.is_active();
+            }));
+
+        self.imp().checkbutton_backdrops.connect_clicked(
+            clone!(@weak window => move |checkbutton| {
+                window.imp().settings.borrow_mut().backdrop_enabled = checkbutton.is_active();
+            }),
+        );
     }
 
     fn plugin_list_fill(&self, window: &Window) {
