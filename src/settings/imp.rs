@@ -13,6 +13,11 @@ pub struct SettingsWindow {
     pub listbox_cache: TemplateChild<ListBox>,
     #[template_child]
     pub button_clear: TemplateChild<Button>,
+
+    #[template_child]
+    pub revealer_images: TemplateChild<gtk::Revealer>,
+    #[template_child]
+    pub switch_images: TemplateChild<gtk::Switch>,
 }
 
 #[gtk::glib::object_subclass]

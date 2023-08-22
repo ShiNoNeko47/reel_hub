@@ -7,8 +7,108 @@
         <property name="hexpand">true</property>
         <!---->
         <child>
-          <object class="GtkLabel">
-            <property name="label">Settings</property>
+          <object class="GtkBox">
+            <property name="orientation">vertical</property>
+            <child>
+              <object class="GtkBox">
+                <property name="orientation">horizontal</property>
+                <property name="hexpand">true</property>
+                <property name="margin-start">10</property>
+                <property name="margin-end">10</property>
+                <child>
+                  <object class="GtkLabel">
+                    <property name="label">Images</property>
+                    <property name="hexpand">true</property>
+                    <property name="halign">start</property>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkSwitch" id="switch_images"></object>
+                </child>
+              </object>
+            </child>
+            <child>
+              <object class="GtkRevealer" id="revealer_images">
+                <child>
+                  <object class="GtkBox">
+                    <property name="orientation">horizontal</property>
+                    <property name="spacing">20</property>
+                    <property name="margin">10</property>
+                    <child>
+                      <object class="GtkBox">
+                        <property name="orientation">vertical</property>
+                        <property name="hexpand">true</property>
+                        <property name="spacing">10</property>
+                        <child>
+                          <object class="GtkLabel">
+                            <property name="label">Poster</property>
+                            <property name="halign">start</property>
+                            <property name="margin">5</property>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkCheckButton" id="checkbutton_posters">
+                            <property name="label">Enable</property>
+                            <property name="active">true</property>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkBox">
+                            <property name="orientation">horizontal</property>
+                            <property name="spacing">10</property>
+                            <child>
+                              <object class="GtkLabel">
+                                <property name="label">Size:</property>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkComboBox" id="combobox_poster_size">
+                                <property name="hexpand">true</property>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkBox">
+                        <property name="orientation">vertical</property>
+                        <property name="hexpand">true</property>
+                        <property name="spacing">10</property>
+                        <child>
+                          <object class="GtkLabel">
+                            <property name="label">Backdrop</property>
+                            <property name="halign">start</property>
+                            <property name="margin">5</property>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkCheckButton" id="checkbutton_backdrops">
+                            <property name="label">Enable</property>
+                            <property name="active">true</property>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkBox">
+                            <property name="orientation">horizontal</property>
+                            <child>
+                              <object class="GtkLabel">
+                                <property name="label">Size:</property>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkComboBox" id="combobox_backdrop_size">
+                                <property name="hexpand">true</property>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </child>
           </object>
         </child>
         <child type="tab">

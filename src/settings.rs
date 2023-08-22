@@ -39,6 +39,18 @@ impl SettingsWindow {
                 Self::plugin_install(&dialog);
             }));
 
+        content
+            .imp()
+            .switch_images
+            .connect_changed_active(clone!(@weak content => move |switch| {
+                content
+                    .imp()
+                    .revealer_images
+                    .set_reveal_child(switch.is_active());
+            }));
+
+        content.imp().switch_images.set_active(true);
+
         for entry in window.imp().cache.borrow().iter() {
             let mut entry = entry.clone();
             entry.data.overview = "...".to_string();
