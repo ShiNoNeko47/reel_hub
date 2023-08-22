@@ -77,6 +77,36 @@ impl SettingsWindow {
             }),
         );
 
+        let settings = window.imp().settings.borrow_mut();
+        content
+            .imp()
+            .switch_images
+            .set_active(settings.images_enabled);
+        content
+            .imp()
+            .checkbutton_posters
+            .set_active(settings.poster_enabled);
+        content
+            .imp()
+            .checkbutton_backdrops
+            .set_active(settings.backdrop_enabled);
+        // content
+        //     .imp()
+        //     .combobox_poster_size
+        //     .set_label(&settings.poster_w.to_string());
+        // content
+        //     .imp()
+        //     .combobox_backdrop_size
+        //     .set_label(&settings.backdrop_w.to_string());
+        for arg in settings.player_args.iter() {
+            content.imp().listbox_args.add(
+                &Label::builder()
+                    .label(arg)
+                    .halign(gtk::Align::Start)
+                    .build(),
+            );
+        }
+
         dialog.connect_delete_event(move |_, _| {
             content.close();
             gtk::Inhibit(false)
@@ -142,5 +172,37 @@ impl SettingsWindow {
 
     fn close(&self) {
         println!("Closing window");
+    }
+}
+
+#[derive(Debug)]
+pub struct Settings {
+    pub images_enabled: bool,
+    pub poster_enabled: bool,
+    pub poster_w: u32,
+    pub backdrop_enabled: bool,
+    pub backdrop_w: u32,
+    pub player_args: Vec<String>,
+}
+
+impl Default for Settings {
+    fn default() -> Self {
+        Self {
+            images_enabled: true,
+            poster_enabled: true,
+            poster_w: 500,
+            backdrop_enabled: true,
+            backdrop_w: 780,
+            player_args: vec![
+                "--no-config".to_string(),
+                "--save-position-on-quit".to_string(),
+                format!(
+                    "--watch-later-directory={}/.watch-later",
+                    super::utils::user_dir(user_data_dir())
+                ),
+                "--fs".to_string(),
+                "--ytdl=format=mp4".to_string(),
+            ],
+        }
     }
 }

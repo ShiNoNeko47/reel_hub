@@ -6,6 +6,7 @@ use std::process::ChildStdin;
 use std::rc::Rc;
 
 use crate::movie::{self, Movie, MovieCache, MovieData};
+use crate::settings;
 use crate::utils;
 use gtk::glib::{clone, user_cache_dir, Priority};
 use gtk::subclass::prelude::*;
@@ -68,6 +69,8 @@ pub struct Window {
 
     pub dir_watcher: Rc<RefCell<Option<notify::RecommendedWatcher>>>,
     pub plugins: RefCell<Vec<(ChildStdin, String, bool)>>,
+
+    pub settings: Rc<RefCell<settings::Settings>>,
 }
 
 impl Window {

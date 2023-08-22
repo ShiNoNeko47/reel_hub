@@ -18,6 +18,19 @@ pub struct SettingsWindow {
     pub revealer_images: TemplateChild<gtk::Revealer>,
     #[template_child]
     pub switch_images: TemplateChild<gtk::Switch>,
+    #[template_child]
+    pub checkbutton_posters: TemplateChild<gtk::CheckButton>,
+    #[template_child]
+    pub combobox_poster_size: TemplateChild<gtk::CheckButton>,
+    #[template_child]
+    pub checkbutton_backdrops: TemplateChild<gtk::CheckButton>,
+    #[template_child]
+    pub combobox_backdrop_size: TemplateChild<gtk::CheckButton>,
+
+    #[template_child]
+    pub listbox_args: TemplateChild<ListBox>,
+    #[template_child]
+    pub entry_arg: TemplateChild<gtk::Entry>,
 }
 
 #[gtk::glib::object_subclass]
