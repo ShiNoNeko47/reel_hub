@@ -10,10 +10,7 @@ use std::{
 use gtk::glib::{user_cache_dir, user_data_dir};
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    res,
-    utils::{self, user_dir},
-};
+use crate::utils::{self, user_dir};
 
 use self::tmdb::fetch_image_tmdb;
 
@@ -165,17 +162,15 @@ impl Movie {
         sender: gtk::glib::Sender<(PathBuf, ImageType)>,
     ) {
         let path = PathBuf::from(format!("{}{}", user_dir(user_cache_dir()), image_path));
-        let mut file = File::create(&path).unwrap();
-        let resolution = match image_type {
-            ImageType::Poster => res::POSTER_W,
-            ImageType::Backdrop => res::BACKDROP_W,
+        let mut file = match File::create(&path) {
+            Ok(file) => file,
+            Err(_) => {
+                let _ = std::fs::create_dir_all(path.parent().unwrap());
+                File::create(&path).unwrap()
+            }
         };
-        file.write(
-            &fetch_image_tmdb(image_path, Some(resolution))
-                .to_vec()
-                .to_vec(),
-        )
-        .expect("Couldn't write to file");
+        file.write(&fetch_image_tmdb(image_path).to_vec().to_vec())
+            .expect("Couldn't write to file");
         sender.send((path, image_type)).expect("Couldn't send");
     }
 }

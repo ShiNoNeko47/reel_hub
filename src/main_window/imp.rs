@@ -163,13 +163,28 @@ impl Window {
                 }
 
                 if data.poster_path != "".to_string() {
-                    self.display_image(data.poster_path.clone(), movie::ImageType::Poster);
+                    let mut image_path: Vec<String> =
+                        data.poster_path.split("/").map(|x| x.to_string()).collect();
+                    if let Some(file_name) = image_path.last_mut() {
+                        *file_name = format!("w{}/{file_name}", self.settings.borrow().poster_w);
+                    }
+                    let image_path = image_path.join("/");
+                    self.display_image(image_path, movie::ImageType::Poster);
                 } else {
                     self.poster.deref().set_pixbuf(None);
                 }
 
                 if data.backdrop_path != "".to_string() {
-                    self.display_image(data.backdrop_path.clone(), movie::ImageType::Backdrop);
+                    let mut image_path: Vec<String> = data
+                        .backdrop_path
+                        .split("/")
+                        .map(|x| x.to_string())
+                        .collect();
+                    if let Some(file_name) = image_path.last_mut() {
+                        *file_name = format!("w{}/{file_name}", self.settings.borrow().backdrop_w);
+                    }
+                    let image_path = image_path.join("/");
+                    self.display_image(image_path, movie::ImageType::Backdrop);
                 } else {
                     self.backdrop.deref().set_pixbuf(None);
                 }
@@ -177,19 +192,22 @@ impl Window {
         }
     }
     fn display_image(&self, image_path: String, image_type: movie::ImageType) {
+        let image_widget = match image_type {
+            movie::ImageType::Poster => &self.poster,
+            movie::ImageType::Backdrop => &self.backdrop,
+        };
         let image_file_path;
         if PathBuf::from(&image_path).is_file() {
             image_file_path = image_path.clone();
+        } else if image_path.split("/").collect::<Vec<&str>>().len() > 3 {
+            image_widget.deref().set_pixbuf(None);
+            return;
         } else {
             image_file_path = format!("{}{}", utils::user_dir(user_cache_dir()), image_path);
         }
 
         let (sender, receiver) =
             gtk::glib::MainContext::channel::<(PathBuf, movie::ImageType)>(Priority::default());
-        let image_widget = match image_type {
-            movie::ImageType::Poster => &self.poster,
-            movie::ImageType::Backdrop => &self.backdrop,
-        };
         match File::open(&image_file_path) {
             Ok(_) => {
                 image_widget.deref().set_file(Some(&image_file_path));
