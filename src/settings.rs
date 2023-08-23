@@ -67,10 +67,12 @@ impl SettingsWindow {
             }),
         );
 
-        dialog.connect_delete_event(move |_, _| {
-            content.close();
-            gtk::Inhibit(false)
-        });
+        dialog.connect_delete_event(
+            clone!(@weak window => @default-return gtk::Inhibit(false), move |_, _| {
+                content.close(&window);
+                gtk::Inhibit(false)
+            }),
+        );
 
         dialog
     }
@@ -234,8 +236,8 @@ impl SettingsWindow {
         });
     }
 
-    fn close(&self) {
-        println!("Closing window");
+    fn close(&self, window: &Window) {
+        window.imp().apply_settings();
     }
 }
 

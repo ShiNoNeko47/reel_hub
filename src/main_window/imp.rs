@@ -271,6 +271,14 @@ impl Window {
         serde_json::to_writer(file, &self.cache.borrow().to_vec())
             .expect("Could not write to file");
     }
+
+    pub fn apply_settings(&self) {
+        let settings = self.settings.borrow();
+        self.poster
+            .set_visible(settings.images_enabled && settings.poster_enabled);
+        self.backdrop_container
+            .set_visible(settings.images_enabled && settings.backdrop_enabled);
+    }
 }
 
 #[gtk::glib::object_subclass]
