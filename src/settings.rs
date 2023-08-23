@@ -93,12 +93,20 @@ impl SettingsWindow {
             .combobox_backdrop_size
             .set_active_id(Some(&format!("w{}", settings.backdrop_w)));
         for arg in settings.player_args.iter() {
-            self.imp().listbox_args.add(
-                &Label::builder()
-                    .label(arg)
-                    .halign(gtk::Align::Start)
-                    .build(),
-            );
+            let hbox = gtk::Box::new(gtk::Orientation::Horizontal, 10);
+            let label = Label::builder()
+                .label(arg)
+                .halign(gtk::Align::Start)
+                .build();
+            let button = Button::with_label("Remove");
+            hbox.add(&label);
+            hbox.add(&button);
+            self.imp().listbox_args.add(&hbox);
+            let arg = arg.clone();
+            button.connect_clicked(clone!(@weak self as content, @weak window => move |_| {
+                content.imp().listbox_args.remove(&hbox.parent().unwrap());
+                window.imp().settings.borrow_mut().player_args.retain(|item| item != &arg);
+            }));
         }
 
         self.imp().switch_images.connect_changed_active(
@@ -141,18 +149,31 @@ impl SettingsWindow {
                 let buffer = entry.buffer();
                 let arg = buffer.text();
                 if !arg.is_empty() {
+                    buffer.set_text("");
+                    if window.imp().settings.borrow().player_args.contains(&arg) {
+                        return;
+                    }
                     window
                         .imp()
                         .settings
                         .borrow_mut()
                         .player_args
                         .push(arg.to_string());
-                    content.imp().listbox_args.add(
-                        &Label::builder()
-                            .label(arg)
-                            .halign(gtk::Align::Start)
-                            .build(),
-                    );
+                    let hbox = gtk::Box::new(gtk::Orientation::Horizontal, 10);
+                    let label = Label::builder()
+                        .label(&arg)
+                        .halign(gtk::Align::Start)
+                        .build();
+                    let button = Button::with_label("Remove");
+                    hbox.add(&label);
+                    hbox.add(&button);
+                    content.imp().listbox_args.add(&hbox);
+                    content.show_all();
+                    let arg = arg.clone();
+                    button.connect_clicked(clone!(@weak content, @weak window => move |_| {
+                        content.imp().listbox_args.remove(&hbox.parent().unwrap());
+                        window.imp().settings.borrow_mut().player_args.retain(|item| item != &arg);
+                    }));
                 }
             }),
         );
