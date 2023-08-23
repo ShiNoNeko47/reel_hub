@@ -90,9 +90,6 @@ impl SettingsWindow {
             .combobox_poster_size
             .set_active_id(Some(&format!("w{}", settings.poster_w)));
         self.imp()
-            .combobox_poster_size
-            .connect_changed(|a| println!("{:?}", a));
-        self.imp()
             .combobox_backdrop_size
             .set_active_id(Some(&format!("w{}", settings.backdrop_w)));
         for arg in settings.player_args.iter() {
@@ -103,6 +100,7 @@ impl SettingsWindow {
                     .build(),
             );
         }
+
         self.imp().switch_images.connect_changed_active(
             clone!(@weak self as content, @weak window => move |switch| {
                 content
@@ -122,6 +120,40 @@ impl SettingsWindow {
         self.imp().checkbutton_backdrops.connect_clicked(
             clone!(@weak window => move |checkbutton| {
                 window.imp().settings.borrow_mut().backdrop_enabled = checkbutton.is_active();
+            }),
+        );
+        self.imp()
+            .combobox_poster_size
+            .connect_changed(
+            clone!(@weak window => move |combobox| {
+                window.imp().settings.borrow_mut().poster_w = combobox.active_id().unwrap().as_str()[1..].parse().unwrap();
+            })
+        );
+        self.imp()
+            .combobox_backdrop_size
+            .connect_changed(
+            clone!(@weak window => move |combobox| {
+                window.imp().settings.borrow_mut().backdrop_w = combobox.active_id().unwrap().as_str()[1..].parse().unwrap();
+            })
+        );
+        self.imp().entry_arg.connect_activate(
+            clone!(@weak self as content, @weak window => move |entry| {
+                let buffer = entry.buffer();
+                let arg = buffer.text();
+                if !arg.is_empty() {
+                    window
+                        .imp()
+                        .settings
+                        .borrow_mut()
+                        .player_args
+                        .push(arg.to_string());
+                    content.imp().listbox_args.add(
+                        &Label::builder()
+                            .label(arg)
+                            .halign(gtk::Align::Start)
+                            .build(),
+                    );
+                }
             }),
         );
     }
