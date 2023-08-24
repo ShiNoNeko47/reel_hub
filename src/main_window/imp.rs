@@ -294,8 +294,10 @@ impl Window {
         let settings = self.settings.borrow();
         self.poster
             .set_visible(settings.images_enabled && settings.poster_enabled);
+        self.poster.set_width_request(settings.poster_w as i32);
         self.backdrop_container
             .set_visible(settings.images_enabled && settings.backdrop_enabled);
+        self.movie_select(self.movie_selected.get());
     }
 }
 

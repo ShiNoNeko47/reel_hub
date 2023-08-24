@@ -23,6 +23,7 @@ gtk::glib::wrapper! {
 
 impl SettingsWindow {
     pub fn new(window: &Window) -> gtk::Dialog {
+        window.window().unwrap().freeze_updates();
         let dialog: gtk::Dialog = gtk::Dialog::builder()
             .transient_for(window)
             .modal(true)
@@ -118,6 +119,7 @@ impl SettingsWindow {
                     .revealer_images
                     .set_reveal_child(switch.is_active());
                 window.imp().settings.borrow_mut().images_enabled = switch.is_active();
+                window.imp().apply_settings();
             }),
         );
 
@@ -125,11 +127,13 @@ impl SettingsWindow {
             .checkbutton_posters
             .connect_clicked(clone!(@weak window => move |checkbutton| {
                 window.imp().settings.borrow_mut().poster_enabled = checkbutton.is_active();
+                window.imp().apply_settings();
             }));
 
         self.imp().checkbutton_backdrops.connect_clicked(
             clone!(@weak window => move |checkbutton| {
                 window.imp().settings.borrow_mut().backdrop_enabled = checkbutton.is_active();
+                window.imp().apply_settings();
             }),
         );
         self.imp()
@@ -137,6 +141,7 @@ impl SettingsWindow {
             .connect_changed(
             clone!(@weak window => move |combobox| {
                 window.imp().settings.borrow_mut().poster_w = combobox.active_id().unwrap().as_str()[1..].parse().unwrap();
+                window.imp().apply_settings();
             })
         );
         self.imp()
@@ -144,6 +149,7 @@ impl SettingsWindow {
             .connect_changed(
             clone!(@weak window => move |combobox| {
                 window.imp().settings.borrow_mut().backdrop_w = combobox.active_id().unwrap().as_str()[1..].parse().unwrap();
+                window.imp().apply_settings();
             })
         );
         self.imp().entry_arg.connect_activate(
@@ -237,7 +243,8 @@ impl SettingsWindow {
     }
 
     fn close(&self, window: &Window) {
-        window.imp().apply_settings();
+        window.window().unwrap().thaw_updates();
+        window.queue_allocate();
     }
 }
 
