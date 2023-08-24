@@ -6,8 +6,6 @@ use gtk::subclass::window::WindowImpl;
 
 use crate::settings::SettingsWindow;
 
-use super::UserInputType;
-
 pub fn set_keymaps(window: &super::Window, key: &EventKey) -> gtk::Inhibit {
     match key.keyval() {
         constants::F5 | constants::r => {
