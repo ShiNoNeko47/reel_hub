@@ -75,6 +75,7 @@ pub struct Window {
 
 impl Window {
     pub fn movie_select(&self, movie: Option<usize>) {
+        self.movie_selected.replace(movie);
         match movie {
             Some(movie) => {
                 let data = self.movies.borrow()[movie].data.clone();
@@ -93,7 +94,6 @@ impl Window {
                 self.play_button.hide();
             }
         }
-        self.movie_selected.replace(movie);
     }
 
     fn display_data(&self, data: Option<MovieData>, name: Option<&str>, duration: u32) {
@@ -208,20 +208,25 @@ impl Window {
 
         let (sender, receiver) =
             gtk::glib::MainContext::channel::<(PathBuf, movie::ImageType)>(Priority::default());
-        match File::open(&image_file_path) {
-            Ok(_) => {
-                image_widget.deref().set_file(Some(&image_file_path));
-            }
-            Err(_) => {
+        match File::open(&image_file_path).map(|file| file.metadata().unwrap().len()) {
+            Ok(0) | Err(_) => {
                 image_widget
                     .deref()
                     .set_pixbuf(Some(&res::loading(&image_type)));
                 std::thread::spawn(move || Movie::fetch_image(image_path, image_type, sender));
             }
+            Ok(_) => {
+                image_widget.deref().set_file(Some(&image_file_path));
+            }
         }
+        let movie_selected = self.movie_selected.get();
         receiver.attach(
             None,
             clone!(@weak self as window => @default-return Continue(false), move |(path, image_type)| {
+                if movie_selected != window.movie_selected.get() {
+                    println!("{:?} {:?}", movie_selected, window.movie_selected.get());
+                    return Continue(true);
+                }
                 match image_type {
                     movie::ImageType::Poster => {
                         window.poster.deref().set_file(path.to_str());
