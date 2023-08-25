@@ -157,6 +157,7 @@
                     <property name="label">mpv</property>
                     <property name="valign">start</property>
                     <property name="halign">start</property>
+                    <property name="margin-top">13</property>
                   </object>
                 </child>
                 <child>

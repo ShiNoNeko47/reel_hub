@@ -1,15 +1,18 @@
 @define-color accent red;
 
-.user-input *, messagedialog *, window * {
+*:focus {
+	outline: none;
+}
+notebook *, .user-input *, messagedialog *, window * {
 	all: unset;
 	color: white;
 	background: #0f0f0f;
 	border: black;
 }
-.user-input label, messagedialog label, window label {
+notebook label, .user-input label, messagedialog label, window label {
 	background: transparent;
 }
-.user-input button, messagedialog button, window button {
+notebook button, .user-input button, messagedialog button, window button {
 	border-style: solid;
 	border-width: 1px;
 	border-image: linear-gradient(to right, black, black) 30;
@@ -19,16 +22,15 @@
 	margin: 2px 0px;
 }
 
-list button {
+window list button {
 	background: #0f0f0f,
 	linear-gradient(to right, @accent, black 0%) 5px calc(100% - 5px) / calc(100% - 10px) 1px no-repeat;
 }
 
-.user-input button:focus, messagedialog button:focus, window button:focus {
+notebook button:focus,.user-input button:focus, messagedialog button:focus, window button:focus {
 	border-image: linear-gradient(to right, @accent, black 10%) 1;
-	outline: none;
 }
-.user-input button:active, messagedialog button:active, window button:active {
+notebook button:active, .user-input button:active, messagedialog button:active, window button:active {
 	transition: border .2s;
 	border-image: linear-gradient(to right, @accent, @accent) 1;
 	box-shadow: none;
@@ -43,20 +45,20 @@ window list > row {
 	background: black;
 }
 
-window undershoot.top {
+notebook undershoot.top, window undershoot.top {
 	background: none;
 	border-width: 1px;
 	border-style: solid;
 	border-image: linear-gradient(to bottom, @accent, transparent 50%) 1;
 }
-window undershoot.bottom {
+notebook undershoot.bottom, window undershoot.bottom {
 	background: none;
 	border-width: 1px;
 	border-style: solid;
 	border-image: linear-gradient(to top, @accent, transparent 50%) 1;
 }
 
-window overshoot {
+notebook overshoot, window overshoot {
 	background: none;
 }
 
@@ -72,4 +74,42 @@ window overshoot {
 }
 .user-input list > row:hover {
 	background: #0d0d0d;
+}
+notebook {
+	margin: 5px;
+}
+notebook{
+	border: none;
+}
+notebook stack {
+	border: 2px solid black;
+	border-top: none;
+}
+notebook tab {
+	padding: 5px 10px;
+	background: #080808;
+	border: 2px black solid;
+	
+}
+notebook tab:checked {
+	border: 2px solid black;
+	border-bottom: 0px;
+	background: #0f0f0f;
+	border-image: linear-gradient(to bottom, @accent ,black 20%) 1;
+}
+notebook tabs {
+	box-shadow: inset 0px -2px black
+}
+notebook menuitem {
+	padding-left: 11px;
+	margin-top: 5px;
+}
+notebook menu * {
+	background: transparent;
+}
+notebook menu {
+	box-shadow: inset 0px 0px 5px black;
+}
+button.combo {
+	box-shadow: inset 0px 0px 5px black;
 }
