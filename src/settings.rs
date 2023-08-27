@@ -68,6 +68,16 @@ impl SettingsWindow {
             }),
         );
 
+        let starting_height = content.allocated_height();
+        content.connect_size_allocate(move |content, rectangle| {
+            if starting_height < rectangle.height() {
+                content
+                    .imp()
+                    .scrolledwindow_args
+                    .set_vscrollbar_policy(gtk::PolicyType::Automatic);
+            }
+        });
+
         dialog.connect_delete_event(
             clone!(@weak window => @default-return gtk::Inhibit(false), move |_, _| {
                 content.close(&window);

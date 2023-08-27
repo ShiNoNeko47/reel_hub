@@ -1,5 +1,5 @@
 use gtk::subclass::prelude::*;
-use gtk::{glib, Button, ListBox};
+use gtk::{glib, Button, ListBox, ScrolledWindow};
 use gtk::{prelude::*, CompositeTemplate};
 
 #[derive(Debug, Default, CompositeTemplate)]
@@ -29,6 +29,8 @@ pub struct SettingsWindow {
 
     #[template_child]
     pub listbox_args: TemplateChild<ListBox>,
+    #[template_child]
+    pub scrolledwindow_args: TemplateChild<ScrolledWindow>,
     #[template_child]
     pub entry_arg: TemplateChild<gtk::Entry>,
 }
