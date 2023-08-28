@@ -27,13 +27,19 @@ window list button {
 	linear-gradient(to right, @accent, black 0%) 5px calc(100% - 5px) / calc(100% - 10px) 1px no-repeat;
 }
 
-notebook button:focus,.user-input button:focus, messagedialog button:focus, window button:focus {
+notebook button:focus, .user-input button:focus, messagedialog button:focus, window button:focus {
 	border-image: linear-gradient(to right, @accent, black 10%) 1;
 }
 notebook button:active, .user-input button:active, messagedialog button:active, window button:active {
 	transition: border .2s;
 	border-image: linear-gradient(to right, @accent, @accent) 1;
 	box-shadow: none;
+}
+notebook button:disabled, window button:disabled {
+	box-shadow: none;
+}
+notebook button:disabled label, window button:disabled label {
+	color: gray;
 }
 
 window list {
