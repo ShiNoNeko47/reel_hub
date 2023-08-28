@@ -284,7 +284,8 @@ impl Default for Settings {
                     super::utils::user_dir(user_data_dir())
                 ),
                 "--fs".to_string(),
-                "--ytdl=format=mp4".to_string(),
+                "--ytdl-format=mp4".to_string(),
+                "--watch-later-options=start".to_string(),
             ],
         }
     }
