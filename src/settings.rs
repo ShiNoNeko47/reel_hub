@@ -9,6 +9,7 @@ use gtk::traits::{ButtonExt, ContainerExt, DialogExt, FileChooserExt, GtkWindowE
 use gtk::{gio, FileChooserAction, FileChooserDialog, Label, ResponseType};
 use gtk::{glib, FileFilter};
 use gtk::{prelude::*, Button};
+use serde::{Deserialize, Serialize};
 
 use crate::main_window::Window;
 use crate::utils;
@@ -258,7 +259,7 @@ impl SettingsWindow {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Settings {
     pub images_enabled: bool,
     pub poster_enabled: bool,

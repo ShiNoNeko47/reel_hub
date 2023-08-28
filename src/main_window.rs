@@ -60,6 +60,9 @@ impl Window {
             .property("application", app)
             .build();
         window.set_default_size(1000, 850);
+        if let Some(settings) = utils::load_settings() {
+            window.imp().settings.replace(settings);
+        };
         window
             .imp()
             .poster

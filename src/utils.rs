@@ -1,8 +1,11 @@
 use std::{ffi::OsStr, fs::File, path::PathBuf};
 
-use gtk::glib::user_cache_dir;
+use gtk::glib::{user_cache_dir, user_config_dir};
 
-use crate::movie::{Movie, MovieCache};
+use crate::{
+    movie::{Movie, MovieCache},
+    settings::Settings,
+};
 
 pub fn user_dir(path: std::path::PathBuf) -> String {
     let mut path: std::path::PathBuf = path;
@@ -38,4 +41,13 @@ pub fn load_cache(movies: &mut Vec<Movie>) -> Vec<MovieCache> {
     } else {
         vec![]
     }
+}
+
+pub fn load_settings() -> Option<Settings> {
+    let path = user_dir(user_config_dir());
+    let file = match File::open(format!("{}/{}", path, "settings.json")) {
+        Ok(file) => file,
+        Err(_) => return None,
+    };
+    serde_json::from_reader(file).ok()
 }

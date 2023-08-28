@@ -8,7 +8,7 @@ use std::rc::Rc;
 use crate::movie::{self, Movie, MovieCache, MovieData};
 use crate::settings;
 use crate::utils;
-use gtk::glib::{clone, user_cache_dir, Priority};
+use gtk::glib::{clone, user_cache_dir, user_config_dir, Priority};
 use gtk::subclass::prelude::*;
 use gtk::{glib, Label, ListBox, Revealer, ScrolledWindow};
 use gtk::{prelude::*, Button, CompositeTemplate, Image};
@@ -293,6 +293,14 @@ impl Window {
         let file = std::fs::File::create(path).expect("Could not create file");
         serde_json::to_writer(file, &self.cache.borrow().to_vec())
             .expect("Could not write to file");
+    }
+
+    pub fn store_settings(&self) {
+        let mut path = utils::user_dir(user_config_dir());
+        path.push_str("/settings.json");
+
+        let file = std::fs::File::create(path).expect("Could not create file");
+        serde_json::to_writer(file, &self.settings.take()).expect("Could not write to file");
     }
 
     pub fn apply_settings(&self) {

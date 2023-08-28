@@ -32,6 +32,7 @@ impl App {
         let window = main_window::Window::new(app);
         app.connect_shutdown(move |_| {
             window.imp().store_cache();
+            window.imp().store_settings();
             for plugin in window.imp().plugins.borrow_mut().iter_mut() {
                 plugin.0.write_all(b"0").ok();
             }
