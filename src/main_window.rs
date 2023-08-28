@@ -60,6 +60,9 @@ impl Window {
             .property("application", app)
             .build();
         window.set_default_size(1000, 850);
+        if let Some(settings) = utils::load_settings() {
+            window.imp().settings.replace(settings);
+        };
         window
             .imp()
             .poster
@@ -90,7 +93,7 @@ impl Window {
             let (sender, receiver) = glib::MainContext::channel(Priority::default());
             match movie.current_time {
                 Some(0) | None => {
-                    let mut handle = movie.play(false);
+                    let mut handle = movie.play(false, &window.imp().settings.borrow().player_args);
                     window.imp().status_label.deref().set_label(&format!("Playing: <b>{}</b>", movie.name));
                     window.plugin_broadcast(format!("playing;{}", movie.id));
                     std::thread::spawn(move || {
@@ -113,13 +116,13 @@ impl Window {
                         let mut handle;
                         match response {
                             ResponseType::Yes => {
-                                handle = movie.play(true);
+                                handle = movie.play(true, &window.imp().settings.borrow().player_args);
                                 window.imp().status_label.deref().set_label(&format!("Playing: <b>{}</b>", movie.name));
                                 window.imp().play_button.set_sensitive(false);
                                 dialog.close();
                             }
                             ResponseType::No => {
-                                handle = movie.play(false);
+                                handle = movie.play(false, &window.imp().settings.borrow().player_args);
                                 window.imp().status_label.deref().set_label(&format!("Playing: <b>{}</b>", movie.name));
                                 window.imp().play_button.set_sensitive(false);
                                 dialog.close();

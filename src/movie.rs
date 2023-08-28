@@ -131,25 +131,17 @@ impl Movie {
         Some((current_time as f32 / duration.unwrap() as f32 * 100.0) as u32 + 1)
     }
 
-    pub fn play(&self, continue_watching: bool) -> Child {
+    pub fn play(&self, continue_watching: bool, args: &Vec<String>) -> Child {
         std::fs::create_dir_all(utils::user_dir(user_data_dir()) + "/.watch-later").unwrap();
         println!("Playing {}", self.name);
         Command::new("mpv")
             .arg(&self.file.deref())
-            .arg("--no-config")
-            .arg("--save-position-on-quit")
-            .arg("--watch-later-options=start")
-            .arg(format!(
-                "--watch-later-directory={}/.watch-later",
-                super::utils::user_dir(user_data_dir())
-            ))
-            .arg("--fs")
             .arg(if !continue_watching {
                 "--no-resume-playback"
             } else {
                 ""
             })
-            .arg("--ytdl-format=mp4")
+            .args(args)
             .stdout(Stdio::null())
             .stderr(Stdio::null())
             .spawn()

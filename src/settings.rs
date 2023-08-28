@@ -9,6 +9,7 @@ use gtk::traits::{ButtonExt, ContainerExt, DialogExt, FileChooserExt, GtkWindowE
 use gtk::{gio, FileChooserAction, FileChooserDialog, Label, ResponseType};
 use gtk::{glib, FileFilter};
 use gtk::{prelude::*, Button};
+use serde::{Deserialize, Serialize};
 
 use crate::main_window::Window;
 use crate::utils;
@@ -67,6 +68,16 @@ impl SettingsWindow {
                 window.imp().cache.borrow_mut().clear();
             }),
         );
+
+        let starting_height = content.allocated_height();
+        content.connect_size_allocate(move |content, rectangle| {
+            if starting_height < rectangle.height() {
+                content
+                    .imp()
+                    .scrolledwindow_args
+                    .set_vscrollbar_policy(gtk::PolicyType::Automatic);
+            }
+        });
 
         dialog.connect_delete_event(
             clone!(@weak window => @default-return gtk::Inhibit(false), move |_, _| {
@@ -248,7 +259,7 @@ impl SettingsWindow {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Settings {
     pub images_enabled: bool,
     pub poster_enabled: bool,
@@ -274,7 +285,8 @@ impl Default for Settings {
                     super::utils::user_dir(user_data_dir())
                 ),
                 "--fs".to_string(),
-                "--ytdl=format=mp4".to_string(),
+                "--ytdl-format=mp4".to_string(),
+                "--watch-later-options=start".to_string(),
             ],
         }
     }
