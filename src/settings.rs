@@ -34,12 +34,11 @@ impl SettingsWindow {
         content.plugin_list_fill(&window);
         dialog.content_area().add(&content);
 
-        content
-            .imp()
-            .button_install
-            .connect_clicked(clone!(@weak dialog => move |_| {
-                Self::plugin_install(&dialog);
-            }));
+        content.imp().button_install.connect_clicked(
+            clone!(@weak dialog, @weak window => move |_| {
+                Self::plugin_install(&dialog, &window);
+            }),
+        );
 
         content.setup_settings(&window);
 
@@ -199,16 +198,20 @@ impl SettingsWindow {
     }
 
     fn plugin_list_fill(&self, window: &Window) {
+        self.imp()
+            .listbox_plugins
+            .forall(|widget| self.imp().listbox_plugins.remove(widget));
         for (i, plugin) in window.imp().plugins.borrow().iter().enumerate() {
+            let file_name = plugin.1.file_name().to_string_lossy().to_string().clone();
             let label = Label::new(Some(
-                &(plugin.1.clone() + if plugin.2 { " - Running..." } else { "" }),
+                &(file_name.clone() + if plugin.2 { " - Running..." } else { "" }),
             ));
 
             let stop_button = Button::with_label("Stop");
             stop_button.set_sensitive(plugin.2);
             stop_button.connect_clicked(clone!(@weak window, @weak label => move |button| {
                 let _ = window.imp().plugins.borrow_mut()[i].0.write_all("0\n".as_bytes());
-                label.set_label(&window.imp().plugins.borrow()[i].1);
+                label.set_label(&file_name);
                 button.set_sensitive(false);
                 let _ = window.imp().plugins.borrow_mut()[i].2 = false;
             }));
@@ -220,7 +223,7 @@ impl SettingsWindow {
         }
     }
 
-    pub fn plugin_install(dialog: &gtk::Dialog) {
+    pub fn plugin_install(dialog: &gtk::Dialog, window: &Window) {
         let filechooser = FileChooserDialog::with_buttons(
             Some("Install a Plugin"),
             Some(dialog),
@@ -235,7 +238,7 @@ impl SettingsWindow {
             .add_mime_type("application/x-compressed-tar");
         filechooser.show_all();
 
-        filechooser.connect_response(|dialog, response| {
+        filechooser.connect_response(clone!(@weak window => move |dialog, response| {
             match response {
                 ResponseType::Ok => {
                     let file = dialog.file();
@@ -245,12 +248,13 @@ impl SettingsWindow {
                         let tar = GzDecoder::new(tar_gz);
                         let mut archive = tar::Archive::new(tar);
                         archive.unpack(dst).unwrap();
+                        window.load_plugins();
                     }
                 }
                 _ => {}
             };
             dialog.close();
-        });
+        }));
     }
 
     fn close(&self, window: &Window) {

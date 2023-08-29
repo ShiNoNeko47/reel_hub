@@ -12,7 +12,10 @@ use gtk::CssProvider;
 
 use crate::main_window::{self, UserInputType};
 
-pub fn load_plugins(sender: gtk::glib::Sender<(String, usize)>) -> Vec<(ChildStdin, String, bool)> {
+pub fn load_plugins(
+    sender: gtk::glib::Sender<(String, usize)>,
+    skip: Vec<std::path::PathBuf>,
+) -> Vec<(ChildStdin, walkdir::DirEntry, bool)> {
     let mut path = utils::user_dir(user_data_dir());
     path.push_str("/.plugins/");
     std::fs::create_dir_all(&path).unwrap();
@@ -22,6 +25,7 @@ pub fn load_plugins(sender: gtk::glib::Sender<(String, usize)>) -> Vec<(ChildStd
         .into_iter()
         .filter_map(|file| file.ok())
         .filter(|file| file.file_type().is_file())
+        .filter(|file| !skip.contains(&std::path::PathBuf::from(file.path())))
         .collect();
     let mut plugins = vec![];
     for file in files {
@@ -39,11 +43,7 @@ pub fn load_plugins(sender: gtk::glib::Sender<(String, usize)>) -> Vec<(ChildStd
             }
         };
         let reader = BufReader::new(plugin.stdout.unwrap());
-        plugins.push((
-            plugin.stdin.unwrap(),
-            file.file_name().to_string_lossy().to_string(),
-            true,
-        ));
+        plugins.push((plugin.stdin.unwrap(), file, true));
         plugin_listen(reader, sender.clone(), plugins.len() - 1);
     }
     println!("Loaded {} plugins", plugins.len());

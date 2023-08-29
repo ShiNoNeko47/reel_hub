@@ -73,15 +73,7 @@ impl Window {
             window.autohide_backdrop();
         });
 
-        let (sender, receiver) = gtk::glib::MainContext::channel(Priority::default());
-        window.imp().plugins.replace(plugin::load_plugins(sender));
-        receiver.attach(
-            None,
-            clone!(@weak window => @default-return Continue(false), move |(response, plugin_id)| {
-                plugin::handle_response(response, &window, plugin_id);
-                Continue(true)
-            }),
-        );
+        window.load_plugins();
 
         window.update();
         window.setup_dir_watcher();
@@ -178,6 +170,28 @@ impl Window {
         window
     }
 
+    pub fn load_plugins(&self) {
+        let skip = self
+            .imp()
+            .plugins
+            .borrow()
+            .iter()
+            .map(|plugin| std::path::PathBuf::from(plugin.1.path()))
+            .collect();
+        let (sender, receiver) = gtk::glib::MainContext::channel(Priority::default());
+        self.imp()
+            .plugins
+            .borrow_mut()
+            .append(&mut plugin::load_plugins(sender, skip));
+        receiver.attach(
+            None,
+            clone!(@weak self as window => @default-return Continue(false), move |(response, plugin_id)| {
+                plugin::handle_response(response, &window, plugin_id);
+                Continue(true)
+            }),
+        );
+    }
+
     fn autohide_backdrop(&self) {
         if let Some(backdrop) = self.imp().backdrop.pixbuf() {
             if self.imp().backdrop_container.allocated_width() > backdrop.width() {
@@ -237,7 +251,7 @@ impl Window {
                     }
                     plugin
                 })
-                .collect::<Vec<(ChildStdin, String, bool)>>(),
+                .collect::<Vec<(ChildStdin, walkdir::DirEntry, bool)>>(),
         );
     }
 
