@@ -35,8 +35,8 @@ impl SettingsWindow {
         dialog.content_area().add(&content);
 
         content.imp().button_install.connect_clicked(
-            clone!(@weak dialog, @weak window => move |_| {
-                Self::plugin_install(&dialog, &window);
+            clone!(@weak dialog, @weak window, @weak content => move |_| {
+                content.plugin_install(&dialog, &window);
             }),
         );
 
@@ -221,9 +221,10 @@ impl SettingsWindow {
             hbox.add(&stop_button);
             self.imp().listbox_plugins.add(&hbox);
         }
+        self.imp().listbox_plugins.show_all();
     }
 
-    pub fn plugin_install(dialog: &gtk::Dialog, window: &Window) {
+    pub fn plugin_install(&self, dialog: &gtk::Dialog, window: &Window) {
         let filechooser = FileChooserDialog::with_buttons(
             Some("Install a Plugin"),
             Some(dialog),
@@ -238,23 +239,26 @@ impl SettingsWindow {
             .add_mime_type("application/x-compressed-tar");
         filechooser.show_all();
 
-        filechooser.connect_response(clone!(@weak window => move |dialog, response| {
-            match response {
-                ResponseType::Ok => {
-                    let file = dialog.file();
-                    let dst = utils::user_dir(user_data_dir()) + "/.plugins/";
-                    let tar_gz = File::open(file.unwrap().path().unwrap());
-                    if let Ok(tar_gz) = tar_gz {
-                        let tar = GzDecoder::new(tar_gz);
-                        let mut archive = tar::Archive::new(tar);
-                        archive.unpack(dst).unwrap();
-                        window.load_plugins();
+        filechooser.connect_response(
+            clone!(@weak window, @weak self as content => move |filechooser, response| {
+                match response {
+                    ResponseType::Ok => {
+                        let file = filechooser.file();
+                        let dst = utils::user_dir(user_data_dir()) + "/.plugins/";
+                        let tar_gz = File::open(file.unwrap().path().unwrap());
+                        if let Ok(tar_gz) = tar_gz {
+                            let tar = GzDecoder::new(tar_gz);
+                            let mut archive = tar::Archive::new(tar);
+                            archive.unpack(dst).unwrap();
+                            window.load_plugins();
+                            content.plugin_list_fill(&window);
+                        }
                     }
-                }
-                _ => {}
-            };
-            dialog.close();
-        }));
+                    _ => {}
+                };
+                filechooser.close();
+            }),
+        );
     }
 
     fn close(&self, window: &Window) {
