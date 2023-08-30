@@ -6,6 +6,8 @@ use gtk::{prelude::*, CompositeTemplate};
 #[template(file = "settings_window.ui")]
 pub struct SettingsWindow {
     #[template_child]
+    pub notebook: TemplateChild<gtk::Notebook>,
+    #[template_child]
     pub button_install: TemplateChild<Button>,
     #[template_child]
     pub listbox_plugins: TemplateChild<ListBox>,

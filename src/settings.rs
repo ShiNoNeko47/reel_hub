@@ -15,6 +15,7 @@ use crate::main_window::Window;
 use crate::utils;
 
 mod imp;
+mod keymaps;
 
 gtk::glib::wrapper! {
     pub struct SettingsWindow(ObjectSubclass<imp::SettingsWindow>)
@@ -33,6 +34,7 @@ impl SettingsWindow {
         let content: Self = gtk::glib::Object::builder().build();
         content.plugin_list_fill(&window);
         dialog.content_area().add(&content);
+        content.connect_key_press_event(keymaps::set_keymaps);
 
         content.imp().button_install.connect_clicked(
             clone!(@weak dialog, @weak window, @weak content => move |_| {

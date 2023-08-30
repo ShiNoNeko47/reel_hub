@@ -2,7 +2,7 @@
 <interface>
   <template class="SettingsWindow" parent="GtkBox">
     <child>
-      <object class="GtkNotebook">
+      <object class="GtkNotebook" id="notebook">
         <property name="vexpand">true</property>
         <property name="hexpand">true</property>
         <!---->
