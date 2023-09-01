@@ -10,7 +10,7 @@ use crate::settings;
 use crate::utils;
 use gtk::glib::{clone, user_cache_dir, user_config_dir, Priority};
 use gtk::subclass::prelude::*;
-use gtk::{glib, Label, ListBox, Revealer, ScrolledWindow};
+use gtk::{glib, Entry, Label, ListBox, Revealer, ScrolledWindow};
 use gtk::{prelude::*, Button, CompositeTemplate, Image};
 
 use crate::res;
@@ -56,6 +56,10 @@ pub struct Window {
     pub add_button: TemplateChild<Button>,
     #[template_child]
     pub browse_button: TemplateChild<Button>,
+    #[template_child]
+    pub revealer_search: TemplateChild<Revealer>,
+    #[template_child]
+    pub entry_search: TemplateChild<Entry>,
 
     pub buttons: Rc<RefCell<Vec<Button>>>,
     pub button_selected: Rc<Cell<usize>>,

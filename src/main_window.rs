@@ -21,6 +21,7 @@ use gtk::FileChooserAction;
 use gtk::FileChooserDialog;
 use gtk::Label;
 use gtk::ListBox;
+use gtk::ListBoxRow;
 use gtk::MessageDialog;
 use gtk::MessageType;
 use gtk::ResponseType;
@@ -75,9 +76,19 @@ impl Window {
 
         window.load_plugins();
 
+        window
+            .imp()
+            .entry_search
+            .connect_changed(clone!(@weak window => move |_| {
+                window.imp().list_box.invalidate_filter();
+            }));
+        window.imp().list_box.set_filter_func(Some(Box::new(
+            clone!(@weak window => @default-return false, move |list_box_row: &ListBoxRow| {
+                window.filter(list_box_row.child().unwrap().property::<String>("label"))
+            }),
+        )));
         window.update();
         window.setup_dir_watcher();
-
         window.imp().play_button.deref().set_label("  Play  ");
         window.imp().play_button.deref().connect_clicked(clone!(@weak window => move |button| {
             let idx = window.imp().movie_selected.get().unwrap();
@@ -377,6 +388,11 @@ impl Window {
             self.plugin_broadcast("selected;".to_string());
         }
         self.imp().button_selected.replace(idx.unwrap_or(0));
+    }
+
+    fn filter(&self, movie: String) -> bool {
+        let search = self.imp().entry_search.buffer().text();
+        movie.to_lowercase().contains(&search.to_lowercase())
     }
 
     fn update_progressbar(&self, button: &Button, movie: usize) {

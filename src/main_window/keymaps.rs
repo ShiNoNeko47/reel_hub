@@ -7,6 +7,31 @@ use gtk::subclass::window::WindowImpl;
 use crate::settings::SettingsWindow;
 
 pub fn set_keymaps(window: &super::Window, key: &EventKey) -> gtk::Inhibit {
+    if window.imp().revealer_search.reveals_child() {
+        match key.keyval() {
+            constants::Escape => {
+                window.imp().revealer_search.set_reveal_child(false);
+                window.imp().entry_search.buffer().set_text("");
+            }
+            constants::Return => {
+                window.imp().revealer_search.set_reveal_child(false);
+            }
+            _ => {
+                return Inhibit(false);
+            }
+        }
+        let first = window
+            .imp()
+            .movies
+            .borrow()
+            .iter()
+            .position(|movie| window.filter(movie.name.clone()));
+        if let Some(first) = first {
+            window.imp().buttons.borrow()[first].grab_focus();
+            window.imp().button_selected.replace(first);
+        }
+        return Inhibit(true);
+    }
     match key.keyval() {
         constants::F5 | constants::r => {
             window.update();
@@ -27,16 +52,29 @@ pub fn set_keymaps(window: &super::Window, key: &EventKey) -> gtk::Inhibit {
         }
         constants::j | constants::Down => {
             let button_selected = window.imp().button_selected.get();
-            if button_selected < window.imp().buttons.borrow().len() - 1 {
-                window.imp().button_selected.replace(button_selected + 1);
-                window.imp().buttons.borrow()[button_selected + 1].grab_focus();
+            let buttons = window.imp().buttons.borrow();
+            let buttons = buttons[button_selected + 1..]
+                .iter()
+                .enumerate()
+                .map(|(i, button)| (i + button_selected + 1, button))
+                .filter(|(_, button)| window.filter(button.label().unwrap().to_string()))
+                .collect::<Vec<_>>();
+            if let Some(button) = buttons.first() {
+                window.imp().button_selected.replace(button.0);
+                window.imp().buttons.borrow()[button.0].grab_focus();
             }
         }
         constants::k | constants::Up => {
             let button_selected = window.imp().button_selected.get();
-            if button_selected > 0 {
-                window.imp().button_selected.replace(button_selected - 1);
-                window.imp().buttons.borrow()[button_selected - 1].grab_focus();
+            let buttons = window.imp().buttons.borrow();
+            let buttons = buttons[..button_selected]
+                .iter()
+                .enumerate()
+                .filter(|(_, button)| window.filter(button.label().unwrap().to_string()))
+                .collect::<Vec<_>>();
+            if let Some(button) = buttons.last() {
+                window.imp().button_selected.replace(button.0);
+                window.imp().buttons.borrow()[button.0].grab_focus();
             }
         }
         constants::l | constants::Right => {
@@ -52,19 +90,36 @@ pub fn set_keymaps(window: &super::Window, key: &EventKey) -> gtk::Inhibit {
             window.setup_buttons();
         }
         constants::g => {
-            window.imp().button_selected.replace(0);
-            window.imp().buttons.borrow()[window.imp().button_selected.get()].grab_focus();
+            let buttons = window.imp().buttons.borrow();
+            let first = buttons
+                .iter()
+                .enumerate()
+                .filter(|(_, button)| window.filter(button.label().unwrap().to_string().clone()))
+                .next();
+            if let Some(first) = first {
+                window.imp().button_selected.replace(first.0);
+                first.1.grab_focus();
+            }
         }
         constants::G => {
-            window
-                .imp()
-                .button_selected
-                .replace(window.imp().buttons.borrow().len() - 1);
-            window.imp().buttons.borrow()[window.imp().button_selected.get()].grab_focus();
+            let buttons = window.imp().buttons.borrow();
+            let last = buttons
+                .iter()
+                .enumerate()
+                .filter(|(_, button)| window.filter(button.label().unwrap().to_string().clone()))
+                .last();
+            if let Some(last) = last {
+                window.imp().button_selected.replace(last.0);
+                last.1.grab_focus();
+            }
         }
         constants::Escape => {
             let settings_window = SettingsWindow::new(window);
             settings_window.show_all();
+        }
+        constants::slash => {
+            window.imp().revealer_search.set_reveal_child(true);
+            window.imp().entry_search.grab_focus();
         }
         _ => {}
     }
