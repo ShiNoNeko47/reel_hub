@@ -53,28 +53,28 @@ pub fn set_keymaps(window: &super::Window, key: &EventKey) -> gtk::Inhibit {
         constants::j | constants::Down => {
             let button_selected = window.imp().button_selected.get();
             let buttons = window.imp().buttons.borrow();
-            let buttons = buttons[button_selected + 1..]
+            let mut buttons = buttons
                 .iter()
                 .enumerate()
-                .map(|(i, button)| (i + button_selected + 1, button))
-                .filter(|(_, button)| window.filter(button.label().unwrap().to_string()))
-                .collect::<Vec<_>>();
-            if let Some(button) = buttons.first() {
+                .filter(|(_, button)| window.filter(button.label().unwrap().to_string()));
+            buttons.find(|(i, _)| i == &button_selected);
+            if let Some(button) = buttons.next() {
                 window.imp().button_selected.replace(button.0);
-                window.imp().buttons.borrow()[button.0].grab_focus();
+                button.1.grab_focus();
             }
         }
         constants::k | constants::Up => {
             let button_selected = window.imp().button_selected.get();
             let buttons = window.imp().buttons.borrow();
-            let buttons = buttons[..button_selected]
+            let mut buttons = buttons
                 .iter()
                 .enumerate()
                 .filter(|(_, button)| window.filter(button.label().unwrap().to_string()))
-                .collect::<Vec<_>>();
-            if let Some(button) = buttons.last() {
+                .rev();
+            buttons.find(|(i, _)| i == &button_selected);
+            if let Some(button) = buttons.next() {
                 window.imp().button_selected.replace(button.0);
-                window.imp().buttons.borrow()[button.0].grab_focus();
+                button.1.grab_focus();
             }
         }
         constants::l | constants::Right => {
