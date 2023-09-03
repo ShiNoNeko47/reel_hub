@@ -27,7 +27,10 @@ pub fn load_cache(movies: &mut Vec<Movie>) -> Vec<MovieCache> {
             .filter(|movie| movie.duration.is_none() || movie.data.is_none())
         {
             match cache.iter().find(|entry| {
-                OsStr::new(&entry.file_name) == PathBuf::from(&movie.file).file_name().unwrap()
+                OsStr::new(&entry.file_name)
+                    == PathBuf::from(&movie.file)
+                        .file_name()
+                        .unwrap_or(OsStr::new(""))
             }) {
                 Some(entry) => {
                     movie.duration = Some(entry.duration);

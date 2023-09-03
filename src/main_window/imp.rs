@@ -1,4 +1,5 @@
 use std::cell::{Cell, RefCell};
+use std::ffi::OsStr;
 use std::fs::File;
 use std::ops::Deref;
 use std::path::PathBuf;
@@ -252,7 +253,7 @@ impl Window {
                 cache.file_name
                     == PathBuf::from(&movie.file)
                         .file_name()
-                        .unwrap()
+                        .unwrap_or(OsStr::new(""))
                         .to_str()
                         .unwrap()
             });
@@ -274,7 +275,7 @@ impl Window {
             let cache = MovieCache {
                 file_name: PathBuf::from(&movie.file)
                     .file_name()
-                    .unwrap()
+                    .unwrap_or(OsStr::new(""))
                     .to_str()
                     .unwrap()
                     .to_string(),
