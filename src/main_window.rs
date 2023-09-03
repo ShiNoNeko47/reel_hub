@@ -64,10 +64,6 @@ impl Window {
         if let Some(settings) = utils::load_settings() {
             window.imp().settings.replace(settings);
         };
-        window
-            .imp()
-            .poster
-            .set_width_request(window.imp().settings.borrow().poster_w as i32);
         window.connect_key_press_event(keymaps::set_keymaps);
 
         window.connect_size_allocate(|window, _event| {
@@ -369,6 +365,7 @@ impl Window {
             }));
         }
         self.show_all();
+        self.imp().apply_settings();
         self.autohide_backdrop();
     }
 
