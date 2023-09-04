@@ -90,7 +90,7 @@ impl Window {
                 self.display_data(
                     data,
                     Some(&self.movies.borrow()[movie].name),
-                    self.movies.borrow()[movie].duration.unwrap_or(0),
+                    self.movies.borrow()[movie].duration,
                 );
                 self.play_button.deref().show();
             }
@@ -257,7 +257,7 @@ impl Window {
                         .to_str()
                         .unwrap()
             });
-            let mut duration = movie.duration.unwrap_or(0);
+            let mut duration = movie.duration;
             if duration == 0
                 && !movie.name.starts_with("~ ")
                 && PathBuf::from(movie.file.clone()).is_file()
@@ -266,7 +266,7 @@ impl Window {
                 duration = match ffprobe::ffprobe(movie.file.clone()) {
                     Ok(info) => {
                         let duration = info.format.duration.unwrap().parse::<f32>().unwrap() as u32;
-                        movie.duration.replace(duration);
+                        movie.duration = duration;
                         duration
                     }
                     Err(_) => 0,

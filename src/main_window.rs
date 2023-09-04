@@ -146,7 +146,8 @@ impl Window {
                     window.imp().movies.borrow_mut()[idx].done = false;
                     window.plugin_broadcast(format!("quit;{};{}", current_time, window.imp().movies.borrow()[idx].id));
                 } else {
-                    window.imp().movies.borrow_mut()[idx].done = true;
+                    let duration = window.imp().movies.borrow()[idx].duration;
+                    window.imp().movies.borrow_mut()[idx].done = duration > 0;
                     window.plugin_broadcast(format!("quit;;{}", window.imp().movies.borrow()[idx].id));
                 }
                 window.update_progressbar(&window.imp().buttons.borrow()[idx], idx);

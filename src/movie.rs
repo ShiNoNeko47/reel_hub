@@ -43,7 +43,7 @@ pub struct Movie {
     pub file: String,
     pub data: Option<MovieData>,
     pub current_time: Option<u32>,
-    pub duration: Option<u32>,
+    pub duration: u32,
     pub done: bool,
 }
 
@@ -91,7 +91,7 @@ impl Movie {
             } else {
                 current_time
             },
-            duration: None,
+            duration: 0,
             done: false,
         }
     }
@@ -122,13 +122,13 @@ impl Movie {
     pub fn get_progress(&self) -> Option<u32> {
         let current_time = self.current_time.unwrap_or(0);
         let duration = self.duration;
-        if duration == Some(0) || duration.is_none() {
-            return duration;
+        if duration == 0 {
+            return None;
         }
         if current_time == 0 {
             return Some(0);
         }
-        Some((current_time as f32 / duration.unwrap() as f32 * 100.0) as u32 + 1)
+        Some((current_time as f32 / duration as f32 * 100.0) as u32 + 1)
     }
 
     pub fn play(&self, continue_watching: bool, args: &Vec<String>) -> Child {

@@ -24,7 +24,7 @@ pub fn load_cache(movies: &mut Vec<Movie>) -> Vec<MovieCache> {
     if let Ok(cache) = cache {
         for movie in movies
             .iter_mut()
-            .filter(|movie| movie.duration.is_none() || movie.data.is_none())
+            .filter(|movie| movie.duration == 0 || movie.data.is_none())
         {
             match cache.iter().find(|entry| {
                 OsStr::new(&entry.file_name)
@@ -33,7 +33,7 @@ pub fn load_cache(movies: &mut Vec<Movie>) -> Vec<MovieCache> {
                         .unwrap_or(OsStr::new(""))
             }) {
                 Some(entry) => {
-                    movie.duration = Some(entry.duration);
+                    movie.duration = entry.duration;
                     movie.done = entry.done;
                     movie.data = Some(entry.data.clone());
                 }

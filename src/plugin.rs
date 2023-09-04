@@ -157,7 +157,8 @@ pub fn handle_response(response: String, window: &main_window::Window, plugin_id
                 },
                 duration: data
                     .next()
-                    .map(|duration| duration.parse::<u32>().unwrap_or(0)),
+                    .map(|duration| duration.parse::<u32>().unwrap_or(0))
+                    .unwrap_or(0),
                 done: data
                     .next()
                     .map(|done| done.parse::<bool>().unwrap_or(false))
