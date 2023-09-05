@@ -1,4 +1,5 @@
 use std::io::{prelude::*, BufReader};
+
 use std::process::{ChildStdin, Command, Stdio};
 
 use crate::movie::{Movie, MovieData};
@@ -246,8 +247,22 @@ pub fn handle_response(response: String, window: &main_window::Window, plugin_id
             }
         }
         "play" => {
-            if window.imp().play_button.is_visible() {
-                window.imp().play_button.activate();
+            if response.len() == 1 {
+                if window.imp().play_button.is_visible() {
+                    window.imp().play_button.activate();
+                }
+            } else {
+                let movie = Movie {
+                    id: 0,
+                    name: response[1].to_string(),
+                    year: None,
+                    file: response.last().unwrap().to_string(),
+                    current_time: Movie::get_current_time(response.last().unwrap().to_string()),
+                    duration: 0,
+                    done: false,
+                    data: None,
+                };
+                window.play_movie(&window.imp().play_button, Some(&movie));
             }
         }
         _ => {

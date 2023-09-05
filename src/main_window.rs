@@ -86,31 +86,67 @@ impl Window {
         window.update();
         window.setup_dir_watcher();
         window.imp().play_button.deref().set_label("  Play  ");
-        window.imp().play_button.deref().connect_clicked(clone!(@weak window => move |button| {
-            let idx = window.imp().movie_selected.get().unwrap();
-            let movie = &window.imp().movies.borrow()[idx];
-            let (sender, receiver) = glib::MainContext::channel(Priority::default());
-            match movie.current_time {
-                Some(0) | None => {
-                    let mut handle = movie.play(false, &window.imp().settings.borrow().player_args);
-                    window.imp().status_label.deref().set_label(&format!("Playing: <b>{}</b>", movie.name));
-                    window.plugin_broadcast(format!("playing;{}", movie.id));
-                    std::thread::spawn(move || {
-                        handle.wait().unwrap();
-                        sender.send(idx).unwrap();
-                    });
-                }
-                Some(current_time) => {
-                    let dialog = MessageDialog::new(
-                        Some(&window),
-                        DialogFlags::MODAL,
-                        MessageType::Question,
-                        gtk::ButtonsType::YesNo,
-                        &format!("Continue watching from {}:{:02}:{:02}?", current_time / 3600, current_time / 60 % 60, current_time % 60));
-                    dialog.set_decorated(false);
-                    dialog.set_default_response(ResponseType::Yes);
-                    dialog.show();
-                    dialog.connect_response(clone!(@weak window => move |dialog, response| {
+        window
+            .imp()
+            .play_button
+            .deref()
+            .connect_clicked(clone!(@weak window => move |button| {
+                window.play_movie(button, None);
+            }));
+
+        window
+            .imp()
+            .add_button
+            .deref()
+            .connect_clicked(clone!(@weak window => move |_| {
+                window.add_dir();
+            }));
+
+        window.imp().browse_button.deref().connect_clicked(clone!(@weak window => move |_| {
+            let filechooser = FileChooserDialog::new(Some("Browse"), Some(&window), gtk::FileChooserAction::CreateFolder);
+            filechooser.set_current_folder(utils::user_dir(user_data_dir()));
+            filechooser.set_decorated(false);
+            filechooser.show();
+        }));
+
+        window
+    }
+
+    pub fn play_movie(&self, button: &Button, movie: Option<&Movie>) {
+        let idx = self.imp().movie_selected.get().unwrap();
+        let binding = self.imp().movies.borrow();
+        let movie = movie.unwrap_or(&binding[idx]);
+        let (sender, receiver) = glib::MainContext::channel(Priority::default());
+        match movie.current_time {
+            Some(0) | None => {
+                let mut handle = movie.play(false, &self.imp().settings.borrow().player_args);
+                self.imp()
+                    .status_label
+                    .deref()
+                    .set_label(&format!("Playing: <b>{}</b>", movie.name));
+                self.plugin_broadcast(format!("playing;{}", movie.id));
+                std::thread::spawn(move || {
+                    handle.wait().unwrap();
+                    sender.send(idx).unwrap();
+                });
+            }
+            Some(current_time) => {
+                let dialog = MessageDialog::new(
+                    Some(self),
+                    DialogFlags::MODAL,
+                    MessageType::Question,
+                    gtk::ButtonsType::YesNo,
+                    &format!(
+                        "Continue watching from {}:{:02}:{:02}?",
+                        current_time / 3600,
+                        current_time / 60 % 60,
+                        current_time % 60
+                    ),
+                );
+                dialog.set_decorated(false);
+                dialog.set_default_response(ResponseType::Yes);
+                dialog.show();
+                dialog.connect_response(clone!(@weak self as window => move |dialog, response| {
                         let movie = &window.imp().movies.borrow()[idx];
                         let mut handle;
                         match response {
@@ -135,10 +171,10 @@ impl Window {
                             sender.send(idx).unwrap();
                         });
                     }));
-                }
             }
+        }
 
-            receiver.attach(None, clone!(@weak button, @weak window => @default-return Continue(false), move |idx| {
+        receiver.attach(None, clone!(@weak button, @weak self as window => @default-return Continue(false), move |idx| {
                 let file_path = window.imp().movies.borrow()[idx].file.clone();
                 let current_time = Movie::get_current_time(file_path);
                 window.imp().movies.borrow_mut()[idx].current_time = current_time;
@@ -158,24 +194,6 @@ impl Window {
                 window.setup_buttons();
                 Continue(true)
             }));
-        }));
-
-        window
-            .imp()
-            .add_button
-            .deref()
-            .connect_clicked(clone!(@weak window => move |_| {
-                window.add_dir();
-            }));
-
-        window.imp().browse_button.deref().connect_clicked(clone!(@weak window => move |_| {
-            let filechooser = FileChooserDialog::new(Some("Browse"), Some(&window), gtk::FileChooserAction::CreateFolder);
-            filechooser.set_current_folder(utils::user_dir(user_data_dir()));
-            filechooser.set_decorated(false);
-            filechooser.show();
-        }));
-
-        window
     }
 
     pub fn load_plugins(&self) {
