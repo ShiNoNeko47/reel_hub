@@ -112,10 +112,11 @@ impl Window {
         window
     }
 
-    pub fn play_movie(&self, button: &Button, movie: Option<&Movie>) {
+    pub fn play_movie(&self, button: &Button, movie: Option<Movie>) {
         let idx = self.imp().movie_selected.get().unwrap();
         let binding = self.imp().movies.borrow();
-        let movie = movie.unwrap_or(&binding[idx]);
+        let broadcast_id = movie.is_none();
+        let movie = movie.unwrap_or(binding[idx].clone());
         let (sender, receiver) = glib::MainContext::channel(Priority::default());
         match movie.current_time {
             Some(0) | None => {
@@ -124,7 +125,9 @@ impl Window {
                     .status_label
                     .deref()
                     .set_label(&format!("Playing: <b>{}</b>", movie.name));
-                self.plugin_broadcast(format!("playing;{}", movie.id));
+                if broadcast_id {
+                    self.plugin_broadcast(format!("playing;{}", movie.id));
+                }
                 std::thread::spawn(move || {
                     handle.wait().unwrap();
                     sender.send(idx).unwrap();
@@ -147,30 +150,31 @@ impl Window {
                 dialog.set_default_response(ResponseType::Yes);
                 dialog.show();
                 dialog.connect_response(clone!(@weak self as window => move |dialog, response| {
-                        let movie = &window.imp().movies.borrow()[idx];
-                        let mut handle;
-                        match response {
-                            ResponseType::Yes => {
-                                handle = movie.play(true, &window.imp().settings.borrow().player_args);
-                                window.imp().status_label.deref().set_label(&format!("Playing: <b>{}</b>", movie.name));
-                                window.imp().play_button.set_sensitive(false);
-                                dialog.close();
-                            }
-                            ResponseType::No => {
-                                handle = movie.play(false, &window.imp().settings.borrow().player_args);
-                                window.imp().status_label.deref().set_label(&format!("Playing: <b>{}</b>", movie.name));
-                                window.imp().play_button.set_sensitive(false);
-                                dialog.close();
-                            }
-                            _ => { return }
-                        };
-                        let sender = sender.clone();
+                    let mut handle;
+                    match response {
+                        ResponseType::Yes => {
+                            handle = movie.play(true, &window.imp().settings.borrow().player_args);
+                            window.imp().status_label.deref().set_label(&format!("Playing: <b>{}</b>", movie.name));
+                            window.imp().play_button.set_sensitive(false);
+                            dialog.close();
+                        }
+                        ResponseType::No => {
+                            handle = movie.play(false, &window.imp().settings.borrow().player_args);
+                            window.imp().status_label.deref().set_label(&format!("Playing: <b>{}</b>", movie.name));
+                            window.imp().play_button.set_sensitive(false);
+                            dialog.close();
+                        }
+                        _ => { return }
+                    };
+                    let sender = sender.clone();
+                    if broadcast_id {
                         window.plugin_broadcast(format!("playing;{}", movie.id));
-                        std::thread::spawn(move || {
-                            handle.wait().unwrap();
-                            sender.send(idx).unwrap();
-                        });
-                    }));
+                    }
+                    std::thread::spawn(move || {
+                        handle.wait().unwrap();
+                        sender.send(idx).unwrap();
+                    });
+                }));
             }
         }
 

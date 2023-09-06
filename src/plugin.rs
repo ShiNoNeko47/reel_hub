@@ -262,7 +262,7 @@ pub fn handle_response(response: String, window: &main_window::Window, plugin_id
                     done: false,
                     data: None,
                 };
-                window.play_movie(&window.imp().play_button, Some(&movie));
+                window.play_movie(&window.imp().play_button, Some(movie));
             }
         }
         _ => {
