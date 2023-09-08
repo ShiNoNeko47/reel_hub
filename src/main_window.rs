@@ -30,10 +30,8 @@ use notify::{
     event::{CreateKind, ModifyKind, RemoveKind, RenameMode},
     EventKind, Watcher,
 };
-use std::io::Write;
 use std::ops::Deref;
 use std::path::Path;
-use std::process::ChildStdin;
 
 use gtk::gio;
 use gtk::glib::subclass::prelude::*;
@@ -206,7 +204,7 @@ impl Window {
             .plugins
             .borrow()
             .iter()
-            .map(|plugin| std::path::PathBuf::from(plugin.1.path()))
+            .map(|plugin| std::path::PathBuf::from(plugin.file.path()))
             .collect();
         let (sender, receiver) = gtk::glib::MainContext::channel(Priority::default());
         self.imp()
@@ -276,12 +274,12 @@ impl Window {
                 .take()
                 .into_iter()
                 .map(|mut plugin| {
-                    if let Err(_) = plugin.0.write_all(format!("{request}\n").as_bytes()) {
-                        plugin.2 = false;
+                    if let Err(_) = plugin.write(&request) {
+                        plugin.running = false;
                     }
                     plugin
                 })
-                .collect::<Vec<(ChildStdin, walkdir::DirEntry, bool)>>(),
+                .collect::<Vec<plugin::Plugin>>(),
         );
     }
 

@@ -1,6 +1,5 @@
 mod cache_entry_row;
 use std::fs::File;
-use std::io::Write;
 
 use flate2::read::GzDecoder;
 use gtk::glib::{clone, user_data_dir};
@@ -204,18 +203,23 @@ impl SettingsWindow {
             .listbox_plugins
             .forall(|widget| self.imp().listbox_plugins.remove(widget));
         for (i, plugin) in window.imp().plugins.borrow().iter().enumerate() {
-            let file_name = plugin.1.file_name().to_string_lossy().to_string().clone();
+            let file_name = plugin
+                .file
+                .file_name()
+                .to_string_lossy()
+                .to_string()
+                .clone();
             let label = Label::new(Some(
-                &(file_name.clone() + if plugin.2 { " - Running..." } else { "" }),
+                &(file_name.clone() + if plugin.running { " - Running..." } else { "" }),
             ));
 
             let stop_button = Button::with_label("Stop");
-            stop_button.set_sensitive(plugin.2);
+            stop_button.set_sensitive(plugin.running);
             stop_button.connect_clicked(clone!(@weak window, @weak label => move |button| {
-                let _ = window.imp().plugins.borrow_mut()[i].0.write_all("0\n".as_bytes());
+                let _ = window.imp().plugins.borrow_mut()[i].write("0");
                 label.set_label(&file_name);
                 button.set_sensitive(false);
-                let _ = window.imp().plugins.borrow_mut()[i].2 = false;
+                let _ = window.imp().plugins.borrow_mut()[i].running = false;
             }));
 
             let hbox = gtk::Box::new(gtk::Orientation::Horizontal, 10);

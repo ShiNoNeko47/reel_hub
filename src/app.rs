@@ -1,7 +1,6 @@
 use crate::main_window;
 use gtk::glib::subclass::types::ObjectSubclassIsExt;
 use gtk::{gdk::Screen, prelude::*, Application, CssProvider, StyleContext};
-use std::io::Write;
 
 pub struct App {
     app: Application,
@@ -34,7 +33,7 @@ impl App {
             window.imp().store_cache();
             window.imp().store_settings();
             for plugin in window.imp().plugins.borrow_mut().iter_mut() {
-                plugin.0.write_all(b"0").ok();
+                let _ = plugin.write("0");
             }
         });
     }

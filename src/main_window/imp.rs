@@ -3,12 +3,11 @@ use std::ffi::OsStr;
 use std::fs::File;
 use std::ops::Deref;
 use std::path::PathBuf;
-use std::process::ChildStdin;
 use std::rc::Rc;
 
 use crate::movie::{self, Movie, MovieCache, MovieData};
-use crate::settings;
 use crate::utils;
+use crate::{plugin, settings};
 use gtk::glib::{clone, user_cache_dir, user_config_dir, Priority};
 use gtk::subclass::prelude::*;
 use gtk::{glib, Entry, Label, ListBox, Revealer, ScrolledWindow};
@@ -73,7 +72,7 @@ pub struct Window {
     pub cache: Rc<RefCell<Vec<MovieCache>>>,
 
     pub dir_watcher: Rc<RefCell<Option<notify::RecommendedWatcher>>>,
-    pub plugins: RefCell<Vec<(ChildStdin, walkdir::DirEntry, bool)>>,
+    pub plugins: RefCell<Vec<plugin::Plugin>>,
 
     pub settings: Rc<RefCell<settings::Settings>>,
 }

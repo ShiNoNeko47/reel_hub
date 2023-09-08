@@ -1,6 +1,6 @@
 use std::io::{prelude::*, BufReader};
 
-use std::process::{ChildStdin, Command, Stdio};
+use std::process::{ChildStdin, ChildStdout, Command, Stdio};
 
 use crate::movie::{Movie, MovieData};
 use crate::utils;
@@ -13,10 +13,48 @@ use gtk::CssProvider;
 
 use crate::main_window::{self, UserInputType};
 
+#[derive(Debug)]
+pub struct Plugin {
+    stdin: ChildStdin,
+    pub file: walkdir::DirEntry,
+    pub running: bool,
+    pub options: Option<serde_json::Value>,
+}
+
+impl Plugin {
+    pub fn new(file: walkdir::DirEntry) -> Option<(Self, ChildStdout)> {
+        match Command::new(file.path())
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .spawn()
+        {
+            Ok(plugin) => {
+                println!("Loading {}...", file.file_name().to_string_lossy());
+                return Some((
+                    Self {
+                        stdin: plugin.stdin.unwrap(),
+                        file,
+                        running: true,
+                        options: None,
+                    },
+                    plugin.stdout.unwrap(),
+                ));
+            }
+            Err(_) => {
+                return None;
+            }
+        };
+    }
+
+    pub fn write(&mut self, message: &str) -> Result<(), std::io::Error> {
+        self.stdin.write_all(format!("{}\n", message).as_bytes())
+    }
+}
+
 pub fn load_plugins(
     sender: gtk::glib::Sender<(String, usize)>,
     skip: Vec<std::path::PathBuf>,
-) -> Vec<(ChildStdin, walkdir::DirEntry, bool)> {
+) -> Vec<Plugin> {
     let mut path = utils::user_dir(user_data_dir());
     path.push_str("/.plugins/");
     std::fs::create_dir_all(&path).unwrap();
@@ -30,22 +68,11 @@ pub fn load_plugins(
         .collect();
     let mut plugins = vec![];
     for file in files {
-        let plugin = match Command::new(file.path())
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
-            .spawn()
-        {
-            Ok(plugin) => {
-                println!("Loading {}...", file.file_name().to_string_lossy());
-                plugin
-            }
-            Err(_) => {
-                continue;
-            }
-        };
-        let reader = BufReader::new(plugin.stdout.unwrap());
-        plugins.push((plugin.stdin.unwrap(), file, true));
-        plugin_listen(reader, sender.clone(), plugins.len() - 1);
+        if let Some((plugin, stdout)) = Plugin::new(file) {
+            let reader = BufReader::new(stdout);
+            plugins.push(plugin);
+            plugin_listen(reader, sender.clone(), plugins.len() - 1);
+        }
     }
     println!("Loaded {} plugins", plugins.len());
     plugins
@@ -73,26 +100,30 @@ pub fn handle_response(response: String, window: &main_window::Window, plugin_id
     let response = response.trim().split(";").collect::<Vec<&str>>();
     match response[0].to_lowercase().as_str() {
         "get_images" => {
-            let _ = window.imp().plugins.borrow_mut()[plugin_id].0.write_all(
-                format!(
-                    "poster;{}\n",
-                    window.imp().poster.file().unwrap_or("".into()).to_string()
-                )
-                .as_bytes(),
-            );
-            if window.imp().backdrop.is_visible() {
-                let _ = window.imp().plugins.borrow_mut()[plugin_id].0.write_all(
+            let _ = window.imp().plugins.borrow_mut()[plugin_id]
+                .stdin
+                .write_all(
                     format!(
-                        "backdrop;{}\n",
-                        window
-                            .imp()
-                            .backdrop
-                            .file()
-                            .unwrap_or("".into())
-                            .to_string()
+                        "poster;{}\n",
+                        window.imp().poster.file().unwrap_or("".into()).to_string()
                     )
                     .as_bytes(),
                 );
+            if window.imp().backdrop.is_visible() {
+                let _ = window.imp().plugins.borrow_mut()[plugin_id]
+                    .stdin
+                    .write_all(
+                        format!(
+                            "backdrop;{}\n",
+                            window
+                                .imp()
+                                .backdrop
+                                .file()
+                                .unwrap_or("".into())
+                                .to_string()
+                        )
+                        .as_bytes(),
+                    );
             }
         }
         "get_user_input" => {
@@ -110,7 +141,7 @@ pub fn handle_response(response: String, window: &main_window::Window, plugin_id
             );
             receiver.attach(None,
                 clone!(@weak window => @default-return Continue(false), move |user_input| {
-                    let _ = window.imp().plugins.borrow_mut()[plugin_id].0.write_all(format!("user_input;{}\n", user_input).as_bytes());
+                    let _ = window.imp().plugins.borrow_mut()[plugin_id].stdin.write_all(format!("user_input;{}\n", user_input).as_bytes());
                     Continue(false)
                 }),
             );
@@ -136,7 +167,7 @@ pub fn handle_response(response: String, window: &main_window::Window, plugin_id
                 .map(|id| id + 1)
                 .unwrap_or(id_prefix);
             let _ = window.imp().plugins.borrow_mut()[plugin_id]
-                .0
+                .stdin
                 .write_all(format!("movie_id;{movie_id}\n").as_bytes());
             if response.len() < 4 {
                 return;
