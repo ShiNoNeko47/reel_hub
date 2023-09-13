@@ -1,3 +1,4 @@
+use std::fs::File;
 use std::io::{prelude::*, BufReader};
 
 use std::process::{ChildStdin, ChildStdout, Command, Stdio};
@@ -33,9 +34,26 @@ impl Plugin {
                 return Some((
                     Self {
                         stdin: plugin.stdin.unwrap(),
-                        file,
+                        file: file.clone(),
                         running: true,
-                        options: None,
+                        options: {
+                            let stem = file.path().file_stem().unwrap();
+                            if let Ok(file) = File::open(
+                                file.path()
+                                    .parent()
+                                    .map(|parent| {
+                                        parent.join(stem).to_str().unwrap_or("").to_string()
+                                    })
+                                    .unwrap_or("".to_string())
+                                    + ".json",
+                            ) {
+                                let json = serde_json::from_reader(BufReader::new(file)).ok();
+                                println!("{json:?}");
+                                json
+                            } else {
+                                None
+                            }
+                        },
                     },
                     plugin.stdout.unwrap(),
                 ));
